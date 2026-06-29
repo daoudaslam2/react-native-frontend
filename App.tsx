@@ -1,45 +1,32 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect, useState } from 'react';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { AppNavigator } from './src/navigation/AppNavigator';
+import { AppProviders } from './src/providers/AppProviders';
+import { prepareLocalDatabase } from './src/database/database';
+import { SplashScreen } from './src/features/home/SplashScreen';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+function App(): React.JSX.Element {
+  const [isSplashVisible, setSplashVisible] = useState(true);
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
+  useEffect(() => {
+    prepareLocalDatabase().catch(error => {
+      if (__DEV__) {
+        console.warn('Unable to prepare local database:', error);
+      }
+    });
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+    const timeout = setTimeout(() => {
+      setSplashVisible(false);
+    }, 1600);
+
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
+    <AppProviders>
+      {isSplashVisible ? <SplashScreen /> : <AppNavigator />}
+    </AppProviders>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;
