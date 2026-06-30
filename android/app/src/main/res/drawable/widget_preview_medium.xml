@@ -1,0 +1,42 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="500dp"
+    android:height="250dp"
+    android:viewportWidth="500"
+    android:viewportHeight="250">
+    <path
+        android:fillColor="@color/widget_background"
+        android:pathData="M0,0h500v250h-500z" />
+    <path
+        android:fillColor="@color/widget_card"
+        android:pathData="M18,36h464v178h-464z" />
+    <path
+        android:fillColor="@color/widget_text"
+        android:pathData="M48,62h112v34h-112z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M50,112h126v17h-126z" />
+    <path
+        android:fillColor="@color/widget_muted"
+        android:pathData="M344,72h100v16h-100z" />
+    <path
+        android:fillColor="@color/widget_muted"
+        android:pathData="M320,100h124v16h-124z" />
+    <path
+        android:fillColor="@color/widget_inactive"
+        android:pathData="M56,172h44v10h-44z" />
+    <path
+        android:fillColor="@color/widget_inactive"
+        android:pathData="M142,172h58v10h-58z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M222,122h58v58h-58z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M228,194h48v12h-48z" />
+    <path
+        android:fillColor="@color/widget_inactive"
+        android:pathData="M314,172h74v10h-74z" />
+    <path
+        android:fillColor="@color/widget_inactive"
+        android:pathData="M420,172h42v10h-42z" />
+</vector>

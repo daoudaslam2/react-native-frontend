@@ -2,6 +2,7 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export type MoreStackParamList = {
   MoreHome: undefined;
+  Widgets: undefined;
   Qibla: undefined;
   Settings: undefined;
 };

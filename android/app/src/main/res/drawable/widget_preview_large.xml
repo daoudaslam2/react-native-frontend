@@ -1,0 +1,60 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="500dp"
+    android:height="500dp"
+    android:viewportWidth="500"
+    android:viewportHeight="500">
+    <path
+        android:fillColor="@color/widget_background"
+        android:pathData="M0,0h500v500h-500z" />
+    <path
+        android:fillColor="@color/widget_card"
+        android:pathData="M24,32h452v436h-452z" />
+    <path
+        android:fillColor="@color/widget_muted"
+        android:pathData="M56,76h136v18h-136z" />
+    <path
+        android:fillColor="@color/widget_text"
+        android:pathData="M56,118h132v42h-132z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M204,132h52v28h-52z" />
+    <path
+        android:fillColor="@color/widget_track"
+        android:pathData="M390,72h58v58h-58z" />
+    <path
+        android:fillColor="@color/widget_inactive"
+        android:pathData="M56,218h44v44h-44z" />
+    <path
+        android:fillColor="@color/widget_inactive"
+        android:pathData="M122,226h116v22h-116z" />
+    <path
+        android:fillColor="@color/widget_inactive"
+        android:pathData="M382,226h58v22h-58z" />
+    <path
+        android:fillColor="@color/widget_card_soft"
+        android:pathData="M36,284h428v86h-428z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M36,284h8v86h-8z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M68,306h58v58h-58z" />
+    <path
+        android:fillColor="@color/widget_text"
+        android:pathData="M148,306h94v28h-94z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M148,346h84v16h-84z" />
+    <path
+        android:fillColor="@color/widget_text"
+        android:pathData="M382,316h60v28h-60z" />
+    <path
+        android:fillColor="@color/widget_muted"
+        android:pathData="M68,406h44v44h-44z" />
+    <path
+        android:fillColor="@color/widget_text"
+        android:pathData="M132,414h116v22h-116z" />
+    <path
+        android:fillColor="@color/widget_muted"
+        android:pathData="M376,414h62v22h-62z" />
+</vector>

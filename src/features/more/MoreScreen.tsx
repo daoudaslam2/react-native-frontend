@@ -21,6 +21,12 @@ interface MoreItem {
 
 const moreItems: MoreItem[] = [
   {
+    title: 'Widgets',
+    subtitle: 'Preview Android home screen widgets',
+    icon: 'widgets',
+    screen: 'Widgets',
+  },
+  {
     title: 'Qibla Compass',
     subtitle: 'Direction to Makkah and calibration',
     icon: 'compass',

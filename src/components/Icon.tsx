@@ -35,7 +35,8 @@ export type IconName =
   | 'settings'
   | 'sun'
   | 'task'
-  | 'timer';
+  | 'timer'
+  | 'widgets';
 
 interface IconProps {
   name: IconName;
@@ -256,6 +257,15 @@ function renderIcon(
           <Line x1="12" y1="13" x2="12" y2="8" {...strokeProps} />
           <Line x1="12" y1="13" x2="16" y2="13" {...strokeProps} />
           <Line x1="9" y1="3" x2="15" y2="3" {...strokeProps} />
+        </>
+      );
+    case 'widgets':
+      return (
+        <>
+          <Rect x="4" y="4" width="7" height="7" rx="2" fill={fillColor} stroke={color} strokeWidth="1.9" />
+          <Rect x="13" y="4" width="7" height="7" rx="2" fill={fillColor} stroke={color} strokeWidth="1.9" />
+          <Rect x="4" y="13" width="7" height="7" rx="2" fill={fillColor} stroke={color} strokeWidth="1.9" />
+          <Rect x="13" y="13" width="7" height="7" rx="2" fill={fillColor} stroke={color} strokeWidth="1.9" />
         </>
       );
   }

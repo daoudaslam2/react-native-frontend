@@ -12,6 +12,7 @@ import { AppText } from '../components/AppText';
 import { Icon, type IconName } from '../components/Icon';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
+import { WidgetsScreen } from '../features/more/WidgetsScreen';
 import { UpdateQazaCountsScreen } from '../features/qaza/UpdateQazaCountsScreen';
 import { QazaScreen } from '../features/qaza/QazaScreen';
 import { QiblaScreen } from '../features/qibla/QiblaScreen';
@@ -66,6 +67,7 @@ function MoreStackNavigator(): React.JSX.Element {
   return (
     <MoreStack.Navigator screenOptions={{ headerShown: false }}>
       <MoreStack.Screen name="MoreHome" component={MoreScreen} />
+      <MoreStack.Screen name="Widgets" component={WidgetsScreen} />
       <MoreStack.Screen name="Qibla" component={QiblaScreen} />
       <MoreStack.Screen name="Settings" component={SettingsScreen} />
     </MoreStack.Navigator>
