@@ -111,8 +111,11 @@ export function calculatePrayerSchedule(
     prayers,
     summary: {
       location: FIXED_PRAYER_LOCATION.label,
-      hijriDate: formatHijriDate(now, FIXED_PRAYER_LOCATION.timeZone),
-      gregorianDate: formatGregorianDate(now, FIXED_PRAYER_LOCATION.timeZone),
+      hijriDate: formatHijriDate(scheduleDate, FIXED_PRAYER_LOCATION.timeZone),
+      gregorianDate: formatGregorianDate(
+        scheduleDate,
+        FIXED_PRAYER_LOCATION.timeZone,
+      ),
       currentPrayer: PRAYER_LABELS[currentNext.current.key],
       nextPrayer: PRAYER_LABELS[currentNext.next.key],
       nextPrayerTime: toPrayerTimeValue(
