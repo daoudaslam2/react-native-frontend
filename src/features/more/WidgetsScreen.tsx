@@ -593,10 +593,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    borderWidth: 12,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
+    borderWidth: 9,
     borderColor: '#eef3f0',
   },
   smallIconWrap: {
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     right: 10,
   },
   smallTopCopy: {
-    marginTop: 28,
+    marginTop: 26,
     marginLeft: 18,
     marginRight: 74,
     gap: 4,

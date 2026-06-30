@@ -11,13 +11,13 @@
         android:pathData="M28,28h194v194h-194z" />
     <path
         android:fillColor="@color/widget_ring"
-        android:pathData="M222,126 C169,126 126,83 126,30 L158,30 C158,65 187,94 222,94 Z" />
+        android:pathData="M222,116 C174,116 136,78 136,30 L158,30 C158,66 186,94 222,94 Z" />
     <path
         android:fillColor="@color/widget_text"
-        android:pathData="M46,64h70v22h-70z" />
+        android:pathData="M46,62h70v22h-70z" />
     <path
         android:fillColor="@color/widget_primary"
-        android:pathData="M46,106h86v10h-86z" />
+        android:pathData="M46,102h86v10h-86z" />
     <path
         android:fillColor="@color/widget_primary"
         android:pathData="M178,44h44v44h-44z" />
