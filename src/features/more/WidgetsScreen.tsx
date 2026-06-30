@@ -89,27 +89,30 @@ export function WidgetsScreen(): React.JSX.Element {
     use24HourTime,
   });
   const previewWidth = Math.min(width - spacing.container * 2, 330);
-  const handleAddWidget = React.useCallback(async (widgetSize: WidgetPinSize) => {
-    setPendingWidgetSize(widgetSize);
+  const handleAddWidget = React.useCallback(
+    async (widgetSize: WidgetPinSize) => {
+      setPendingWidgetSize(widgetSize);
 
-    try {
-      const result = await requestWidgetPin(widgetSize);
+      try {
+        const result = await requestWidgetPin(widgetSize);
 
-      if (!result.requested) {
+        if (!result.requested) {
+          Alert.alert(
+            'Widget pinning unavailable',
+            'Open the Android widget picker and choose Al-Salah from the widget list.',
+          );
+        }
+      } catch {
         Alert.alert(
-          'Widget pinning unavailable',
+          'Could not add widget',
           'Open the Android widget picker and choose Al-Salah from the widget list.',
         );
+      } finally {
+        setPendingWidgetSize(null);
       }
-    } catch {
-      Alert.alert(
-        'Could not add widget',
-        'Open the Android widget picker and choose Al-Salah from the widget list.',
-      );
-    } finally {
-      setPendingWidgetSize(null);
-    }
-  }, []);
+    },
+    [],
+  );
 
   return (
     <Screen contentContainerStyle={styles.screenContent}>
@@ -118,7 +121,11 @@ export function WidgetsScreen(): React.JSX.Element {
           accessibilityLabel="Go back"
           accessibilityRole="button"
           onPress={() => navigation.goBack()}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.pressed,
+          ]}
+        >
           <Icon name="arrowLeft" size={28} color={colors.primary} />
         </Pressable>
         <AppText variant="headlineMobile" weight="700" align="center">
@@ -134,23 +141,29 @@ export function WidgetsScreen(): React.JSX.Element {
       </View>
 
       <WidgetSection
-        title="Small (2x2)"
+        title="Compact (2x1)"
         isAdding={pendingWidgetSize === 'small'}
-        onLongPress={() => handleAddWidget('small')}>
-        <SmallWidgetPreview data={previewData} size={Math.min(previewWidth, 224)} />
+        onLongPress={() => handleAddWidget('small')}
+      >
+        <SmallWidgetPreview
+          data={previewData}
+          width={Math.min(previewWidth, 200)}
+        />
       </WidgetSection>
 
       <WidgetSection
         title="Medium (4x2)"
         isAdding={pendingWidgetSize === 'medium'}
-        onLongPress={() => handleAddWidget('medium')}>
+        onLongPress={() => handleAddWidget('medium')}
+      >
         <MediumWidgetPreview data={previewData} width={previewWidth} />
       </WidgetSection>
 
       <WidgetSection
         title="Large (4x4)"
         isAdding={pendingWidgetSize === 'large'}
-        onLongPress={() => handleAddWidget('large')}>
+        onLongPress={() => handleAddWidget('large')}
+      >
         <LargeWidgetPreview
           data={previewData}
           width={previewWidth}
@@ -180,7 +193,8 @@ function WidgetSection({
         transform="uppercase"
         weight="700"
         align="center"
-        style={styles.sectionTitle}>
+        style={styles.sectionTitle}
+      >
         {title}
       </AppText>
       <Pressable
@@ -194,7 +208,8 @@ function WidgetSection({
           styles.previewPressable,
           pressed && styles.previewPressed,
           isAdding && styles.previewDisabled,
-        ]}>
+        ]}
+      >
         {children}
       </Pressable>
     </View>
@@ -203,31 +218,36 @@ function WidgetSection({
 
 function SmallWidgetPreview({
   data,
-  size,
+  width,
 }: {
   data: WidgetPreviewData;
-  size: number;
+  width: number;
 }): React.JSX.Element {
   return (
-    <View style={[styles.smallWidget, { width: size, height: size }]}>
+    <View style={[styles.smallWidget, { width, height: width * 0.5 }]}>
       <View style={styles.softRingSmall} />
       <View style={styles.smallIconWrap}>
         <PrayerIcon
           name={data.current.key}
-          size={50}
+          size={36}
           color={colors.onPrimary}
           backgroundColor={colors.primaryContainer}
         />
       </View>
       <View style={styles.smallTopCopy}>
-        <AppText variant="headline" weight="700" style={styles.smallCurrentName}>
+        <AppText
+          variant="headline"
+          weight="700"
+          style={styles.smallCurrentName}
+        >
           {data.current.name}
         </AppText>
         <AppText
           variant="bodyLarge"
           color="primary"
           weight="700"
-          style={styles.smallRemaining}>
+          style={styles.smallRemaining}
+        >
           {data.countdownText}
         </AppText>
       </View>
@@ -236,17 +256,15 @@ function SmallWidgetPreview({
           variant="body"
           color="onSurfaceVariant"
           weight="700"
-          style={styles.smallNext}>
+          style={styles.smallNext}
+        >
           {data.isPrayerActive
             ? `Next: ${data.next.name}`
             : `Starts: ${formatPrayerTime(data.next.time, true)}`}
         </AppText>
         <View style={styles.progressTrack}>
           <View
-            style={[
-              styles.progressFill,
-              { width: `${data.progressPercent}%` },
-            ]}
+            style={[styles.progressFill, { width: `${data.progressPercent}%` }]}
           />
         </View>
       </View>
@@ -270,20 +288,31 @@ function MediumWidgetPreview({
             {data.currentTime}
           </AppText>
           <AppText
-          variant="bodyLarge"
-          color="primary"
-          weight="700"
-          style={styles.mediumStatus}>
+            variant="bodyLarge"
+            color="primary"
+            weight="700"
+            style={styles.mediumStatus}
+          >
             {data.isPrayerActive
               ? `Next: ${data.next.name}`
               : data.countdownText}
           </AppText>
         </View>
         <View style={styles.mediumLocation}>
-          <AppText variant="label" color="onSurfaceVariant" weight="700" align="right">
+          <AppText
+            variant="label"
+            color="onSurfaceVariant"
+            weight="700"
+            align="right"
+          >
             {data.location}
           </AppText>
-          <AppText variant="label" color="onSurfaceVariant" weight="700" align="right">
+          <AppText
+            variant="label"
+            color="onSurfaceVariant"
+            weight="700"
+            align="right"
+          >
             {data.hijriDate}
           </AppText>
         </View>
@@ -304,7 +333,8 @@ function MediumWidgetPreview({
                 variant="label"
                 color="primary"
                 weight="700"
-                style={styles.mediumPrayerName}>
+                style={styles.mediumPrayerName}
+              >
                 {prayer.name}
               </AppText>
             </View>
@@ -320,7 +350,8 @@ function MediumWidgetPreview({
                 variant="labelSmall"
                 color="outline"
                 weight="700"
-                style={styles.mediumPrayerName}>
+                style={styles.mediumPrayerName}
+              >
                 {prayer.name}
               </AppText>
             </View>
@@ -352,7 +383,8 @@ function LargeWidgetPreview({
             variant="title"
             color="onSurfaceVariant"
             weight="700"
-            style={styles.largeDate}>
+            style={styles.largeDate}
+          >
             {data.displayDate}
           </AppText>
           <View style={styles.largeClockRow}>
@@ -362,14 +394,21 @@ function LargeWidgetPreview({
           </View>
         </View>
         <View style={styles.moreButton}>
-          <AppText variant="headlineMobile" color="onSurfaceVariant" weight="700">
+          <AppText
+            variant="headlineMobile"
+            color="onSurfaceVariant"
+            weight="700"
+          >
             ...
           </AppText>
         </View>
       </View>
 
       <View style={styles.largeRows}>
-        <LargeInactiveRow prayer={rows.previous} use24HourTime={use24HourTime} />
+        <LargeInactiveRow
+          prayer={rows.previous}
+          use24HourTime={use24HourTime}
+        />
         <View style={styles.largeCurrentRow}>
           <View style={styles.currentAccent} />
           <View style={styles.largeCurrentIcon}>
@@ -384,14 +423,16 @@ function LargeWidgetPreview({
             <AppText
               variant="headline"
               weight="700"
-              style={styles.largeCurrentName}>
+              style={styles.largeCurrentName}
+            >
               {data.current.name}
             </AppText>
             <AppText
               variant="bodyLarge"
               color="primary"
               weight="700"
-              style={styles.largeCurrentRemaining}>
+              style={styles.largeCurrentRemaining}
+            >
               {data.countdownText}
             </AppText>
           </View>
@@ -401,7 +442,10 @@ function LargeWidgetPreview({
         </View>
         <LargeDefaultRow prayer={rows.next} use24HourTime={use24HourTime} />
         <View style={styles.rowDivider} />
-        <LargeDefaultRow prayer={rows.afterNext} use24HourTime={use24HourTime} />
+        <LargeDefaultRow
+          prayer={rows.afterNext}
+          use24HourTime={use24HourTime}
+        />
       </View>
     </View>
   );
@@ -425,7 +469,8 @@ function LargeInactiveRow({
       <AppText
         variant="headlineMobile"
         color="outline"
-        style={[styles.largeRowName, styles.largeInactiveName]}>
+        style={[styles.largeRowName, styles.largeInactiveName]}
+      >
         {prayer.name}
       </AppText>
       <AppText variant="bodyLarge" color="outline" style={styles.largeRowTime}>
@@ -452,13 +497,15 @@ function LargeDefaultRow({
       />
       <AppText
         variant="headlineMobile"
-        style={[styles.largeRowName, styles.largeDefaultName]}>
+        style={[styles.largeRowName, styles.largeDefaultName]}
+      >
         {prayer.name}
       </AppText>
       <AppText
         variant="bodyLarge"
         color="onSurfaceVariant"
-        style={styles.largeRowTime}>
+        style={styles.largeRowTime}
+      >
         {formatPrayerTime(prayer.time, use24HourTime)}
       </AppText>
     </View>
@@ -516,7 +563,11 @@ function createPreviewData({
     next,
     prayers,
     isPrayerActive,
-    currentTime: formatPrayerTime(now, use24HourTime, FIXED_PRAYER_LOCATION.timeZone),
+    currentTime: formatPrayerTime(
+      now,
+      use24HourTime,
+      FIXED_PRAYER_LOCATION.timeZone,
+    ),
     displayDate: new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
       day: 'numeric',
@@ -546,7 +597,9 @@ function getLargeRows(data: WidgetPreviewData): {
 
   return {
     previous:
-      data.prayers[(safeCurrentIndex - 1 + data.prayers.length) % data.prayers.length],
+      data.prayers[
+        (safeCurrentIndex - 1 + data.prayers.length) % data.prayers.length
+      ],
     next: data.prayers[safeNextIndex % data.prayers.length],
     afterNext: data.prayers[(safeNextIndex + 1) % data.prayers.length],
   };
@@ -665,7 +718,7 @@ const styles = StyleSheet.create({
   },
   smallWidget: {
     overflow: 'hidden',
-    borderRadius: 28,
+    borderRadius: 24,
     backgroundColor: colors.surfaceLowest,
     padding: 0,
     shadowColor: '#000000',
@@ -676,54 +729,54 @@ const styles = StyleSheet.create({
   },
   softRingSmall: {
     position: 'absolute',
-    top: -15,
-    right: -15,
-    width: 94,
-    height: 94,
-    borderRadius: 47,
-    borderWidth: 10,
+    top: -12,
+    right: -12,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 8,
     borderColor: '#eef3f0',
   },
   smallIconWrap: {
     position: 'absolute',
-    top: 12,
-    right: 10,
+    top: 8,
+    right: 8,
   },
   smallTopCopy: {
-    marginTop: 22,
-    marginLeft: 18,
-    marginRight: 74,
-    gap: 1,
+    marginTop: 10,
+    marginLeft: 14,
+    marginRight: 56,
+    gap: 0,
   },
   smallCurrentName: {
     color: colors.onSurface,
-    fontSize: 28,
-    lineHeight: 33,
+    fontSize: 23,
+    lineHeight: 27,
   },
   smallRemaining: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 15,
   },
   smallNext: {
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 16,
   },
   smallFooter: {
     marginTop: 'auto',
-    marginHorizontal: 18,
-    marginBottom: 18,
-    gap: spacing.sm,
+    marginHorizontal: 14,
+    marginBottom: 9,
+    gap: 4,
   },
   progressTrack: {
-    height: 7,
-    borderRadius: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: '#eceae5',
     overflow: 'hidden',
   },
   progressFill: {
     width: '68%',
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 2,
     backgroundColor: colors.primary,
   },
   previewPressable: {

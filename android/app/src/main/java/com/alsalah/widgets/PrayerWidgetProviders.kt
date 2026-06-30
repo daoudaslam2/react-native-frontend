@@ -246,9 +246,9 @@ private fun renderSmallWidget(
 }
 
 private fun getSmallWidgetTitleSize(label: String): Float = when {
-    label.length >= 7 -> 24f
-    label.length >= 5 -> 26f
-    else -> 28f
+    label.length >= 7 -> 16f
+    label.length >= 5 -> 20f
+    else -> 23f
 }
 
 private fun renderMediumWidget(
