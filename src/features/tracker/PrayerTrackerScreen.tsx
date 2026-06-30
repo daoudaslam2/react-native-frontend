@@ -30,6 +30,7 @@ interface TrackerMetrics {
   thirtyDayCompletionPercent: number;
   completedPrayers: number;
   qazaPrayers: number;
+  pendingPrayers: number;
   trackedDays: number;
   qazaTotal: number;
   highestQazaPrayer: string;
@@ -131,6 +132,11 @@ export function PrayerTrackerScreen(): React.JSX.Element {
           icon="task"
           label="Qaza Logged"
           value={metrics.qazaPrayers.toString()}
+        />
+        <SmallMetricCard
+          icon="timer"
+          label="Pending"
+          value={metrics.pendingPrayers.toString()}
         />
         <SmallMetricCard
           icon="calendar"
@@ -240,6 +246,7 @@ function getTrackerMetrics({
 }): TrackerMetrics {
   const completedPrayers = countStatuses(logsByDate, ['completed']);
   const qazaPrayers = countStatuses(logsByDate, ['qaza']);
+  const pendingPrayers = countStatuses(logsByDate, ['pending', 'upcoming']);
   const weekKeys = getDateRange(activeDateKey, 7);
   const thirtyDayKeys = getDateRange(activeDateKey, 30);
 
@@ -250,6 +257,7 @@ function getTrackerMetrics({
     thirtyDayCompletionPercent: getCompletionPercent(thirtyDayKeys, logsByDate),
     completedPrayers,
     qazaPrayers,
+    pendingPrayers,
     trackedDays: countTrackedDays(logsByDate),
     qazaTotal: getTotalQaza(qazaCounts),
     highestQazaPrayer: getHighestQazaPrayer(qazaCounts),
