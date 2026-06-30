@@ -3,19 +3,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_card_bg"
-    android:paddingStart="24dp"
-    android:paddingTop="24dp"
-    android:paddingEnd="24dp"
-    android:paddingBottom="18dp">
+    android:paddingStart="18dp"
+    android:paddingTop="18dp"
+    android:paddingEnd="18dp"
+    android:paddingBottom="14dp">
 
     <ImageView
         android:id="@+id/widget_medium_ring"
-        android:layout_width="178dp"
-        android:layout_height="178dp"
+        android:layout_width="142dp"
+        android:layout_height="142dp"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginEnd="-64dp"
-        android:layout_marginBottom="-82dp"
+        android:layout_marginEnd="-48dp"
+        android:layout_marginBottom="-66dp"
         android:background="@drawable/widget_soft_ring"
         android:contentDescription="@null" />
 
@@ -26,7 +26,7 @@
         android:includeFontPadding="false"
         android:text="14:30"
         android:textColor="@color/widget_text"
-        android:textSize="46sp"
+        android:textSize="34sp"
         android:textStyle="bold" />
 
     <TextView
@@ -34,11 +34,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/widget_medium_time"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:includeFontPadding="false"
-        android:text="Asr is next"
+        android:text="Next: Maghrib"
         android:textColor="@color/widget_primary"
-        android:textSize="22sp"
+        android:textSize="16sp"
         android:textStyle="bold" />
 
     <LinearLayout
@@ -47,7 +47,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="22dp"
+        android:layout_marginTop="14dp"
         android:gravity="end"
         android:orientation="vertical">
 
@@ -58,25 +58,25 @@
             android:includeFontPadding="false"
             android:text="London, UK"
             android:textColor="@color/widget_muted"
-            android:textSize="20sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/widget_medium_hijri"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:includeFontPadding="false"
             android:text="24 Safar 1445"
             android:textColor="@color/widget_muted"
-            android:textSize="20sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/widget_medium_timeline"
         android:layout_width="match_parent"
-        android:layout_height="82dp"
+        android:layout_height="66dp"
         android:layout_alignParentBottom="true"
         android:baselineAligned="false"
         android:gravity="bottom"
@@ -91,8 +91,8 @@
 
             <ImageView
                 android:id="@+id/widget_medium_slot_0_icon"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_namaz_fajr"
                 android:tint="@color/widget_inactive" />
@@ -101,11 +101,11 @@
                 android:id="@+id/widget_medium_slot_0_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="5dp"
                 android:includeFontPadding="false"
                 android:text="Fajr"
                 android:textColor="@color/widget_inactive"
-                android:textSize="20sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -118,8 +118,8 @@
 
             <ImageView
                 android:id="@+id/widget_medium_slot_1_icon"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_namaz_dhuhr"
                 android:tint="@color/widget_inactive" />
@@ -128,11 +128,11 @@
                 android:id="@+id/widget_medium_slot_1_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="5dp"
                 android:includeFontPadding="false"
                 android:text="Dhuhr"
                 android:textColor="@color/widget_inactive"
-                android:textSize="20sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -144,21 +144,15 @@
             android:orientation="vertical">
 
             <FrameLayout
-                android:layout_width="64dp"
-                android:layout_height="76dp">
-
-                <TextView
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_gravity="top|center_horizontal"
-                    android:background="@drawable/widget_active_dot" />
+                android:layout_width="52dp"
+                android:layout_height="52dp">
 
                 <FrameLayout
-                    android:layout_width="58dp"
-                    android:layout_height="58dp"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
                     android:layout_gravity="bottom|center_horizontal"
                     android:background="@drawable/widget_green_rounded_square"
-                    android:padding="14dp">
+                    android:padding="9dp">
 
                     <ImageView
                         android:id="@+id/widget_medium_focus_icon"
@@ -176,7 +170,7 @@
                 android:includeFontPadding="false"
                 android:text="Asr"
                 android:textColor="@color/widget_primary"
-                android:textSize="20sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -189,8 +183,8 @@
 
             <ImageView
                 android:id="@+id/widget_medium_slot_3_icon"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_namaz_maghrib"
                 android:tint="@color/widget_inactive" />
@@ -199,11 +193,11 @@
                 android:id="@+id/widget_medium_slot_3_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="5dp"
                 android:includeFontPadding="false"
                 android:text="Maghrib"
                 android:textColor="@color/widget_inactive"
-                android:textSize="20sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -216,8 +210,8 @@
 
             <ImageView
                 android:id="@+id/widget_medium_slot_4_icon"
-                android:layout_width="34dp"
-                android:layout_height="34dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:contentDescription="@null"
                 android:src="@drawable/ic_namaz_isha"
                 android:tint="@color/widget_inactive" />
@@ -226,11 +220,11 @@
                 android:id="@+id/widget_medium_slot_4_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="5dp"
                 android:includeFontPadding="false"
                 android:text="Isha"
                 android:textColor="@color/widget_inactive"
-                android:textSize="20sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>

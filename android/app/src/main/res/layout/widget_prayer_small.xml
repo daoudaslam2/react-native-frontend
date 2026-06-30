@@ -3,19 +3,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_card_bg"
-    android:paddingStart="22dp"
-    android:paddingTop="22dp"
-    android:paddingEnd="22dp"
-    android:paddingBottom="22dp">
+    android:paddingStart="18dp"
+    android:paddingTop="18dp"
+    android:paddingEnd="18dp"
+    android:paddingBottom="18dp">
 
     <ImageView
         android:id="@+id/widget_small_ring"
-        android:layout_width="118dp"
-        android:layout_height="118dp"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="-54dp"
-        android:layout_marginEnd="-48dp"
+        android:layout_marginTop="-44dp"
+        android:layout_marginEnd="-40dp"
         android:background="@drawable/widget_soft_ring"
         android:contentDescription="@null" />
 
@@ -26,7 +26,7 @@
         android:includeFontPadding="false"
         android:text="Asr"
         android:textColor="@color/widget_text"
-        android:textSize="40sp"
+        android:textSize="30sp"
         android:textStyle="bold" />
 
     <TextView
@@ -34,23 +34,23 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/widget_small_current_prayer"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="4dp"
         android:includeFontPadding="false"
         android:text="In 1h 45m"
         android:textColor="@color/widget_primary"
-        android:textSize="20sp"
+        android:textSize="15sp"
         android:textStyle="bold" />
 
     <FrameLayout
         android:id="@+id/widget_small_icon_bg"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         android:background="@drawable/widget_green_circle"
-        android:padding="16dp">
+        android:padding="10dp">
 
         <ImageView
             android:id="@+id/widget_small_icon"
@@ -74,14 +74,14 @@
             android:includeFontPadding="false"
             android:text="Next: Maghrib"
             android:textColor="@color/widget_muted"
-            android:textSize="20sp"
+            android:textSize="15sp"
             android:textStyle="bold" />
 
         <FrameLayout
             android:id="@+id/widget_small_progress"
             android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="6dp"
+            android:layout_marginTop="8dp"
             android:background="@drawable/widget_progress_track">
 
             <TextView

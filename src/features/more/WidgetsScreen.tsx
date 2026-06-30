@@ -35,7 +35,6 @@ interface WidgetPreviewData {
   next: WidgetPrayer;
   prayers: WidgetPrayer[];
   currentTime: string;
-  seconds: string;
   displayDate: string;
   hijriDate: string;
   location: string;
@@ -66,11 +65,12 @@ export function WidgetsScreen(): React.JSX.Element {
     prayers,
     currentPrayerName: summary.currentPrayer,
     nextPrayerName: summary.nextPrayer,
+    nextPrayerTime: summary.nextPrayerTime,
     hijriDate: summary.hijriDate,
     remainingTime: summary.remainingTime,
     use24HourTime,
   });
-  const previewWidth = Math.min(width - spacing.container * 2, 380);
+  const previewWidth = Math.min(width - spacing.container * 2, 330);
 
   return (
     <Screen contentContainerStyle={styles.screenContent}>
@@ -92,16 +92,10 @@ export function WidgetsScreen(): React.JSX.Element {
           Preview the Android widgets available from your home screen widget
           picker.
         </AppText>
-        <View style={styles.installNote}>
-          <Icon name="info" size={18} color={colors.primary} />
-          <AppText variant="label" color="primary" style={styles.installText}>
-            After rebuilding, open Android Widgets and search for Al-Salah.
-          </AppText>
-        </View>
       </View>
 
       <WidgetSection title="Small (2x2)">
-        <SmallWidgetPreview data={previewData} size={Math.min(previewWidth, 280)} />
+        <SmallWidgetPreview data={previewData} size={Math.min(previewWidth, 224)} />
       </WidgetSection>
 
       <WidgetSection title="Medium (4x2)">
@@ -155,21 +149,29 @@ function SmallWidgetPreview({
       <View style={styles.smallIconWrap}>
         <PrayerIcon
           name={data.current.key}
-          size={74}
+          size={56}
           color={colors.onPrimary}
           backgroundColor={colors.primaryContainer}
         />
       </View>
       <View style={styles.smallTopCopy}>
-        <AppText variant="headline" weight="700" style={styles.widgetName}>
+        <AppText variant="headline" weight="700" style={styles.smallCurrentName}>
           {data.current.name}
         </AppText>
-        <AppText variant="title" color="primary" weight="700">
+        <AppText
+          variant="bodyLarge"
+          color="primary"
+          weight="700"
+          style={styles.smallRemaining}>
           {data.remainingTime}
         </AppText>
       </View>
       <View style={styles.smallFooter}>
-        <AppText variant="title" color="onSurfaceVariant" weight="700">
+        <AppText
+          variant="body"
+          color="onSurfaceVariant"
+          weight="700"
+          style={styles.smallNext}>
           Next: {data.next.name}
         </AppText>
         <View style={styles.progressTrack}>
@@ -195,33 +197,40 @@ function MediumWidgetPreview({
           <AppText variant="display" weight="700" style={styles.mediumTime}>
             {data.currentTime}
           </AppText>
-          <AppText variant="title" color="primary" weight="700">
-            {data.next.name} is next
+          <AppText
+            variant="bodyLarge"
+            color="primary"
+            weight="700"
+            style={styles.mediumStatus}>
+            Next: {data.next.name}
           </AppText>
         </View>
         <View style={styles.mediumLocation}>
-          <AppText variant="bodyLarge" color="onSurfaceVariant" weight="700" align="right">
+          <AppText variant="label" color="onSurfaceVariant" weight="700" align="right">
             {data.location}
           </AppText>
-          <AppText variant="body" color="onSurfaceVariant" weight="700" align="right">
+          <AppText variant="label" color="onSurfaceVariant" weight="700" align="right">
             {data.hijriDate}
           </AppText>
         </View>
       </View>
       <View style={styles.mediumTimeline}>
         {data.prayers.map(prayer =>
-          prayer.key === data.next.key ? (
+          prayer.key === data.current.key ? (
             <View key={prayer.key} style={styles.mediumActivePrayer}>
-              <View style={styles.activeDot} />
               <View style={styles.mediumActiveIcon}>
                 <PrayerIcon
                   name={prayer.key}
-                  size={48}
+                  size={40}
                   color={colors.onPrimary}
                   backgroundColor="transparent"
                 />
               </View>
-              <AppText variant="bodyLarge" color="primary" weight="700">
+              <AppText
+                variant="label"
+                color="primary"
+                weight="700"
+                style={styles.mediumPrayerName}>
                 {prayer.name}
               </AppText>
             </View>
@@ -229,11 +238,15 @@ function MediumWidgetPreview({
             <View key={prayer.key} style={styles.mediumInactivePrayer}>
               <PrayerIcon
                 name={prayer.key}
-                size={36}
+                size={28}
                 color={inactiveColor}
                 backgroundColor="transparent"
               />
-              <AppText variant="label" color="outline" weight="700">
+              <AppText
+                variant="labelSmall"
+                color="outline"
+                weight="700"
+                style={styles.mediumPrayerName}>
                 {prayer.name}
               </AppText>
             </View>
@@ -261,15 +274,16 @@ function LargeWidgetPreview({
       <View style={styles.dottedRingLarge} />
       <View style={styles.largeHeader}>
         <View>
-          <AppText variant="title" color="onSurfaceVariant" weight="700">
+          <AppText
+            variant="title"
+            color="onSurfaceVariant"
+            weight="700"
+            style={styles.largeDate}>
             {data.displayDate}
           </AppText>
           <View style={styles.largeClockRow}>
             <AppText variant="display" weight="700" style={styles.largeTime}>
               {data.currentTime}
-            </AppText>
-            <AppText variant="headline" color="primary" weight="700">
-              : {data.seconds}
             </AppText>
           </View>
         </View>
@@ -287,20 +301,27 @@ function LargeWidgetPreview({
           <View style={styles.largeCurrentIcon}>
             <PrayerIcon
               name={data.current.key}
-              size={58}
+              size={48}
               color={colors.onPrimary}
               backgroundColor={colors.primaryContainer}
             />
           </View>
           <View style={styles.largeCurrentText}>
-            <AppText variant="headline" weight="700">
+            <AppText
+              variant="headline"
+              weight="700"
+              style={styles.largeCurrentName}>
               {data.current.name}
             </AppText>
-            <AppText variant="bodyLarge" color="primary" weight="700">
+            <AppText
+              variant="bodyLarge"
+              color="primary"
+              weight="700"
+              style={styles.largeCurrentRemaining}>
               {data.remainingTime}
             </AppText>
           </View>
-          <AppText variant="title" weight="700">
+          <AppText variant="title" weight="700" style={styles.largeCurrentTime}>
             {formatPrayerTime(data.current.time, use24HourTime)}
           </AppText>
         </View>
@@ -330,10 +351,10 @@ function LargeInactiveRow({
       <AppText
         variant="headlineMobile"
         color="outline"
-        style={styles.largeRowName}>
+        style={[styles.largeRowName, styles.largeInactiveName]}>
         {prayer.name}
       </AppText>
-      <AppText variant="bodyLarge" color="outline">
+      <AppText variant="bodyLarge" color="outline" style={styles.largeRowTime}>
         {formatPrayerTime(prayer.time, use24HourTime)}
       </AppText>
     </View>
@@ -355,10 +376,15 @@ function LargeDefaultRow({
         color={colors.onSurfaceVariant}
         backgroundColor="transparent"
       />
-      <AppText variant="headlineMobile" style={styles.largeRowName}>
+      <AppText
+        variant="headlineMobile"
+        style={[styles.largeRowName, styles.largeDefaultName]}>
         {prayer.name}
       </AppText>
-      <AppText variant="bodyLarge" color="onSurfaceVariant">
+      <AppText
+        variant="bodyLarge"
+        color="onSurfaceVariant"
+        style={styles.largeRowTime}>
         {formatPrayerTime(prayer.time, use24HourTime)}
       </AppText>
     </View>
@@ -370,6 +396,7 @@ function createPreviewData({
   prayers,
   currentPrayerName,
   nextPrayerName,
+  nextPrayerTime,
   hijriDate,
   remainingTime,
   use24HourTime,
@@ -378,6 +405,7 @@ function createPreviewData({
   prayers: WidgetPrayer[];
   currentPrayerName: string;
   nextPrayerName: string;
+  nextPrayerTime: string;
   hijriDate: string;
   remainingTime: string;
   use24HourTime: boolean;
@@ -386,17 +414,25 @@ function createPreviewData({
     prayers.find(prayer => prayer.status === 'current') ??
     prayers.find(prayer => prayer.name === currentPrayerName) ??
     prayers[0];
-  const next =
+  const nextFromSchedule =
     prayers.find(prayer => prayer.status === 'next') ??
     prayers.find(prayer => prayer.name === nextPrayerName) ??
     prayers[(prayers.indexOf(current) + 1) % prayers.length];
+  const next =
+    nextFromSchedule.status === 'next'
+      ? nextFromSchedule
+      : {
+          ...nextFromSchedule,
+          time: nextPrayerTime,
+          displayTime: nextPrayerTime,
+          status: 'next' as const,
+        };
 
   return {
     current,
     next,
     prayers,
     currentTime: formatPrayerTime(now, use24HourTime, FIXED_PRAYER_LOCATION.timeZone),
-    seconds: now.getSeconds().toString().padStart(2, '0'),
     displayDate: new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
       day: 'numeric',
@@ -469,31 +505,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  installNote: {
-    maxWidth: 340,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.primarySoft,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  installText: {
-    flex: 1,
-  },
   section: {
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   sectionTitle: {
     letterSpacing: 2,
   },
   smallWidget: {
     overflow: 'hidden',
-    borderRadius: 36,
+    borderRadius: 28,
     backgroundColor: colors.surfaceLowest,
-    padding: 34,
+    padding: 26,
     shadowColor: '#000000',
     shadowOpacity: 0.06,
     shadowRadius: 28,
@@ -502,49 +525,59 @@ const styles = StyleSheet.create({
   },
   softRingSmall: {
     position: 'absolute',
-    top: -24,
-    right: -22,
-    width: 132,
-    height: 132,
-    borderRadius: 66,
-    borderWidth: 18,
+    top: -20,
+    right: -18,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    borderWidth: 14,
     borderColor: '#eef3f0',
   },
   smallIconWrap: {
     position: 'absolute',
-    top: 42,
-    right: 34,
+    top: 32,
+    right: 26,
   },
   smallTopCopy: {
     gap: 6,
   },
-  widgetName: {
+  smallCurrentName: {
     color: colors.onSurface,
+    fontSize: 30,
+    lineHeight: 34,
+  },
+  smallRemaining: {
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  smallNext: {
+    fontSize: 15,
+    lineHeight: 20,
   },
   smallFooter: {
     marginTop: 'auto',
     gap: spacing.sm,
   },
   progressTrack: {
-    height: 10,
-    borderRadius: 5,
+    height: 7,
+    borderRadius: 4,
     backgroundColor: '#eceae5',
     overflow: 'hidden',
   },
   progressFill: {
     width: '68%',
     height: '100%',
-    borderRadius: 5,
+    borderRadius: 4,
     backgroundColor: colors.primary,
   },
   mediumWidget: {
-    minHeight: 186,
+    minHeight: 154,
     overflow: 'hidden',
-    borderRadius: 34,
+    borderRadius: 28,
     backgroundColor: colors.surfaceLowest,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
     shadowColor: '#000000',
     shadowOpacity: 0.06,
     shadowRadius: 28,
@@ -553,11 +586,11 @@ const styles = StyleSheet.create({
   },
   softRingMedium: {
     position: 'absolute',
-    width: 170,
-    height: 170,
-    right: -42,
-    bottom: -46,
-    borderRadius: 85,
+    width: 136,
+    height: 136,
+    right: -34,
+    bottom: -38,
+    borderRadius: 68,
     backgroundColor: '#f0f4f2',
   },
   mediumTop: {
@@ -566,8 +599,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   mediumTime: {
-    fontSize: 52,
-    lineHeight: 58,
+    fontSize: 36,
+    lineHeight: 42,
+  },
+  mediumStatus: {
+    fontSize: 16,
+    lineHeight: 20,
   },
   mediumLocation: {
     flex: 1,
@@ -589,28 +626,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
-  activeDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
-    marginBottom: -6,
-    zIndex: 1,
-  },
   mediumActiveIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
+    width: 50,
+    height: 50,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primaryContainer,
   },
+  mediumPrayerName: {
+    fontSize: 12,
+    lineHeight: 15,
+  },
   largeWidget: {
-    minHeight: 424,
+    minHeight: 356,
     overflow: 'hidden',
-    borderRadius: 36,
+    borderRadius: 30,
     backgroundColor: colors.surfaceLowest,
-    padding: spacing.lg,
+    padding: spacing.md,
     shadowColor: '#000000',
     shadowOpacity: 0.06,
     shadowRadius: 28,
@@ -619,27 +652,27 @@ const styles = StyleSheet.create({
   },
   softRingLarge: {
     position: 'absolute',
-    top: -60,
-    right: -54,
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    borderWidth: 6,
+    top: -48,
+    right: -44,
+    width: 196,
+    height: 196,
+    borderRadius: 98,
+    borderWidth: 5,
     borderColor: '#e8eeeb',
   },
   dottedRingLarge: {
     position: 'absolute',
-    top: -78,
-    right: 44,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    borderWidth: 10,
+    top: -64,
+    right: 36,
+    width: 176,
+    height: 176,
+    borderRadius: 88,
+    borderWidth: 8,
     borderColor: '#e1ece5',
     opacity: 0.8,
   },
   largeHeader: {
-    minHeight: 112,
+    minHeight: 88,
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: spacing.md,
@@ -648,23 +681,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
   },
+  largeDate: {
+    fontSize: 17,
+    lineHeight: 22,
+  },
   largeTime: {
-    fontSize: 52,
-    lineHeight: 60,
+    fontSize: 38,
+    lineHeight: 44,
   },
   moreButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceContainer,
   },
   largeRows: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   largeDefaultRow: {
-    minHeight: 54,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
@@ -672,8 +709,20 @@ const styles = StyleSheet.create({
   largeRowName: {
     flex: 1,
   },
+  largeInactiveName: {
+    fontSize: 21,
+    lineHeight: 26,
+  },
+  largeDefaultName: {
+    fontSize: 21,
+    lineHeight: 26,
+  },
+  largeRowTime: {
+    fontSize: 17,
+    lineHeight: 22,
+  },
   largeCurrentRow: {
-    minHeight: 96,
+    minHeight: 76,
     overflow: 'hidden',
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -681,7 +730,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8faf8',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: spacing.lg,
+    paddingLeft: spacing.md,
     paddingRight: spacing.md,
     gap: spacing.md,
   },
@@ -694,14 +743,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   largeCurrentIcon: {
-    width: 66,
-    height: 66,
+    width: 52,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
   largeCurrentText: {
     flex: 1,
     gap: 2,
+  },
+  largeCurrentName: {
+    fontSize: 26,
+    lineHeight: 31,
+  },
+  largeCurrentRemaining: {
+    fontSize: 15,
+    lineHeight: 19,
+  },
+  largeCurrentTime: {
+    fontSize: 21,
+    lineHeight: 26,
   },
   rowDivider: {
     height: StyleSheet.hairlineWidth,

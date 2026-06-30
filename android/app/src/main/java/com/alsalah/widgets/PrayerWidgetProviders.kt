@@ -1,8 +1,10 @@
 package com.alsalah.widgets
 
 import android.app.PendingIntent
+import android.app.AlarmManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.icu.util.IslamicCalendar
@@ -27,6 +29,10 @@ private const val LAHORE_LONGITUDE = 74.321451
 private const val LOCATION_LABEL = "Lahore, PK"
 private const val TIME_ZONE_ID = "Asia/Karachi"
 private const val CUTOFF_HOUR = 2
+private const val ONE_MINUTE_MS = 60_000L
+private const val ACTION_REFRESH_SMALL = "com.alsalah.widgets.REFRESH_SMALL"
+private const val ACTION_REFRESH_MEDIUM = "com.alsalah.widgets.REFRESH_MEDIUM"
+private const val ACTION_REFRESH_LARGE = "com.alsalah.widgets.REFRESH_LARGE"
 
 private val WIDGET_TIME_ZONE: TimeZone = TimeZone.getTimeZone(TIME_ZONE_ID)
 
@@ -58,9 +64,58 @@ abstract class PrayerWidgetProvider(
     private val layoutId: Int,
     private val rootViewId: Int,
     private val render: (Context, RemoteViews, PrayerWidgetData) -> Unit,
+    private val providerClass: Class<out PrayerWidgetProvider>,
+    private val refreshAction: String,
 ) : AppWidgetProvider() {
 
     override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray,
+    ) {
+        updateWidgets(context, appWidgetManager, appWidgetIds)
+        scheduleNextRefresh(context, appWidgetIds)
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+
+        if (intent.action != refreshAction) {
+            return
+        }
+
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(
+            ComponentName(context, providerClass),
+        )
+
+        if (appWidgetIds.isEmpty()) {
+            cancelRefresh(context)
+            return
+        }
+
+        updateWidgets(context, appWidgetManager, appWidgetIds)
+        scheduleNextRefresh(context, appWidgetIds)
+    }
+
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+
+        val remainingWidgetIds = AppWidgetManager.getInstance(context).getAppWidgetIds(
+            ComponentName(context, providerClass),
+        )
+
+        if (remainingWidgetIds.isEmpty()) {
+            cancelRefresh(context)
+        }
+    }
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        cancelRefresh(context)
+    }
+
+    private fun updateWidgets(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
@@ -71,6 +126,49 @@ abstract class PrayerWidgetProvider(
                 createRemoteViews(context),
             )
         }
+    }
+
+    private fun scheduleNextRefresh(context: Context, appWidgetIds: IntArray) {
+        if (appWidgetIds.isEmpty()) {
+            return
+        }
+
+        val alarmManager = context.getSystemService(AlarmManager::class.java)
+        val pendingIntent = createRefreshPendingIntent(
+            context,
+            PendingIntent.FLAG_UPDATE_CURRENT,
+        ) ?: return
+        val now = System.currentTimeMillis()
+        val triggerAtMillis = ((now / ONE_MINUTE_MS) + 1) * ONE_MINUTE_MS + 1_000L
+
+        alarmManager.set(AlarmManager.RTC, triggerAtMillis, pendingIntent)
+    }
+
+    private fun cancelRefresh(context: Context) {
+        val alarmManager = context.getSystemService(AlarmManager::class.java)
+        val pendingIntent = createRefreshPendingIntent(
+            context,
+            PendingIntent.FLAG_NO_CREATE,
+        )
+
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+        }
+    }
+
+    private fun createRefreshPendingIntent(
+        context: Context,
+        flags: Int,
+    ): PendingIntent? {
+        val intent = Intent(context, providerClass).setAction(refreshAction)
+
+        return PendingIntent.getBroadcast(
+            context,
+            layoutId,
+            intent,
+            flags or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     private fun createRemoteViews(context: Context): RemoteViews {
@@ -94,18 +192,24 @@ class SmallPrayerWidgetProvider : PrayerWidgetProvider(
     R.layout.widget_prayer_small,
     R.id.widget_prayer_small_root,
     ::renderSmallWidget,
+    SmallPrayerWidgetProvider::class.java,
+    ACTION_REFRESH_SMALL,
 )
 
 class MediumPrayerWidgetProvider : PrayerWidgetProvider(
     R.layout.widget_prayer_medium,
     R.id.widget_prayer_medium_root,
     ::renderMediumWidget,
+    MediumPrayerWidgetProvider::class.java,
+    ACTION_REFRESH_MEDIUM,
 )
 
 class LargePrayerWidgetProvider : PrayerWidgetProvider(
     R.layout.widget_prayer_large,
     R.id.widget_prayer_large_root,
     ::renderLargeWidget,
+    LargePrayerWidgetProvider::class.java,
+    ACTION_REFRESH_LARGE,
 )
 
 private fun renderSmallWidget(
@@ -125,15 +229,13 @@ private fun renderMediumWidget(
     views: RemoteViews,
     data: PrayerWidgetData,
 ) {
-    val focusIndex = data.timeline.indexOf(data.next)
-        .takeIf { it >= 0 }
-        ?: data.currentIndex
+    val focusIndex = data.currentIndex
     val focusedItems = (-2..2).map { offset ->
         data.timeline[(focusIndex + offset).coerceIn(0, data.timeline.lastIndex)]
     }
 
     views.setTextViewText(R.id.widget_medium_time, formatTime(data.now))
-    views.setTextViewText(R.id.widget_medium_status, "${data.next.namaz.label} is next")
+    views.setTextViewText(R.id.widget_medium_status, "Next: ${data.next.namaz.label}")
     views.setTextViewText(R.id.widget_medium_place, LOCATION_LABEL)
     views.setTextViewText(R.id.widget_medium_hijri, formatHijriDate(data.now))
 
@@ -149,8 +251,8 @@ private fun renderMediumWidget(
         R.id.widget_medium_slot_1_name,
         focusedItems[1],
     )
-    views.setImageViewResource(R.id.widget_medium_focus_icon, data.next.namaz.icon)
-    views.setTextViewText(R.id.widget_medium_focus_name, data.next.namaz.label)
+    views.setImageViewResource(R.id.widget_medium_focus_icon, data.current.namaz.icon)
+    views.setTextViewText(R.id.widget_medium_focus_name, data.current.namaz.label)
     setMediumInactiveSlot(
         views,
         R.id.widget_medium_slot_3_icon,
@@ -176,7 +278,6 @@ private fun renderLargeWidget(
 
     views.setTextViewText(R.id.widget_large_date, formatDisplayDate(data.now))
     views.setTextViewText(R.id.widget_large_time, formatTime(data.now))
-    views.setTextViewText(R.id.widget_large_seconds, ": ${formatSeconds(data.now)}")
     views.setTextViewText(R.id.widget_large_current_name, data.current.namaz.label)
     views.setTextViewText(R.id.widget_large_current_remaining, formatRemaining(data))
     views.setTextViewText(R.id.widget_large_current_time, formatTime(data.current.time))
@@ -305,12 +406,6 @@ private fun dateComponents(date: Date): DateComponents {
 
 private fun formatTime(date: Date): String {
     return SimpleDateFormat("HH:mm", Locale.US).apply {
-        timeZone = WIDGET_TIME_ZONE
-    }.format(date)
-}
-
-private fun formatSeconds(date: Date): String {
-    return SimpleDateFormat("ss", Locale.US).apply {
         timeZone = WIDGET_TIME_ZONE
     }.format(date)
 }
