@@ -1,23 +1,18 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AnimatedCard } from '../../components/AnimatedCard';
 import { AppText } from '../../components/AppText';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon } from '../../components/Icon';
 import { MetricChip } from '../../components/MetricChip';
+import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
-import type { PrayerKey, PrayerTime } from '../../types/prayer';
-
-const prayerIcons: Record<PrayerKey, IconName> = {
-  fajr: 'sun',
-  sunrise: 'sun',
-  dhuhr: 'sun',
-  asr: 'cloud',
-  maghrib: 'moon',
-  isha: 'moon',
-};
+import type {
+  ObligatoryPrayerKey,
+  PrayerKey,
+  PrayerTime,
+} from '../../types/prayer';
 
 export function PrayerTimesScreen(): React.JSX.Element {
   const summary = prayerRepository.getSummary();
@@ -46,10 +41,10 @@ export function PrayerTimesScreen(): React.JSX.Element {
       </View>
 
       <View style={styles.list}>
-        {prayers.map((prayer, index) => (
-          <AnimatedCard key={prayer.id} delay={index * 45}>
+        {prayers.map(prayer => (
+          <View key={prayer.id}>
             <PrayerTimeRow prayer={prayer} />
-          </AnimatedCard>
+          </View>
         ))}
       </View>
     </Screen>
@@ -59,6 +54,7 @@ export function PrayerTimesScreen(): React.JSX.Element {
 function PrayerTimeRow({ prayer }: { prayer: PrayerTime }): React.JSX.Element {
   const isCurrent = prayer.status === 'current';
   const isCompleted = prayer.status === 'completed';
+  const prayerIcon = getPrayerIconName(prayer.key);
 
   return (
     <View
@@ -69,11 +65,20 @@ function PrayerTimeRow({ prayer }: { prayer: PrayerTime }): React.JSX.Element {
       ]}>
       <View style={styles.rowLeft}>
         <View style={[styles.iconWrap, isCurrent && styles.iconWrapActive]}>
-          <Icon
-            name={prayerIcons[prayer.key]}
-            color={isCurrent ? colors.onPrimary : colors.primary}
-            filled
-          />
+          {prayerIcon ? (
+            <PrayerIcon name={prayerIcon} size={isCurrent ? 52 : 44} />
+          ) : (
+            <Icon
+              name="sun"
+              color={isCurrent ? colors.onPrimary : colors.secondary}
+              filled
+            />
+          )}
+          {isCompleted ? (
+            <View style={styles.completedBadge}>
+              <Icon name="check" size={11} color={colors.onPrimary} />
+            </View>
+          ) : null}
         </View>
         <View style={styles.rowTitle}>
           <View style={styles.nameLine}>
@@ -105,6 +110,10 @@ function PrayerTimeRow({ prayer }: { prayer: PrayerTime }): React.JSX.Element {
       </AppText>
     </View>
   );
+}
+
+function getPrayerIconName(key: PrayerKey): ObligatoryPrayerKey | null {
+  return key === 'sunrise' ? null : key;
 }
 
 const styles = StyleSheet.create({
@@ -176,13 +185,24 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceHigh,
   },
   iconWrapActive: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
+  completedBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.surfaceLowest,
   },
   rowTitle: {
     gap: spacing.xs,

@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing } from '../theme';
 import { AppText } from './AppText';
-import { Icon } from './Icon';
 
 export function TopAppBar(): React.JSX.Element {
   const insets = useSafeAreaInsets();
@@ -12,9 +11,7 @@ export function TopAppBar(): React.JSX.Element {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.bar}>
-        <Pressable accessibilityRole="button" style={styles.iconButton}>
-          <Icon name="menu" color={colors.onSurfaceVariant} />
-        </Pressable>
+        <View style={styles.edgeSpacer} />
         <AppText variant="headlineMobile" color="primary" weight="700">
           Al-Salah
         </AppText>
@@ -43,12 +40,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  iconButton: {
+  edgeSpacer: {
     width: 40,
     height: 40,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   avatarButton: {
     width: 40,

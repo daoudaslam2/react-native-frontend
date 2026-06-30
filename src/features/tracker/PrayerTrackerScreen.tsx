@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, type CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
@@ -8,7 +9,7 @@ import { Icon } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
-import type { TrackerStackParamList } from '../../navigation/types';
+import type { MainTabParamList, MoreStackParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
@@ -19,12 +20,17 @@ import {
 } from './trackerStore';
 
 type TrackerNavigation = NativeStackNavigationProp<
-  TrackerStackParamList,
+  MoreStackParamList,
   'PrayerTracker'
 >;
 
+type TrackerTabNavigation = CompositeNavigationProp<
+  TrackerNavigation,
+  BottomTabNavigationProp<MainTabParamList>
+>;
+
 export function PrayerTrackerScreen(): React.JSX.Element {
-  const navigation = useNavigation<TrackerNavigation>();
+  const navigation = useNavigation<TrackerTabNavigation>();
   const stats = prayerRepository.getTrackerStats();
   const qazaCounts = useQazaStore(state => state.counts);
   const qazaTotal = OBLIGATORY_PRAYERS.reduce(
@@ -110,7 +116,12 @@ export function PrayerTrackerScreen(): React.JSX.Element {
           </AppText>
         </View>
         <Pressable
-          onPress={() => navigation.navigate('Qaza')}
+          onPress={() =>
+            navigation.navigate({
+              name: 'Qaza',
+              params: { screen: 'QazaHome' },
+            })
+          }
           style={styles.qazaButton}>
           <AppText variant="label" color="onPrimaryContainer">
             Manage

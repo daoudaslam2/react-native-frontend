@@ -1,16 +1,23 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
+import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
+import type { QazaStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
 import { getTotalQaza, useQazaStore } from './qazaStore';
 
+type QazaNavigation = NativeStackNavigationProp<QazaStackParamList, 'QazaHome'>;
+
 export function QazaScreen(): React.JSX.Element {
+  const navigation = useNavigation<QazaNavigation>();
   const counts = useQazaStore(state => state.counts);
   const total = getTotalQaza(counts);
 
@@ -27,6 +34,13 @@ export function QazaScreen(): React.JSX.Element {
             {total} remaining
           </AppText>
         </View>
+        <Pressable
+          onPress={() => navigation.navigate('UpdateQazaCounts')}
+          style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}>
+          <AppText variant="label" color="onPrimaryContainer" weight="700">
+            Update All Counts
+          </AppText>
+        </Pressable>
       </View>
 
       <View style={styles.cards}>
@@ -44,37 +58,22 @@ function QazaCard({
   prayer: ObligatoryPrayerKey;
 }): React.JSX.Element {
   const count = useQazaStore(state => state.counts[prayer]);
-  const increase = useQazaStore(state => state.increase);
-  const decrease = useQazaStore(state => state.decrease);
   const completeOne = useQazaStore(state => state.completeOne);
   const isEmpty = count === 0;
 
   return (
     <Surface style={styles.card} radiusSize="lg">
       <View style={styles.cardHeader}>
-        <View style={styles.cardTitle}>
+        <View style={styles.prayerName}>
+          <View style={styles.prayerIcon}>
+            <PrayerIcon name={prayer} size={44} />
+          </View>
           <AppText variant="title">{PRAYER_LABELS[prayer]}</AppText>
-          <AppText variant="body" color="onSurfaceVariant">
-            Qaza Remaining:{' '}
-            <AppText variant="body" color="primary" weight="700">
-              {count}
-            </AppText>
-          </AppText>
         </View>
-        <View style={styles.stepper}>
-          <StepperButton
-            icon="minus"
-            label="Decrease"
-            onPress={() => decrease(prayer)}
-          />
-          <AppText variant="title" align="center" style={styles.count}>
+        <View style={styles.countPill}>
+          <AppText variant="title" color="primary" weight="700">
             {count}
           </AppText>
-          <StepperButton
-            icon="add"
-            label="Increase"
-            onPress={() => increase(prayer)}
-          />
         </View>
       </View>
       <Pressable
@@ -85,12 +84,6 @@ function QazaCard({
           isEmpty && styles.completeButtonDisabled,
           pressed && !isEmpty && styles.pressed,
         ]}>
-        <Icon
-          name="task"
-          size={20}
-          color={isEmpty ? colors.onSurfaceVariant : colors.onPrimaryContainer}
-          filled={!isEmpty}
-        />
         <AppText
           variant="label"
           color={isEmpty ? 'onSurfaceVariant' : 'onPrimaryContainer'}
@@ -99,26 +92,6 @@ function QazaCard({
         </AppText>
       </Pressable>
     </Surface>
-  );
-}
-
-function StepperButton({
-  icon,
-  label,
-  onPress,
-}: {
-  icon: 'add' | 'minus';
-  label: string;
-  onPress: () => void;
-}): React.JSX.Element {
-  return (
-    <Pressable
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [styles.stepperButton, pressed && styles.pressed]}>
-      <Icon name={icon} color={colors.onSurface} />
-    </Pressable>
   );
 }
 
@@ -137,6 +110,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
+  editButton: {
+    marginTop: spacing.xs,
+    minHeight: 48,
+    borderRadius: radius.full,
+    backgroundColor: colors.primaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
   cards: {
     gap: spacing.md,
   },
@@ -145,31 +127,31 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(228, 226, 221, 0.65)',
   },
   cardHeader: {
-    gap: spacing.md,
-  },
-  cardTitle: {
-    gap: spacing.xs,
-  },
-  stepper: {
-    minHeight: 58,
-    borderRadius: radius.full,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.surfaceVariant,
-    backgroundColor: colors.surfaceLow,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.xs,
+    gap: spacing.md,
   },
-  stepperButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  prayerName: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  prayerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  countPill: {
+    minWidth: 54,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  count: {
-    minWidth: 48,
+    backgroundColor: 'rgba(0, 106, 57, 0.1)',
   },
   completeButton: {
     minHeight: 56,
@@ -178,7 +160,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
   },
   completeButtonDisabled: {
     backgroundColor: colors.surfaceHigh,

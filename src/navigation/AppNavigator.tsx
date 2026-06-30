@@ -10,18 +10,24 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { Icon, type IconName } from '../components/Icon';
-import { TopAppBar } from '../components/TopAppBar';
 import { HomeScreen } from '../features/home/HomeScreen';
+import { MoreScreen } from '../features/more/MoreScreen';
 import { PrayerTimesScreen } from '../features/prayer-times/PrayerTimesScreen';
+import { UpdateQazaCountsScreen } from '../features/qaza/UpdateQazaCountsScreen';
 import { QazaScreen } from '../features/qaza/QazaScreen';
 import { QiblaScreen } from '../features/qibla/QiblaScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
 import { PrayerTrackerScreen } from '../features/tracker/PrayerTrackerScreen';
 import { colors, radius, spacing } from '../theme';
-import type { MainTabParamList, TrackerStackParamList } from './types';
+import type {
+  MainTabParamList,
+  MoreStackParamList,
+  QazaStackParamList,
+} from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-const TrackerStack = createNativeStackNavigator<TrackerStackParamList>();
+const MoreStack = createNativeStackNavigator<MoreStackParamList>();
+const QazaStack = createNativeStackNavigator<QazaStackParamList>();
 
 const tabConfig: Record<
   keyof MainTabParamList,
@@ -32,9 +38,8 @@ const tabConfig: Record<
 > = {
   Home: { label: 'Home', icon: 'home' },
   PrayerTimes: { label: 'Prayers', icon: 'timer' },
-  Qibla: { label: 'Qibla', icon: 'compass' },
-  TrackerStack: { label: 'Tracker', icon: 'chart' },
-  Settings: { label: 'Settings', icon: 'settings' },
+  Qaza: { label: 'Qaza', icon: 'task' },
+  More: { label: 'More', icon: 'menu' },
 };
 
 export function AppNavigator(): React.JSX.Element {
@@ -42,33 +47,42 @@ export function AppNavigator(): React.JSX.Element {
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={{
-          header: renderTopAppBar,
+          headerShown: false,
         }}
         tabBar={renderBottomNavigation}>
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="PrayerTimes" component={PrayerTimesScreen} />
-        <Tab.Screen name="Qibla" component={QiblaScreen} />
-        <Tab.Screen name="TrackerStack" component={TrackerStackNavigator} />
-        <Tab.Screen name="Settings" component={SettingsScreen} />
+        <Tab.Screen name="Qaza" component={QazaStackNavigator} />
+        <Tab.Screen name="More" component={MoreStackNavigator} />
       </Tab.Navigator>
     </NavigationContainer>
   );
-}
-
-function renderTopAppBar(): React.JSX.Element {
-  return <TopAppBar />;
 }
 
 function renderBottomNavigation(props: BottomTabBarProps): React.JSX.Element {
   return <BottomNavigation {...props} />;
 }
 
-function TrackerStackNavigator(): React.JSX.Element {
+function MoreStackNavigator(): React.JSX.Element {
   return (
-    <TrackerStack.Navigator screenOptions={{ headerShown: false }}>
-      <TrackerStack.Screen name="PrayerTracker" component={PrayerTrackerScreen} />
-      <TrackerStack.Screen name="Qaza" component={QazaScreen} />
-    </TrackerStack.Navigator>
+    <MoreStack.Navigator screenOptions={{ headerShown: false }}>
+      <MoreStack.Screen name="MoreHome" component={MoreScreen} />
+      <MoreStack.Screen name="Qibla" component={QiblaScreen} />
+      <MoreStack.Screen name="PrayerTracker" component={PrayerTrackerScreen} />
+      <MoreStack.Screen name="Settings" component={SettingsScreen} />
+    </MoreStack.Navigator>
+  );
+}
+
+function QazaStackNavigator(): React.JSX.Element {
+  return (
+    <QazaStack.Navigator screenOptions={{ headerShown: false }}>
+      <QazaStack.Screen name="QazaHome" component={QazaScreen} />
+      <QazaStack.Screen
+        name="UpdateQazaCounts"
+        component={UpdateQazaCountsScreen}
+      />
+    </QazaStack.Navigator>
   );
 }
 
@@ -136,7 +150,7 @@ const styles = StyleSheet.create({
   tabBar: {
     minHeight: 80,
     paddingTop: 12,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     flexDirection: 'row',
@@ -150,17 +164,17 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   tabItem: {
-    minWidth: 62,
+    minWidth: 72,
     minHeight: 52,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
   tabItemActive: {
     backgroundColor: colors.secondaryContainer,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
   },
   tabPressed: {
     opacity: 0.76,

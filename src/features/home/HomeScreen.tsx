@@ -1,30 +1,31 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
-import { AnimatedCard } from '../../components/AnimatedCard';
 import { AppText } from '../../components/AppText';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon } from '../../components/Icon';
+import { LogoMark } from '../../components/LogoMark';
+import { PrayerIcon } from '../../components/PrayerIcon';
 import { PrayerGradientCard } from '../../components/PrayerGradientCard';
 import { Screen } from '../../components/Screen';
-import { Surface } from '../../components/Surface';
+import { useTrackerStore } from '../tracker/trackerStore';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
-import type { MainTabParamList } from '../../navigation/types';
-import type { PrayerTime } from '../../types/prayer';
+import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
 
-type HomeNavigation = BottomTabNavigationProp<MainTabParamList, 'Home'>;
+type TimelinePrayer = PrayerTime & { key: ObligatoryPrayerKey };
 
 export function HomeScreen(): React.JSX.Element {
-  const navigation = useNavigation<HomeNavigation>();
   const summary = prayerRepository.getSummary();
   const prayers = prayerRepository
     .getTodayPrayerTimes()
-    .filter(prayer => prayer.key !== 'sunrise');
+    .filter(isTimelinePrayer);
+  const logs = useTrackerStore(state => state.logs);
+  const markPrayer = useTrackerStore(state => state.markPrayer);
 
   return (
-    <Screen patterned>
+    <Screen patterned contentContainerStyle={styles.screenContent}>
+      <HomeHeader />
+
       <View style={styles.greeting}>
         <AppText variant="title">As-salamu alaykum, User</AppText>
         <AppText variant="body" color="onSurfaceVariant">
@@ -32,71 +33,52 @@ export function HomeScreen(): React.JSX.Element {
         </AppText>
       </View>
 
-      <AnimatedCard>
-        <PrayerGradientCard
-          currentPrayer={summary.currentPrayer}
-          remainingTime={summary.remainingTime}
-          nextPrayer={summary.nextPrayer}
-          nextPrayerTime={summary.nextPrayerTime}
-        />
-      </AnimatedCard>
+      <PrayerGradientCard
+        currentPrayer={summary.currentPrayer}
+        remainingTime={summary.remainingTime}
+        nextPrayer={summary.nextPrayer}
+        nextPrayerTime={summary.nextPrayerTime}
+      />
 
       <View style={styles.section}>
         <AppText variant="title">Today's Timeline</AppText>
         <View style={styles.list}>
           {prayers.map(prayer => (
-            <TimelineRow key={prayer.id} prayer={prayer} />
+            <TimelineRow
+              key={prayer.id}
+              prayer={prayer}
+              isMarkedComplete={logs[prayer.key].status === 'completed'}
+              onMarkComplete={() => markPrayer(prayer.key, 'completed')}
+            />
           ))}
         </View>
-      </View>
-
-      <View style={styles.actionsGrid}>
-        <ActionCard
-          icon="compass"
-          label="Qibla"
-          tone="secondary"
-          onPress={() =>
-            navigation.navigate({ name: 'Qibla', params: undefined })
-          }
-        />
-        <ActionCard
-          icon="checkCircle"
-          label="Mark Complete"
-          tone="primary"
-          onPress={() =>
-            navigation.navigate({
-              name: 'TrackerStack',
-              params: { screen: 'PrayerTracker' },
-            })
-          }
-        />
-        <ActionCard
-          icon="chart"
-          label="History"
-          tone="neutral"
-          onPress={() =>
-            navigation.navigate({
-              name: 'TrackerStack',
-              params: { screen: 'PrayerTracker' },
-            })
-          }
-        />
-        <ActionCard
-          icon="settings"
-          label="Settings"
-          tone="neutral"
-          onPress={() =>
-            navigation.navigate({ name: 'Settings', params: undefined })
-          }
-        />
       </View>
     </Screen>
   );
 }
 
-function TimelineRow({ prayer }: { prayer: PrayerTime }): React.JSX.Element {
-  const isCurrent = prayer.status === 'current';
-  const isCompleted = prayer.status === 'completed';
+function HomeHeader(): React.JSX.Element {
+  return (
+    <View style={styles.homeHeader}>
+      <LogoMark size={44} />
+      <AppText variant="headlineMobile" color="primary" weight="700">
+        Al-Salah
+      </AppText>
+    </View>
+  );
+}
+
+function TimelineRow({
+  prayer,
+  isMarkedComplete,
+  onMarkComplete,
+}: {
+  prayer: TimelinePrayer;
+  isMarkedComplete: boolean;
+  onMarkComplete: () => void;
+}): React.JSX.Element {
+  const isCompleted = prayer.status === 'completed' || isMarkedComplete;
+  const isCurrent = prayer.status === 'current' && !isCompleted;
 
   return (
     <View
@@ -112,11 +94,12 @@ function TimelineRow({ prayer }: { prayer: PrayerTime }): React.JSX.Element {
             isCurrent && styles.timelineIconActive,
             isCompleted && styles.timelineIconDim,
           ]}>
-          <Icon
-            name={isCompleted ? 'check' : isCurrent ? 'timer' : 'moon'}
-            size={20}
-            color={isCurrent ? colors.onPrimary : colors.outline}
-          />
+          <PrayerIcon name={prayer.key} size={42} />
+          {isCompleted ? (
+            <View style={styles.completedBadge}>
+              <Icon name="check" size={11} color={colors.onPrimary} />
+            </View>
+          ) : null}
         </View>
         <View>
           <AppText
@@ -129,66 +112,52 @@ function TimelineRow({ prayer }: { prayer: PrayerTime }): React.JSX.Element {
             <AppText variant="labelSmall" color="primaryFixed">
               Current
             </AppText>
+          ) : isCompleted ? (
+            <AppText variant="labelSmall" color="onSurfaceVariant">
+              Completed
+            </AppText>
           ) : null}
         </View>
       </View>
-      <AppText
-        variant={isCurrent ? 'title' : 'body'}
-        color={isCurrent ? 'onPrimary' : 'onSurface'}
-        weight={isCurrent ? '700' : '400'}>
-        {prayer.time}
-      </AppText>
+      <View style={styles.timelineRight}>
+        <AppText
+          variant={isCurrent ? 'title' : 'body'}
+          color={isCurrent ? 'onPrimary' : 'onSurface'}
+          weight={isCurrent ? '700' : '400'}>
+          {prayer.time}
+        </AppText>
+        {isCurrent ? (
+          <Pressable
+            accessibilityLabel={`Mark ${prayer.name} complete`}
+            accessibilityRole="button"
+            onPress={onMarkComplete}
+            style={({ pressed }) => [
+              styles.markCompleteButton,
+              pressed && styles.pressed,
+            ]}>
+            <Icon name="check" size={18} color={colors.primary} />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
 
-interface ActionCardProps {
-  icon: IconName;
-  label: string;
-  tone: 'primary' | 'secondary' | 'neutral';
-  onPress: () => void;
+function isTimelinePrayer(prayer: PrayerTime): prayer is TimelinePrayer {
+  return prayer.key !== 'sunrise';
 }
-
-function ActionCard({
-  icon,
-  label,
-  tone,
-  onPress,
-}: ActionCardProps): React.JSX.Element {
-  const palette = actionPalette[tone];
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.actionPressable, pressed && styles.pressed]}>
-      <Surface style={styles.actionCard} radiusSize="xxl">
-        <View style={[styles.actionIcon, { backgroundColor: palette.background }]}>
-          <Icon name={icon} color={palette.foreground} filled />
-        </View>
-        <AppText variant="label" weight="600" align="center">
-          {label}
-        </AppText>
-      </Surface>
-    </Pressable>
-  );
-}
-
-const actionPalette = {
-  primary: {
-    background: colors.primaryContainer,
-    foreground: colors.onPrimaryContainer,
-  },
-  secondary: {
-    background: colors.secondaryContainer,
-    foreground: colors.onSecondaryContainer,
-  },
-  neutral: {
-    background: colors.surfaceVariant,
-    foreground: colors.onSurfaceVariant,
-  },
-};
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingBottom: 32,
+  },
+  homeHeader: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: spacing.sm,
+  },
   greeting: {
     gap: spacing.sm,
     alignItems: 'center',
@@ -218,45 +187,49 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceLow,
   },
   timelineLabel: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
   },
   timelineIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
   },
   timelineIconActive: {
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    transform: [{ scale: 1.04 }],
   },
   timelineIconDim: {
-    backgroundColor: colors.surfaceContainer,
+    opacity: 0.94,
   },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.gutter,
-  },
-  actionPressable: {
-    width: '47.6%',
-    flexGrow: 1,
-  },
-  actionCard: {
-    width: '100%',
-    minHeight: 142,
+  completedBadge: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderWidth: 2,
+    borderColor: colors.surfaceContainer,
+  },
+  timelineRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
-  actionIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  markCompleteButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.onPrimary,
   },
   pressed: {
     opacity: 0.78,

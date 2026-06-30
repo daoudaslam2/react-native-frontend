@@ -12,6 +12,7 @@ interface QazaState {
   increase: (prayer: ObligatoryPrayerKey) => void;
   decrease: (prayer: ObligatoryPrayerKey) => void;
   completeOne: (prayer: ObligatoryPrayerKey) => void;
+  replaceCounts: (counts: QazaCounts) => void;
 }
 
 const initialCounts: QazaCounts = {
@@ -33,6 +34,16 @@ function updateCount(
   };
 }
 
+function normalizeCounts(counts: QazaCounts): QazaCounts {
+  return OBLIGATORY_PRAYERS.reduce<QazaCounts>(
+    (normalized, prayer) => ({
+      ...normalized,
+      [prayer]: Math.max(0, Math.floor(counts[prayer])),
+    }),
+    initialCounts,
+  );
+}
+
 export const useQazaStore = create<QazaState>()(
   persist(
     set => ({
@@ -48,6 +59,10 @@ export const useQazaStore = create<QazaState>()(
       completeOne: prayer =>
         set(state => ({
           counts: updateCount(state.counts, prayer, state.counts[prayer] - 1),
+        })),
+      replaceCounts: counts =>
+        set(() => ({
+          counts: normalizeCounts(counts),
         })),
     }),
     {

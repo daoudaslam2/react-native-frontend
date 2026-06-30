@@ -9,6 +9,7 @@ import Svg, {
 
 export type IconName =
   | 'add'
+  | 'arrowLeft'
   | 'bell'
   | 'calendar'
   | 'chart'
@@ -85,6 +86,13 @@ function renderIcon(
         <>
           <Line x1="12" y1="5" x2="12" y2="19" {...strokeProps} />
           <Line x1="5" y1="12" x2="19" y2="12" {...strokeProps} />
+        </>
+      );
+    case 'arrowLeft':
+      return (
+        <>
+          <Line x1="19" y1="12" x2="5" y2="12" {...strokeProps} />
+          <Polyline points="12 5 5 12 12 19" {...strokeProps} />
         </>
       );
     case 'bell':
