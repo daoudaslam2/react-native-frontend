@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useMissedPrayerSync } from '../features/tracker/useMissedPrayerSync';
 import { colors } from '../theme';
 
 interface AppProvidersProps {
@@ -14,6 +15,7 @@ export function AppProviders({
   children,
 }: AppProvidersProps): React.JSX.Element {
   const queryClient = useMemo(() => new QueryClient(), []);
+  useMissedPrayerSync();
 
   return (
     <GestureHandlerRootView style={styles.root}>

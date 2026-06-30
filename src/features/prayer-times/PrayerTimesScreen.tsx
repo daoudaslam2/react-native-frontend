@@ -6,6 +6,7 @@ import { Icon } from '../../components/Icon';
 import { MetricChip } from '../../components/MetricChip';
 import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
+import { useNow } from '../../hooks/useNow';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 import type {
@@ -17,9 +18,13 @@ import { formatPrayerTime } from '../../utils/dateTime';
 import { useSettingsStore } from '../settings/settingsStore';
 
 export function PrayerTimesScreen(): React.JSX.Element {
-  const summary = prayerRepository.getSummary();
-  const prayers = prayerRepository.getTodayPrayerTimes();
+  const now = useNow();
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
+  const calculationMethod = useSettingsStore(state => state.calculationMethod);
+  const asrMethod = useSettingsStore(state => state.asrMethod);
+  const queryOptions = { now, calculationMethod, asrMethod };
+  const summary = prayerRepository.getSummary(queryOptions);
+  const prayers = prayerRepository.getTodayPrayerTimes(queryOptions);
 
   return (
     <Screen>
@@ -62,7 +67,7 @@ function PrayerTimeRow({
   use24HourTime: boolean;
 }): React.JSX.Element {
   const isCurrent = prayer.status === 'current';
-  const isCompleted = prayer.status === 'completed';
+  const isNext = prayer.status === 'next';
   const prayerIcon = getPrayerIconName(prayer.key);
 
   return (
@@ -70,7 +75,8 @@ function PrayerTimeRow({
       style={[
         styles.row,
         isCurrent && styles.rowActive,
-        isCompleted && styles.rowCompleted,
+        isNext && styles.rowNext,
+        prayer.status === 'past' && styles.rowPast,
       ]}>
       <View style={styles.rowLeft}>
         <View style={[styles.iconWrap, isCurrent && styles.iconWrapActive]}>
@@ -83,11 +89,6 @@ function PrayerTimeRow({
               filled
             />
           )}
-          {isCompleted ? (
-            <View style={styles.completedBadge}>
-              <Icon name="check" size={11} color={colors.onPrimary} />
-            </View>
-          ) : null}
         </View>
         <View style={styles.rowTitle}>
           <View style={styles.nameLine}>
@@ -102,12 +103,16 @@ function PrayerTimeRow({
           {isCurrent ? (
             <View style={styles.startsIn}>
               <AppText variant="labelSmall" style={styles.startsInText}>
-                Starts in 01:25:40
+                Current
               </AppText>
             </View>
-          ) : isCompleted ? (
+          ) : isNext ? (
+            <AppText variant="labelSmall" color="primary">
+              Next
+            </AppText>
+          ) : prayer.status === 'past' ? (
             <AppText variant="labelSmall" color="onSurfaceVariant">
-              Completed
+              Past
             </AppText>
           ) : null}
         </View>
@@ -179,8 +184,12 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     shadowOffset: { width: 0, height: 8 },
   },
-  rowCompleted: {
-    opacity: 0.62,
+  rowNext: {
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryFixedDim,
+  },
+  rowPast: {
+    opacity: 0.68,
   },
   rowLeft: {
     flex: 1,
@@ -199,19 +208,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-  },
-  completedBadge: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: colors.surfaceLowest,
   },
   rowTitle: {
     gap: spacing.xs,

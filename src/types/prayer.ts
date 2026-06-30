@@ -10,7 +10,7 @@ export type PrayerKey =
 
 export type ObligatoryPrayerKey = Exclude<PrayerKey, 'sunrise'>;
 
-export type PrayerStatus = 'completed' | 'current' | 'upcoming';
+export type PrayerStatus = 'past' | 'current' | 'next' | 'upcoming';
 
 export interface SyncableEntity {
   id: string;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
@@ -7,23 +7,45 @@ import { LogoMark } from '../../components/LogoMark';
 import { PrayerIcon } from '../../components/PrayerIcon';
 import { PrayerGradientCard } from '../../components/PrayerGradientCard';
 import { Screen } from '../../components/Screen';
-import { useTrackerStore } from '../tracker/trackerStore';
+import { useNow } from '../../hooks/useNow';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
 import { formatPrayerTime } from '../../utils/dateTime';
 import { useSettingsStore } from '../settings/settingsStore';
+import {
+  getPrayerTrackingDate,
+  getPrayerTrackingDateKey,
+  isPrayerActionable,
+} from '../tracker/trackerRules';
+import {
+  type PrayerLogStatus,
+  useTrackerStore,
+} from '../tracker/trackerStore';
 
 type TimelinePrayer = PrayerTime & { key: ObligatoryPrayerKey };
 
 export function HomeScreen(): React.JSX.Element {
-  const summary = prayerRepository.getSummary();
-  const prayers = prayerRepository
-    .getTodayPrayerTimes()
-    .filter(isTimelinePrayer);
-  const logs = useTrackerStore(state => state.logs);
-  const markPrayer = useTrackerStore(state => state.markPrayer);
+  const now = useNow();
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
+  const calculationMethod = useSettingsStore(state => state.calculationMethod);
+  const asrMethod = useSettingsStore(state => state.asrMethod);
+  const trackingDateKey = getPrayerTrackingDateKey(now);
+  const scheduleDate = getPrayerTrackingDate(now);
+  const logs = useTrackerStore(
+    state => state.logsByDate[trackingDateKey],
+  );
+  const ensurePrayerDate = useTrackerStore(state => state.ensurePrayerDate);
+  const markPrayer = useTrackerStore(state => state.markPrayer);
+  const queryOptions = { now, scheduleDate, calculationMethod, asrMethod };
+  const summary = prayerRepository.getSummary(queryOptions);
+  const prayers = prayerRepository
+    .getTodayPrayerTimes(queryOptions)
+    .filter(isTimelinePrayer);
+
+  useEffect(() => {
+    ensurePrayerDate(trackingDateKey);
+  }, [ensurePrayerDate, trackingDateKey]);
 
   return (
     <Screen patterned contentContainerStyle={styles.screenContent}>
@@ -53,9 +75,11 @@ export function HomeScreen(): React.JSX.Element {
             <TimelineRow
               key={prayer.id}
               prayer={prayer}
+              logStatus={logs?.[prayer.key].status ?? 'pending'}
               use24HourTime={use24HourTime}
-              isMarkedComplete={logs[prayer.key].status === 'completed'}
-              onMarkComplete={() => markPrayer(prayer.key, 'completed')}
+              onMarkComplete={() =>
+                markPrayer(trackingDateKey, prayer.key, 'completed')
+              }
             />
           ))}
         </View>
@@ -77,31 +101,38 @@ function HomeHeader(): React.JSX.Element {
 
 function TimelineRow({
   prayer,
-  isMarkedComplete,
+  logStatus,
   use24HourTime,
   onMarkComplete,
 }: {
   prayer: TimelinePrayer;
-  isMarkedComplete: boolean;
+  logStatus: PrayerLogStatus;
   use24HourTime: boolean;
   onMarkComplete: () => void;
 }): React.JSX.Element {
-  const isCompleted = prayer.status === 'completed' || isMarkedComplete;
-  const isCurrent = prayer.status === 'current' && !isCompleted;
+  const isCurrent = prayer.status === 'current';
+  const isNext = prayer.status === 'next';
+  const isCompleted = logStatus === 'completed' || logStatus === 'late';
+  const isMissed = logStatus === 'missed' || logStatus === 'qaza';
+  const canMarkComplete =
+    (prayer.status === 'current' || prayer.status === 'past') &&
+    isPrayerActionable(logStatus);
 
   return (
     <View
       style={[
         styles.timelineRow,
         isCurrent && styles.timelineRowActive,
-        isCompleted && styles.timelineRowDim,
+        isNext && styles.timelineRowNext,
+        prayer.status === 'past' && styles.timelineRowPast,
+        isCompleted && styles.timelineRowCompleted,
+        isMissed && styles.timelineRowMissed,
       ]}>
       <View style={styles.timelineLabel}>
         <View
           style={[
             styles.timelineIcon,
             isCurrent && styles.timelineIconActive,
-            isCompleted && styles.timelineIconDim,
           ]}>
           <PrayerIcon name={prayer.key} size={42} />
           {isCompleted ? (
@@ -117,13 +148,27 @@ function TimelineRow({
             weight={isCurrent ? '600' : '400'}>
             {prayer.name}
           </AppText>
-          {isCurrent ? (
+          {isCompleted ? (
+            <AppText
+              variant="labelSmall"
+              color={isCurrent ? 'primaryFixed' : 'primary'}>
+              Completed
+            </AppText>
+          ) : isMissed ? (
+            <AppText variant="labelSmall" color="error">
+              Missed
+            </AppText>
+          ) : isCurrent ? (
             <AppText variant="labelSmall" color="primaryFixed">
               Current
             </AppText>
-          ) : isCompleted ? (
+          ) : isNext ? (
+            <AppText variant="labelSmall" color="primary">
+              Next
+            </AppText>
+          ) : prayer.status === 'past' ? (
             <AppText variant="labelSmall" color="onSurfaceVariant">
-              Completed
+              Past
             </AppText>
           ) : null}
         </View>
@@ -135,7 +180,7 @@ function TimelineRow({
           weight={isCurrent ? '700' : '400'}>
           {formatPrayerTime(prayer.time, use24HourTime)}
         </AppText>
-        {isCurrent ? (
+        {canMarkComplete ? (
           <Pressable
             accessibilityLabel={`Mark ${prayer.name} complete`}
             accessibilityRole="button"
@@ -191,9 +236,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     transform: [{ scale: 1.01 }],
   },
-  timelineRowDim: {
-    opacity: 0.7,
+  timelineRowNext: {
+    backgroundColor: colors.primarySoft,
+  },
+  timelineRowPast: {
+    opacity: 0.72,
     backgroundColor: colors.surfaceLow,
+  },
+  timelineRowCompleted: {
+    opacity: 1,
+  },
+  timelineRowMissed: {
+    backgroundColor: colors.errorContainer,
   },
   timelineLabel: {
     flex: 1,
@@ -210,9 +264,6 @@ const styles = StyleSheet.create({
   },
   timelineIconActive: {
     transform: [{ scale: 1.04 }],
-  },
-  timelineIconDim: {
-    opacity: 0.94,
   },
   completedBadge: {
     position: 'absolute',

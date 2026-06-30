@@ -12,15 +12,16 @@ interface QazaState {
   increase: (prayer: ObligatoryPrayerKey) => void;
   decrease: (prayer: ObligatoryPrayerKey) => void;
   completeOne: (prayer: ObligatoryPrayerKey) => void;
+  addMissed: (prayer: ObligatoryPrayerKey) => void;
   replaceCounts: (counts: QazaCounts) => void;
 }
 
 const initialCounts: QazaCounts = {
-  fajr: 14,
-  dhuhr: 5,
-  asr: 2,
+  fajr: 0,
+  dhuhr: 0,
+  asr: 0,
   maghrib: 0,
-  isha: 8,
+  isha: 0,
 };
 
 function updateCount(
@@ -60,13 +61,17 @@ export const useQazaStore = create<QazaState>()(
         set(state => ({
           counts: updateCount(state.counts, prayer, state.counts[prayer] - 1),
         })),
+      addMissed: prayer =>
+        set(state => ({
+          counts: updateCount(state.counts, prayer, state.counts[prayer] + 1),
+        })),
       replaceCounts: counts =>
         set(() => ({
           counts: normalizeCounts(counts),
         })),
     }),
     {
-      name: 'al-salah-qaza-counts',
+      name: 'al-salah-qaza-counts-v2',
       storage: createJSONStorage(() => localStorage),
       partialize: state => ({ counts: state.counts }),
     },

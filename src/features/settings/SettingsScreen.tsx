@@ -4,6 +4,15 @@ import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { AppText } from '../../components/AppText';
 import { Icon, type IconName } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
+import {
+  ASR_METHOD_OPTIONS,
+  CALCULATION_METHOD_OPTIONS,
+  getAsrMethodLabel,
+  getCalculationMethodLabel,
+  type AsrMethodKey,
+  type CalculationMethodKey,
+  type PrayerSettingOption,
+} from '../../constants/prayerSettings';
 import { colors, radius, spacing } from '../../theme';
 import { useSettingsStore } from './settingsStore';
 
@@ -26,16 +35,27 @@ export function SettingsScreen(): React.JSX.Element {
       </SettingsSection>
 
       <SettingsSection title="Prayer Settings">
-        <SettingsRow
+        <OptionRow
           icon="timer"
           label="Calculation Method"
           value={settings.calculationMethod}
+          displayValue={getCalculationMethodLabel(settings.calculationMethod)}
+          options={CALCULATION_METHOD_OPTIONS}
+          onSelect={settings.setCalculationMethod}
         />
-        <SettingsRow icon="sun" label="Asr Method" value={settings.asrMethod} />
+        <OptionRow
+          icon="sun"
+          label="Asr Method"
+          value={settings.asrMethod}
+          displayValue={getAsrMethodLabel(settings.asrMethod)}
+          options={ASR_METHOD_OPTIONS}
+          onSelect={settings.setAsrMethod}
+        />
         <SettingsRow
           icon="location"
           label="Location"
           value={settings.locationMode}
+          interactive={false}
         />
       </SettingsSection>
 
@@ -91,13 +111,20 @@ function SettingsRow({
   icon,
   label,
   value,
+  interactive = true,
 }: {
   icon: IconName;
   label: string;
   value?: string;
+  interactive?: boolean;
 }): React.JSX.Element {
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+    <Pressable
+      disabled={!interactive}
+      style={({ pressed }) => [
+        styles.row,
+        interactive && pressed && styles.pressed,
+      ]}>
       <View style={styles.rowIcon}>
         <Icon name={icon} color={colors.onSurfaceVariant} />
       </View>
@@ -109,8 +136,67 @@ function SettingsRow({
           </AppText>
         ) : null}
       </View>
-      <Icon name="chevronRight" color={colors.onSurfaceVariant} />
+      {interactive ? (
+        <Icon name="chevronRight" color={colors.onSurfaceVariant} />
+      ) : null}
     </Pressable>
+  );
+}
+
+function OptionRow<T extends CalculationMethodKey | AsrMethodKey>({
+  icon,
+  label,
+  value,
+  displayValue,
+  options,
+  onSelect,
+}: {
+  icon: IconName;
+  label: string;
+  value: T;
+  displayValue: string;
+  options: ReadonlyArray<PrayerSettingOption<T>>;
+  onSelect: (value: T) => void;
+}): React.JSX.Element {
+  return (
+    <View style={styles.optionRow}>
+      <View style={styles.optionHeader}>
+        <View style={styles.rowIcon}>
+          <Icon name={icon} color={colors.onSurfaceVariant} />
+        </View>
+        <View style={styles.rowText}>
+          <AppText variant="bodyLarge">{label}</AppText>
+          <AppText variant="body" color="onSurfaceVariant" numberOfLines={1}>
+            {displayValue}
+          </AppText>
+        </View>
+      </View>
+      <View style={styles.options}>
+        {options.map(option => {
+          const isSelected = option.key === value;
+
+          return (
+            <Pressable
+              key={option.key}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              onPress={() => onSelect(option.key)}
+              style={({ pressed }) => [
+                styles.optionPill,
+                isSelected && styles.optionPillSelected,
+                pressed && styles.pressed,
+              ]}>
+              <AppText
+                variant="labelSmall"
+                color={isSelected ? 'onPrimary' : 'onSurfaceVariant'}
+                weight="700">
+                {option.label}
+              </AppText>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -176,6 +262,38 @@ const styles = StyleSheet.create({
   rowText: {
     flex: 1,
     gap: 2,
+  },
+  optionRow: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    gap: spacing.md,
+  },
+  optionHeader: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  options: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    paddingLeft: 52,
+  },
+  optionPill: {
+    minHeight: 34,
+    borderRadius: radius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.outlineVariant,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceLowest,
+  },
+  optionPillSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   pressed: {
     backgroundColor: colors.surfaceContainer,

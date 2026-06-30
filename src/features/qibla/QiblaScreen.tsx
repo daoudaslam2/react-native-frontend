@@ -18,7 +18,7 @@ export function QiblaScreen(): React.JSX.Element {
         <View style={styles.currentLocation}>
           <Icon name="location" size={18} color={colors.onSurfaceVariant} />
           <AppText variant="label" color="onSurfaceVariant" transform="uppercase">
-            Current Location
+            Fixed Location
           </AppText>
         </View>
         <AppText variant="title">{summary.location}</AppText>

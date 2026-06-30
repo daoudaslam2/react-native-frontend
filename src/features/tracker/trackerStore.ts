@@ -3,6 +3,11 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { localStorage } from '../../storage/mmkv';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
+import {
+  createInitialPrayerLogs,
+  getProcessedMissedKey,
+  type PrayerLogs,
+} from './trackerRules';
 
 export type PrayerLogStatus =
   | 'completed'
@@ -17,40 +22,85 @@ export interface PrayerLog {
   loggedAt?: string;
 }
 
-type PrayerLogs = Record<ObligatoryPrayerKey, PrayerLog>;
+type LogsByDate = Record<string, PrayerLogs>;
+type ProcessedMissedKeys = Record<string, boolean>;
 
 interface TrackerState {
-  logs: PrayerLogs;
-  markPrayer: (prayer: ObligatoryPrayerKey, status: PrayerLogStatus) => void;
+  logsByDate: LogsByDate;
+  processedMissedKeys: ProcessedMissedKeys;
+  ensurePrayerDate: (dateKey: string) => void;
+  markPrayer: (
+    dateKey: string,
+    prayer: ObligatoryPrayerKey,
+    status: PrayerLogStatus,
+  ) => void;
+  markMissedForQaza: (
+    dateKey: string,
+    prayer: ObligatoryPrayerKey,
+  ) => boolean;
 }
-
-const initialLogs: PrayerLogs = {
-  fajr: { status: 'completed', loggedAt: '2026-06-29T05:20:00.000Z' },
-  dhuhr: { status: 'pending' },
-  asr: { status: 'upcoming' },
-  maghrib: { status: 'upcoming' },
-  isha: { status: 'upcoming' },
-};
 
 export const useTrackerStore = create<TrackerState>()(
   persist(
-    set => ({
-      logs: initialLogs,
-      markPrayer: (prayer, status) =>
+    (set, get) => ({
+      logsByDate: {},
+      processedMissedKeys: {},
+      ensurePrayerDate: dateKey =>
         set(state => ({
-          logs: {
-            ...state.logs,
-            [prayer]: {
-              status,
-              loggedAt: new Date().toISOString(),
+          logsByDate: {
+            ...state.logsByDate,
+            [dateKey]: state.logsByDate[dateKey] ?? createInitialPrayerLogs(),
+          },
+        })),
+      markPrayer: (dateKey, prayer, status) =>
+        set(state => ({
+          logsByDate: {
+            ...state.logsByDate,
+            [dateKey]: {
+              ...(state.logsByDate[dateKey] ?? createInitialPrayerLogs()),
+              [prayer]: {
+                status,
+                loggedAt: new Date().toISOString(),
+              },
             },
           },
         })),
+      markMissedForQaza: (dateKey, prayer) => {
+        const processedKey = getProcessedMissedKey(dateKey, prayer);
+        const state = get();
+
+        if (state.processedMissedKeys[processedKey]) {
+          return false;
+        }
+
+        set(currentState => ({
+          logsByDate: {
+            ...currentState.logsByDate,
+            [dateKey]: {
+              ...(currentState.logsByDate[dateKey] ??
+                createInitialPrayerLogs()),
+              [prayer]: {
+                status: 'missed',
+                loggedAt: new Date().toISOString(),
+              },
+            },
+          },
+          processedMissedKeys: {
+            ...currentState.processedMissedKeys,
+            [processedKey]: true,
+          },
+        }));
+
+        return true;
+      },
     }),
     {
-      name: 'al-salah-prayer-tracker',
+      name: 'al-salah-prayer-tracker-v3',
       storage: createJSONStorage(() => localStorage),
-      partialize: state => ({ logs: state.logs }),
+      partialize: state => ({
+        logsByDate: state.logsByDate,
+        processedMissedKeys: state.processedMissedKeys,
+      }),
     },
   ),
 );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -8,13 +8,23 @@ import { Icon } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
+import type {
+  AsrMethodKey,
+  CalculationMethodKey,
+} from '../../constants/prayerSettings';
+import { useNow } from '../../hooks/useNow';
 import type { MainTabParamList } from '../../navigation/types';
+import { getFormattedPrayerTime } from '../../services/prayer/prayerCalculator';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
-import type { ObligatoryPrayerKey } from '../../types/prayer';
-import { formatPrayerTime } from '../../utils/dateTime';
+import type { ObligatoryPrayerKey, PrayerStatus } from '../../types/prayer';
 import { useQazaStore } from '../qaza/qazaStore';
 import { useSettingsStore } from '../settings/settingsStore';
+import {
+  getPrayerTrackingDate,
+  getPrayerTrackingDateKey,
+  isPrayerActionable,
+} from './trackerRules';
 import {
   type PrayerLogStatus,
   useTrackerStore,
@@ -130,13 +140,38 @@ function TrackerPrayerRow({
 }: {
   prayer: ObligatoryPrayerKey;
 }): React.JSX.Element {
-  const log = useTrackerStore(state => state.logs[prayer]);
+  const now = useNow(60_000);
+  const trackingDateKey = getPrayerTrackingDateKey(now);
+  const scheduleDate = getPrayerTrackingDate(now);
+  const log = useTrackerStore(
+    state => state.logsByDate[trackingDateKey]?.[prayer],
+  );
+  const ensurePrayerDate = useTrackerStore(state => state.ensurePrayerDate);
   const markPrayer = useTrackerStore(state => state.markPrayer);
-  const qazaComplete = useQazaStore(state => state.completeOne);
+  const addMissed = useQazaStore(state => state.addMissed);
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
-  const isCompleted = log.status === 'completed';
-  const isCurrent = prayer === 'dhuhr' && log.status === 'pending';
-  const isUpcoming = log.status === 'upcoming';
+  const calculationMethod = useSettingsStore(state => state.calculationMethod);
+  const asrMethod = useSettingsStore(state => state.asrMethod);
+  const prayerTimeStatus = getPrayerTimeStatus(
+    prayer,
+    calculationMethod,
+    asrMethod,
+    now,
+    scheduleDate,
+  );
+  const logStatus = log?.status ?? 'pending';
+  const effectiveStatus = getEffectiveLogStatus(logStatus, prayerTimeStatus);
+  const isCompleted = effectiveStatus === 'completed';
+  const isCurrent =
+    prayerTimeStatus === 'current' && effectiveStatus === 'pending';
+  const canLogPrayer =
+    (prayerTimeStatus === 'current' || prayerTimeStatus === 'past') &&
+    isPrayerActionable(effectiveStatus);
+  const isUpcoming = effectiveStatus === 'upcoming';
+
+  useEffect(() => {
+    ensurePrayerDate(trackingDateKey);
+  }, [ensurePrayerDate, trackingDateKey]);
 
   return (
     <Surface
@@ -154,22 +189,39 @@ function TrackerPrayerRow({
             {PRAYER_LABELS[prayer]}
           </AppText>
           <AppText variant="label" color="onSurfaceVariant">
-            {displayPrayerTime(prayer, use24HourTime)}
+            {getFormattedPrayerTime(prayer, use24HourTime, {
+              calculationMethod,
+              asrMethod,
+              scheduleDate,
+            })}
           </AppText>
         </View>
-        {renderStatus(log.status)}
+        {renderStatus(effectiveStatus)}
       </View>
-      {isCurrent ? (
+      {canLogPrayer ? (
         <View style={styles.logOptions}>
-          <LogButton label="Congregation" onPress={() => markPrayer(prayer, 'completed')} />
-          <LogButton label="On Time" onPress={() => markPrayer(prayer, 'completed')} />
-          <LogButton label="Late" onPress={() => markPrayer(prayer, 'late')} />
+          <LogButton
+            label="Congregation"
+            onPress={() =>
+              markPrayer(trackingDateKey, prayer, 'completed')
+            }
+          />
+          <LogButton
+            label="On Time"
+            onPress={() =>
+              markPrayer(trackingDateKey, prayer, 'completed')
+            }
+          />
+          <LogButton
+            label="Late"
+            onPress={() => markPrayer(trackingDateKey, prayer, 'late')}
+          />
           <LogButton
             label="Qaza"
             danger
             onPress={() => {
-              markPrayer(prayer, 'qaza');
-              qazaComplete(prayer);
+              markPrayer(trackingDateKey, prayer, 'qaza');
+              addMissed(prayer);
             }}
           />
         </View>
@@ -260,19 +312,33 @@ function renderStatus(status: PrayerLogStatus): React.JSX.Element {
   );
 }
 
-function displayPrayerTime(
+function getPrayerTimeStatus(
   prayer: ObligatoryPrayerKey,
-  use24HourTime: boolean,
-): string {
-  const times: Record<ObligatoryPrayerKey, string> = {
-    fajr: '05:12',
-    dhuhr: '12:34',
-    asr: '16:15',
-    maghrib: '18:45',
-    isha: '20:10',
-  };
+  calculationMethod: CalculationMethodKey,
+  asrMethod: AsrMethodKey,
+  now: Date,
+  scheduleDate: Date,
+): PrayerStatus {
+  return (
+    prayerRepository
+      .getTodayPrayerTimes({ now, scheduleDate, calculationMethod, asrMethod })
+      .find(item => item.key === prayer)?.status ?? 'upcoming'
+  );
+}
 
-  return formatPrayerTime(times[prayer], use24HourTime);
+function getEffectiveLogStatus(
+  logStatus: PrayerLogStatus,
+  prayerStatus: PrayerStatus,
+): PrayerLogStatus {
+  if (logStatus !== 'pending' && logStatus !== 'upcoming') {
+    return logStatus;
+  }
+
+  if (prayerStatus === 'next' || prayerStatus === 'upcoming') {
+    return 'upcoming';
+  }
+
+  return 'pending';
 }
 
 const styles = StyleSheet.create({
