@@ -12,7 +12,6 @@ import { AppText } from '../components/AppText';
 import { Icon, type IconName } from '../components/Icon';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
-import { PrayerTimesScreen } from '../features/prayer-times/PrayerTimesScreen';
 import { UpdateQazaCountsScreen } from '../features/qaza/UpdateQazaCountsScreen';
 import { QazaScreen } from '../features/qaza/QazaScreen';
 import { QiblaScreen } from '../features/qibla/QiblaScreen';
@@ -37,7 +36,7 @@ const tabConfig: Record<
   }
 > = {
   Home: { label: 'Home', icon: 'home' },
-  PrayerTimes: { label: 'Prayers', icon: 'timer' },
+  Tracker: { label: 'Tracker', icon: 'chart' },
   Qaza: { label: 'Qaza', icon: 'task' },
   More: { label: 'More', icon: 'menu' },
 };
@@ -51,7 +50,7 @@ export function AppNavigator(): React.JSX.Element {
         }}
         tabBar={renderBottomNavigation}>
         <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="PrayerTimes" component={PrayerTimesScreen} />
+        <Tab.Screen name="Tracker" component={PrayerTrackerScreen} />
         <Tab.Screen name="Qaza" component={QazaStackNavigator} />
         <Tab.Screen name="More" component={MoreStackNavigator} />
       </Tab.Navigator>
@@ -68,7 +67,6 @@ function MoreStackNavigator(): React.JSX.Element {
     <MoreStack.Navigator screenOptions={{ headerShown: false }}>
       <MoreStack.Screen name="MoreHome" component={MoreScreen} />
       <MoreStack.Screen name="Qibla" component={QiblaScreen} />
-      <MoreStack.Screen name="PrayerTracker" component={PrayerTrackerScreen} />
       <MoreStack.Screen name="Settings" component={SettingsScreen} />
     </MoreStack.Navigator>
   );
@@ -150,12 +148,12 @@ const styles = StyleSheet.create({
   tabBar: {
     minHeight: 80,
     paddingTop: 12,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     backgroundColor: colors.surfaceContainer,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -4 },
@@ -164,17 +162,16 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   tabItem: {
-    minWidth: 72,
+    flex: 1,
     minHeight: 52,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   tabItemActive: {
     backgroundColor: colors.secondaryContainer,
-    paddingHorizontal: 20,
   },
   tabPressed: {
     opacity: 0.76,

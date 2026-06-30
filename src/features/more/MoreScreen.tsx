@@ -27,12 +27,6 @@ const moreItems: MoreItem[] = [
     screen: 'Qibla',
   },
   {
-    title: 'Prayer Tracker',
-    subtitle: 'Daily logs, streaks and history',
-    icon: 'chart',
-    screen: 'PrayerTracker',
-  },
-  {
     title: 'Settings',
     subtitle: 'Prayer methods, reminders and privacy',
     icon: 'settings',

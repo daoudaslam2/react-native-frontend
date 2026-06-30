@@ -3,7 +3,6 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 export type MoreStackParamList = {
   MoreHome: undefined;
   Qibla: undefined;
-  PrayerTracker: undefined;
   Settings: undefined;
 };
 
@@ -14,7 +13,7 @@ export type QazaStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  PrayerTimes: undefined;
+  Tracker: undefined;
   Qaza: NavigatorScreenParams<QazaStackParamList> | undefined;
   More: NavigatorScreenParams<MoreStackParamList> | undefined;
 };

@@ -1,15 +1,14 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useNavigation, type CompositeNavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
-import type { MainTabParamList, MoreStackParamList } from '../../navigation/types';
+import type { MainTabParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
@@ -19,18 +18,10 @@ import {
   useTrackerStore,
 } from './trackerStore';
 
-type TrackerNavigation = NativeStackNavigationProp<
-  MoreStackParamList,
-  'PrayerTracker'
->;
-
-type TrackerTabNavigation = CompositeNavigationProp<
-  TrackerNavigation,
-  BottomTabNavigationProp<MainTabParamList>
->;
+type TrackerNavigation = BottomTabNavigationProp<MainTabParamList, 'Tracker'>;
 
 export function PrayerTrackerScreen(): React.JSX.Element {
-  const navigation = useNavigation<TrackerTabNavigation>();
+  const navigation = useNavigation<TrackerNavigation>();
   const stats = prayerRepository.getTrackerStats();
   const qazaCounts = useQazaStore(state => state.counts);
   const qazaTotal = OBLIGATORY_PRAYERS.reduce(
