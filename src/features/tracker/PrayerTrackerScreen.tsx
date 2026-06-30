@@ -1,375 +1,429 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 import { AppText } from '../../components/AppText';
-import { Icon } from '../../components/Icon';
+import { Icon, type IconName } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
-import type {
-  AsrMethodKey,
-  CalculationMethodKey,
-} from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
 import type { MainTabParamList } from '../../navigation/types';
-import { getFormattedPrayerTime } from '../../services/prayer/prayerCalculator';
-import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
-import type { ObligatoryPrayerKey, PrayerStatus } from '../../types/prayer';
-import { useQazaStore } from '../qaza/qazaStore';
+import type { ObligatoryPrayerKey } from '../../types/prayer';
+import { getTotalQaza, type QazaCounts, useQazaStore } from '../qaza/qazaStore';
 import { useSettingsStore } from '../settings/settingsStore';
 import {
-  getPrayerTrackingDate,
+  formatDateKey,
   getPrayerTrackingDateKey,
-  isPrayerActionable,
+  type PrayerLogs,
 } from './trackerRules';
-import {
-  type PrayerLogStatus,
-  useTrackerStore,
-} from './trackerStore';
+import { type PrayerLogStatus, useTrackerStore } from './trackerStore';
 
 type TrackerNavigation = BottomTabNavigationProp<MainTabParamList, 'Tracker'>;
 
+interface TrackerMetrics {
+  currentStreakDays: number;
+  bestStreakDays: number;
+  sevenDayCompletionPercent: number;
+  thirtyDayCompletionPercent: number;
+  completedPrayers: number;
+  latePrayers: number;
+  missedPrayers: number;
+  trackedDays: number;
+  qazaTotal: number;
+  highestQazaPrayer: string;
+  week: ReadonlyArray<{
+    key: string;
+    label: string;
+    percent: number;
+    isCurrent: boolean;
+  }>;
+}
+
 export function PrayerTrackerScreen(): React.JSX.Element {
   const navigation = useNavigation<TrackerNavigation>();
-  const stats = prayerRepository.getTrackerStats();
+  const now = useNow(60_000);
+  const logsByDate = useTrackerStore(state => state.logsByDate);
   const qazaCounts = useQazaStore(state => state.counts);
-  const qazaTotal = OBLIGATORY_PRAYERS.reduce(
-    (total, prayer) => total + qazaCounts[prayer],
-    0,
+  const calculationMethod = useSettingsStore(state => state.calculationMethod);
+  const asrMethod = useSettingsStore(state => state.asrMethod);
+  const ishaDeadlineMinutes = useSettingsStore(
+    state => state.ishaDeadlineMinutes,
   );
+  const activeDateKey = getPrayerTrackingDateKey(now, {
+    calculationMethod,
+    asrMethod,
+    ishaDeadlineMinutes,
+  });
+  const metrics = getTrackerMetrics({
+    activeDateKey,
+    logsByDate,
+    qazaCounts,
+  });
 
   return (
-    <Screen patterned>
+    <Screen patterned contentContainerStyle={styles.screenContent}>
       <View style={styles.header}>
         <AppText variant="display">Tracker</AppText>
         <AppText variant="bodyLarge" color="onSurfaceVariant">
-          Your spiritual consistency
+          Your prayer consistency at a glance
         </AppText>
       </View>
 
-      <View style={styles.statsGrid}>
-        <Surface style={styles.streakCard} radiusSize="md">
-          <View style={styles.statLabel}>
-            <Icon name="fire" color={colors.gold} filled />
-            <AppText variant="label" color="gold" weight="700">
-              Current Streak
-            </AppText>
-          </View>
-          <View style={styles.statValue}>
-            <AppText variant="display">{stats.currentStreakDays}</AppText>
-            <AppText variant="body" color="onSurfaceVariant" style={styles.statUnit}>
-              Days
-            </AppText>
-          </View>
-        </Surface>
-
-        <Surface style={styles.completionCard} radiusSize="md">
-          <View style={styles.completionHeader}>
-            <View style={styles.statLabel}>
-              <Icon name="task" color={colors.primary} filled />
-              <AppText variant="label" color="primary" weight="700">
-                Monthly Completion
-              </AppText>
-            </View>
-            <AppText variant="headlineMobile">
-              {stats.monthlyCompletionPercent}%
-            </AppText>
-          </View>
-          <View style={styles.chart}>
-            {stats.weeklyCompletion.map(day => (
-              <View key={`${day.day}-${day.percent}`} style={styles.barWrap}>
-                <View style={styles.barTrack}>
-                  <View
-                    style={[
-                      styles.barFill,
-                      { height: `${day.percent}%` },
-                      day.percent < 50 && styles.barLow,
-                    ]}
-                  />
-                </View>
-                <AppText
-                  variant="labelSmall"
-                  color={day.isToday ? 'primary' : 'onSurfaceVariant'}
-                  weight={day.isToday ? '700' : '600'}>
-                  {day.day}
-                </AppText>
-              </View>
-            ))}
-          </View>
-        </Surface>
+      <View style={styles.heroGrid}>
+        <MetricCard
+          icon="fire"
+          tone="gold"
+          label="Current Streak"
+          value={metrics.currentStreakDays.toString()}
+          suffix="days"
+        />
+        <MetricCard
+          icon="task"
+          tone="primary"
+          label="Last 7 Days"
+          value={`${metrics.sevenDayCompletionPercent}%`}
+          suffix="complete"
+        />
       </View>
 
-      <View style={styles.section}>
-        <AppText variant="title">Today's Prayers</AppText>
-        <View style={styles.prayers}>
-          {OBLIGATORY_PRAYERS.map(prayer => (
-            <TrackerPrayerRow key={prayer} prayer={prayer} />
+      <Surface style={styles.weekCard} radiusSize="lg">
+        <View style={styles.sectionHeader}>
+          <View style={styles.statLabel}>
+            <Icon name="chart" color={colors.primary} />
+            <AppText variant="title">Weekly Completion</AppText>
+          </View>
+          <AppText variant="label" color="onSurfaceVariant">
+            {metrics.thirtyDayCompletionPercent}% in 30 days
+          </AppText>
+        </View>
+        <View style={styles.chart}>
+          {metrics.week.map(day => (
+            <View key={day.key} style={styles.barWrap}>
+              <View style={styles.barTrack}>
+                <View
+                  style={[
+                    styles.barFill,
+                    { height: `${day.percent}%` },
+                    day.percent < 50 && styles.barLow,
+                  ]}
+                />
+              </View>
+              <AppText
+                variant="labelSmall"
+                color={day.isCurrent ? 'primary' : 'onSurfaceVariant'}
+                weight={day.isCurrent ? '700' : '600'}>
+                {day.label}
+              </AppText>
+            </View>
           ))}
         </View>
+      </Surface>
+
+      <View style={styles.compactGrid}>
+        <SmallMetricCard
+          icon="checkCircle"
+          label="Completed"
+          value={metrics.completedPrayers.toString()}
+        />
+        <SmallMetricCard
+          icon="timer"
+          label="Late"
+          value={metrics.latePrayers.toString()}
+        />
+        <SmallMetricCard
+          icon="close"
+          label="Missed"
+          value={metrics.missedPrayers.toString()}
+        />
+        <SmallMetricCard
+          icon="calendar"
+          label="Tracked Days"
+          value={metrics.trackedDays.toString()}
+        />
+        <SmallMetricCard
+          icon="chart"
+          label="Best Streak"
+          value={metrics.bestStreakDays.toString()}
+        />
       </View>
 
       <Surface style={styles.qazaEntry} radiusSize="lg">
         <View style={styles.qazaEntryText}>
-          <AppText variant="title">Qaza Counter</AppText>
+          <AppText variant="title">Qaza Balance</AppText>
           <AppText variant="body" color="onSurfaceVariant">
-            {qazaTotal} missed prayers remaining
+            {metrics.qazaTotal} remaining - Highest: {metrics.highestQazaPrayer}
           </AppText>
         </View>
         <Pressable
+          accessibilityRole="button"
           onPress={() =>
             navigation.navigate({
               name: 'Qaza',
               params: { screen: 'QazaHome' },
             })
           }
-          style={styles.qazaButton}>
+          style={({ pressed }) => [
+            styles.qazaButton,
+            pressed && styles.pressed,
+          ]}>
           <AppText variant="label" color="onPrimaryContainer">
             Manage
           </AppText>
         </Pressable>
       </Surface>
+
+      <Surface style={styles.noteCard} radiusSize="md">
+        <Icon name="info" color={colors.onSurfaceVariant} />
+        <AppText variant="body" color="onSurfaceVariant" style={styles.noteText}>
+          Completion counts prayers logged as completed or late. Qaza and missed
+          prayers stay visible so they can be recovered intentionally.
+        </AppText>
+      </Surface>
     </Screen>
   );
 }
 
-function TrackerPrayerRow({
-  prayer,
+function MetricCard({
+  icon,
+  tone,
+  label,
+  value,
+  suffix,
 }: {
-  prayer: ObligatoryPrayerKey;
+  icon: IconName;
+  tone: 'primary' | 'gold';
+  label: string;
+  value: string;
+  suffix: string;
 }): React.JSX.Element {
-  const now = useNow(60_000);
-  const use24HourTime = useSettingsStore(state => state.use24HourTime);
-  const calculationMethod = useSettingsStore(state => state.calculationMethod);
-  const asrMethod = useSettingsStore(state => state.asrMethod);
-  const ishaDeadlineMinutes = useSettingsStore(
-    state => state.ishaDeadlineMinutes,
-  );
-  const trackingOptions = {
-    calculationMethod,
-    asrMethod,
-    ishaDeadlineMinutes,
-  };
-  const trackingDateKey = getPrayerTrackingDateKey(now, trackingOptions);
-  const scheduleDate = getPrayerTrackingDate(now, trackingOptions);
-  const log = useTrackerStore(
-    state => state.logsByDate[trackingDateKey]?.[prayer],
-  );
-  const ensurePrayerDate = useTrackerStore(state => state.ensurePrayerDate);
-  const markPrayer = useTrackerStore(state => state.markPrayer);
-  const addMissed = useQazaStore(state => state.addMissed);
-  const prayerTimeStatus = getPrayerTimeStatus(
-    prayer,
-    calculationMethod,
-    asrMethod,
-    ishaDeadlineMinutes,
-    now,
-    scheduleDate,
-  );
-  const logStatus = log?.status ?? 'pending';
-  const effectiveStatus = getEffectiveLogStatus(logStatus, prayerTimeStatus);
-  const isCompleted = effectiveStatus === 'completed';
-  const isCurrent =
-    prayerTimeStatus === 'current' && effectiveStatus === 'pending';
-  const canLogPrayer =
-    (prayerTimeStatus === 'current' || prayerTimeStatus === 'past') &&
-    isPrayerActionable(effectiveStatus);
-  const isUpcoming = effectiveStatus === 'upcoming';
-
-  useEffect(() => {
-    ensurePrayerDate(trackingDateKey);
-  }, [ensurePrayerDate, trackingDateKey]);
+  const toneColor = tone === 'gold' ? colors.gold : colors.primary;
 
   return (
-    <Surface
-      radiusSize="md"
-      elevated={isCurrent || isCompleted}
-      style={[
-        styles.prayerRow,
-        isCompleted && styles.prayerRowCompleted,
-        isUpcoming && styles.prayerRowUpcoming,
-        isCurrent && styles.prayerRowCurrent,
-      ]}>
-      <View style={styles.prayerRowHeader}>
-        <View>
-          <AppText variant="bodyLarge" weight="500">
-            {PRAYER_LABELS[prayer]}
-          </AppText>
-          <AppText variant="label" color="onSurfaceVariant">
-            {getFormattedPrayerTime(prayer, use24HourTime, {
-              calculationMethod,
-              asrMethod,
-              ishaDeadlineMinutes,
-              scheduleDate,
-            })}
-          </AppText>
-        </View>
-        {renderStatus(effectiveStatus)}
+    <Surface style={styles.metricCard} radiusSize="md">
+      <View style={styles.statLabel}>
+        <Icon name={icon} color={toneColor} filled />
+        <AppText variant="label" color={tone} weight="700">
+          {label}
+        </AppText>
       </View>
-      {canLogPrayer ? (
-        <View style={styles.logOptions}>
-          <LogButton
-            label="Congregation"
-            onPress={() =>
-              markPrayer(trackingDateKey, prayer, 'completed')
-            }
-          />
-          <LogButton
-            label="On Time"
-            onPress={() =>
-              markPrayer(trackingDateKey, prayer, 'completed')
-            }
-          />
-          <LogButton
-            label="Late"
-            onPress={() => markPrayer(trackingDateKey, prayer, 'late')}
-          />
-          <LogButton
-            label="Qaza"
-            danger
-            onPress={() => {
-              markPrayer(trackingDateKey, prayer, 'qaza');
-              addMissed(prayer);
-            }}
-          />
-        </View>
-      ) : null}
+      <View style={styles.statValue}>
+        <AppText variant="display">{value}</AppText>
+        <AppText variant="body" color="onSurfaceVariant" style={styles.statUnit}>
+          {suffix}
+        </AppText>
+      </View>
     </Surface>
   );
 }
 
-function LogButton({
+function SmallMetricCard({
+  icon,
   label,
-  danger = false,
-  onPress,
+  value,
 }: {
+  icon: IconName;
   label: string;
-  danger?: boolean;
-  onPress: () => void;
+  value: string;
 }): React.JSX.Element {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.logButton,
-        danger && styles.logButtonDanger,
-        pressed && styles.pressed,
-      ]}>
-      <AppText variant="labelSmall" color={danger ? 'error' : 'onSurfaceVariant'}>
+    <Surface style={styles.smallMetricCard} radiusSize="md">
+      <View style={styles.smallMetricIcon}>
+        <Icon name={icon} color={colors.primary} />
+      </View>
+      <AppText variant="headlineMobile" weight="700">
+        {value}
+      </AppText>
+      <AppText variant="labelSmall" color="onSurfaceVariant" align="center">
         {label}
       </AppText>
-    </Pressable>
+    </Surface>
   );
 }
 
-function renderStatus(status: PrayerLogStatus): React.JSX.Element {
-  if (status === 'completed') {
+function getTrackerMetrics({
+  activeDateKey,
+  logsByDate,
+  qazaCounts,
+}: {
+  activeDateKey: string;
+  logsByDate: Record<string, PrayerLogs>;
+  qazaCounts: QazaCounts;
+}): TrackerMetrics {
+  const completedPrayers = countStatuses(logsByDate, ['completed', 'late']);
+  const latePrayers = countStatuses(logsByDate, ['late']);
+  const missedPrayers = countStatuses(logsByDate, ['missed', 'qaza']);
+  const weekKeys = getDateRange(activeDateKey, 7);
+  const thirtyDayKeys = getDateRange(activeDateKey, 30);
+
+  return {
+    currentStreakDays: getCurrentStreakDays(activeDateKey, logsByDate),
+    bestStreakDays: getBestStreakDays(logsByDate),
+    sevenDayCompletionPercent: getCompletionPercent(weekKeys, logsByDate),
+    thirtyDayCompletionPercent: getCompletionPercent(thirtyDayKeys, logsByDate),
+    completedPrayers,
+    latePrayers,
+    missedPrayers,
+    trackedDays: countTrackedDays(logsByDate),
+    qazaTotal: getTotalQaza(qazaCounts),
+    highestQazaPrayer: getHighestQazaPrayer(qazaCounts),
+    week: weekKeys.map(key => ({
+      key,
+      label: formatWeekdayLabel(key),
+      percent: getDayCompletionPercent(logsByDate[key]),
+      isCurrent: key === activeDateKey,
+    })),
+  };
+}
+
+function countStatuses(
+  logsByDate: Record<string, PrayerLogs>,
+  statuses: ReadonlyArray<PrayerLogStatus>,
+): number {
+  return Object.values(logsByDate).reduce((total, logs) => {
     return (
-      <View style={styles.completedPill}>
-        <Icon name="check" size={16} color={colors.primaryContainer} />
-        <AppText variant="labelSmall" color="primary">
-          Completed
-        </AppText>
-      </View>
+      total +
+      OBLIGATORY_PRAYERS.filter(prayer =>
+        statuses.includes(logs[prayer].status),
+      ).length
     );
+  }, 0);
+}
+
+function countTrackedDays(logsByDate: Record<string, PrayerLogs>): number {
+  return Object.values(logsByDate).filter(logs =>
+    OBLIGATORY_PRAYERS.some(prayer => isLoggedStatus(logs[prayer].status)),
+  ).length;
+}
+
+function getCurrentStreakDays(
+  activeDateKey: string,
+  logsByDate: Record<string, PrayerLogs>,
+): number {
+  let streak = 0;
+  let cursor = isCompleteDay(logsByDate[activeDateKey])
+    ? activeDateKey
+    : addDaysToDateKey(activeDateKey, -1);
+
+  while (isCompleteDay(logsByDate[cursor])) {
+    streak += 1;
+    cursor = addDaysToDateKey(cursor, -1);
   }
 
-  if (status === 'late') {
-    return (
-      <View style={styles.neutralPill}>
-        <AppText variant="labelSmall" color="onSurfaceVariant">
-          Late
-        </AppText>
-      </View>
-    );
-  }
+  return streak;
+}
 
-  if (status === 'qaza' || status === 'missed') {
-    return (
-      <View style={styles.errorPill}>
-        <AppText variant="labelSmall" color="error">
-          Qaza
-        </AppText>
-      </View>
-    );
-  }
+function getBestStreakDays(logsByDate: Record<string, PrayerLogs>): number {
+  const dateKeys = Object.keys(logsByDate).sort();
+  let bestStreak = 0;
+  let currentStreak = 0;
+  let previousKey: string | null = null;
 
-  if (status === 'upcoming') {
-    return (
-      <AppText variant="labelSmall" color="onSurfaceVariant">
-        Upcoming
-      </AppText>
-    );
-  }
+  dateKeys.forEach(dateKey => {
+    if (previousKey && dateKey !== addDaysToDateKey(previousKey, 1)) {
+      currentStreak = 0;
+    }
 
-  return (
-    <View style={styles.currentActions}>
-      <Pressable style={styles.iconAction}>
-        <Icon name="close" size={18} color={colors.onSurfaceVariant} />
-      </Pressable>
-      <Pressable style={styles.iconAction}>
-        <Icon name="timer" size={18} color={colors.onSurfaceVariant} />
-      </Pressable>
-      <Pressable style={styles.logPrimary}>
-        <Icon name="check" size={18} color={colors.onPrimary} />
-        <AppText variant="label" color="onPrimary">
-          Log
-        </AppText>
-      </Pressable>
-    </View>
+    currentStreak = isCompleteDay(logsByDate[dateKey])
+      ? currentStreak + 1
+      : 0;
+    bestStreak = Math.max(bestStreak, currentStreak);
+    previousKey = dateKey;
+  });
+
+  return bestStreak;
+}
+
+function getCompletionPercent(
+  dateKeys: ReadonlyArray<string>,
+  logsByDate: Record<string, PrayerLogs>,
+): number {
+  const completed = dateKeys.reduce((total, dateKey) => {
+    return total + getCompletedPrayerCount(logsByDate[dateKey]);
+  }, 0);
+
+  return Math.round((completed / (dateKeys.length * OBLIGATORY_PRAYERS.length)) * 100);
+}
+
+function getDayCompletionPercent(logs?: PrayerLogs): number {
+  return Math.round(
+    (getCompletedPrayerCount(logs) / OBLIGATORY_PRAYERS.length) * 100,
   );
 }
 
-function getPrayerTimeStatus(
-  prayer: ObligatoryPrayerKey,
-  calculationMethod: CalculationMethodKey,
-  asrMethod: AsrMethodKey,
-  ishaDeadlineMinutes: number | null,
-  now: Date,
-  scheduleDate: Date,
-): PrayerStatus {
-  return (
-    prayerRepository
-      .getTodayPrayerTimes({
-        now,
-        scheduleDate,
-        calculationMethod,
-        asrMethod,
-        ishaDeadlineMinutes,
-      })
-      .find(item => item.key === prayer)?.status ?? 'upcoming'
+function getCompletedPrayerCount(logs?: PrayerLogs): number {
+  if (!logs) {
+    return 0;
+  }
+
+  return OBLIGATORY_PRAYERS.filter(prayer =>
+    isCompletedStatus(logs[prayer].status),
+  ).length;
+}
+
+function isCompleteDay(logs?: PrayerLogs): boolean {
+  return getCompletedPrayerCount(logs) === OBLIGATORY_PRAYERS.length;
+}
+
+function isCompletedStatus(status: PrayerLogStatus): boolean {
+  return status === 'completed' || status === 'late';
+}
+
+function isLoggedStatus(status: PrayerLogStatus): boolean {
+  return status !== 'pending' && status !== 'upcoming';
+}
+
+function getHighestQazaPrayer(counts: QazaCounts): string {
+  const [highestPrayer, highestCount] = OBLIGATORY_PRAYERS.reduce<
+    [ObligatoryPrayerKey, number]
+  >(
+    (highest, prayer) =>
+      counts[prayer] > highest[1] ? [prayer, counts[prayer]] : highest,
+    ['fajr', counts.fajr],
+  );
+
+  return highestCount > 0
+    ? `${PRAYER_LABELS[highestPrayer]} (${highestCount})`
+    : 'None';
+}
+
+function getDateRange(endDateKey: string, days: number): string[] {
+  return Array.from({ length: days }, (_, index) =>
+    addDaysToDateKey(endDateKey, index - days + 1),
   );
 }
 
-function getEffectiveLogStatus(
-  logStatus: PrayerLogStatus,
-  prayerStatus: PrayerStatus,
-): PrayerLogStatus {
-  if (logStatus !== 'pending' && logStatus !== 'upcoming') {
-    return logStatus;
-  }
+function addDaysToDateKey(dateKey: string, dayOffset: number): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + dayOffset, 12));
 
-  if (prayerStatus === 'next' || prayerStatus === 'upcoming') {
-    return 'upcoming';
-  }
+  return formatDateKey(date);
+}
 
-  return 'pending';
+function formatWeekdayLabel(dateKey: string): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+
+  return new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
 }
 
 const styles = StyleSheet.create({
+  screenContent: {
+    paddingBottom: 32,
+  },
   header: {
     gap: spacing.sm,
   },
-  statsGrid: {
+  heroGrid: {
+    flexDirection: 'row',
     gap: spacing.gutter,
   },
-  streakCard: {
+  metricCard: {
+    flex: 1,
+    minHeight: 132,
     gap: spacing.md,
-  },
-  completionCard: {
-    gap: spacing.lg,
   },
   statLabel: {
     flexDirection: 'row',
@@ -384,13 +438,17 @@ const styles = StyleSheet.create({
   statUnit: {
     paddingBottom: spacing.sm,
   },
-  completionHeader: {
+  weekCard: {
+    gap: spacing.lg,
+  },
+  sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
   },
   chart: {
-    height: 116,
+    height: 118,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.surfaceVariant,
     paddingTop: spacing.md,
@@ -404,7 +462,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   barTrack: {
-    height: 80,
+    height: 82,
     width: '100%',
     justifyContent: 'flex-end',
     borderTopLeftRadius: radius.sm,
@@ -419,94 +477,27 @@ const styles = StyleSheet.create({
   },
   barLow: {
     backgroundColor: colors.error,
-    opacity: 0.6,
-  },
-  section: {
-    gap: spacing.md,
-  },
-  prayers: {
-    gap: spacing.sm,
-  },
-  prayerRow: {
-    gap: spacing.md,
-    borderLeftWidth: 0,
-  },
-  prayerRowCompleted: {
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
-  },
-  prayerRowUpcoming: {
     opacity: 0.62,
   },
-  prayerRowCurrent: {
-    backgroundColor: colors.surfaceLowest,
-  },
-  prayerRowHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  completedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(0, 134, 73, 0.12)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-  },
-  neutralPill: {
-    borderRadius: radius.full,
-    backgroundColor: colors.surfaceHigh,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-  },
-  errorPill: {
-    borderRadius: radius.full,
-    backgroundColor: colors.errorContainer,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-  },
-  currentActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  iconAction: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceVariant,
-  },
-  logPrimary: {
-    height: 40,
-    borderRadius: 20,
-    paddingHorizontal: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.primary,
-  },
-  logOptions: {
+  compactGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.surfaceVariant,
-    paddingTop: spacing.md,
+    gap: spacing.gutter,
   },
-  logButton: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.outlineVariant,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  smallMetricCard: {
+    width: '47.5%',
+    minHeight: 128,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
   },
-  logButtonDanger: {
-    borderColor: colors.errorContainer,
+  smallMetricIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primarySoft,
   },
   qazaEntry: {
     flexDirection: 'row',
@@ -523,6 +514,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryContainer,
     paddingHorizontal: spacing.lg,
     paddingVertical: 12,
+  },
+  noteCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceHigh,
+  },
+  noteText: {
+    flex: 1,
   },
   pressed: {
     opacity: 0.7,
