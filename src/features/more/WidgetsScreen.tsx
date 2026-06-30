@@ -449,7 +449,7 @@ function formatWidgetRemaining(remainingTime: string): string {
 
 const styles = StyleSheet.create({
   screenContent: {
-    paddingBottom: 64,
+    paddingBottom: 32,
   },
   topBar: {
     minHeight: 44,

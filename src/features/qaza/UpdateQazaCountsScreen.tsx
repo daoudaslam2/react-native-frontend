@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   screenContent: {
     flexGrow: 1,
     paddingTop: spacing.xl,
-    paddingBottom: 120,
+    paddingBottom: 32,
     gap: spacing.xl,
   },
   topBar: {
