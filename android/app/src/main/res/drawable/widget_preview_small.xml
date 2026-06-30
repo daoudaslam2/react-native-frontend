@@ -14,23 +14,20 @@
         android:pathData="M222,126 C169,126 126,83 126,30 L158,30 C158,65 187,94 222,94 Z" />
     <path
         android:fillColor="@color/widget_text"
-        android:pathData="M54,62h70v22h-70z" />
-    <path
-        android:fillColor="@color/widget_muted"
-        android:pathData="M54,96h50v10h-50z" />
+        android:pathData="M50,68h58v18h-58z" />
     <path
         android:fillColor="@color/widget_primary"
-        android:pathData="M54,116h78v11h-78z" />
+        android:pathData="M50,106h86v10h-86z" />
     <path
         android:fillColor="@color/widget_primary"
-        android:pathData="M166,58h48v48h-48z" />
+        android:pathData="M178,44h44v44h-44z" />
     <path
         android:fillColor="@color/widget_muted"
-        android:pathData="M54,176h132v12h-132z" />
+        android:pathData="M50,178h94v12h-94z" />
     <path
         android:fillColor="@color/widget_track"
-        android:pathData="M54,202h142v7h-142z" />
+        android:pathData="M50,202h150v7h-150z" />
     <path
         android:fillColor="@color/widget_primary"
-        android:pathData="M54,202h86v7h-86z" />
+        android:pathData="M50,202h92v7h-92z" />
 </vector>

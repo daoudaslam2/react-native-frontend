@@ -35,10 +35,10 @@ interface WidgetPreviewData {
   next: WidgetPrayer;
   prayers: WidgetPrayer[];
   currentTime: string;
-  currentPrayerTime: string;
   displayDate: string;
   hijriDate: string;
   location: string;
+  remainingDuration: string;
   remainingTime: string;
   progressPercent: number;
 }
@@ -151,7 +151,7 @@ function SmallWidgetPreview({
       <View style={styles.smallIconWrap}>
         <PrayerIcon
           name={data.current.key}
-          size={56}
+          size={50}
           color={colors.onPrimary}
           backgroundColor={colors.primaryContainer}
         />
@@ -161,18 +161,11 @@ function SmallWidgetPreview({
           {data.current.name}
         </AppText>
         <AppText
-          variant="label"
-          color="onSurfaceVariant"
-          weight="700"
-          style={styles.smallPrayerTime}>
-          {data.currentPrayerTime}
-        </AppText>
-        <AppText
           variant="bodyLarge"
           color="primary"
           weight="700"
           style={styles.smallRemaining}>
-          {data.remainingTime}
+          {data.remainingDuration} remaining
         </AppText>
       </View>
       <View style={styles.smallFooter}>
@@ -181,7 +174,7 @@ function SmallWidgetPreview({
           color="onSurfaceVariant"
           weight="700"
           style={styles.smallNext}>
-          Next: {data.next.name} · {stripInPrefix(data.remainingTime)}
+          Next: {data.next.name}
         </AppText>
         <View style={styles.progressTrack}>
           <View
@@ -447,7 +440,6 @@ function createPreviewData({
     next,
     prayers,
     currentTime: formatPrayerTime(now, use24HourTime, FIXED_PRAYER_LOCATION.timeZone),
-    currentPrayerTime: formatPrayerTime(current.time, use24HourTime),
     displayDate: new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
       day: 'numeric',
@@ -456,6 +448,7 @@ function createPreviewData({
     }).format(now),
     hijriDate: compactHijriDate(hijriDate),
     location: 'Lahore, PK',
+    remainingDuration: formatWidgetRemainingDuration(remainingTime),
     remainingTime: formatWidgetRemaining(remainingTime),
     progressPercent: calculatePreviewProgress(now, current, next),
   };
@@ -488,19 +481,19 @@ function compactHijriDate(hijriDate: string): string {
 }
 
 function formatWidgetRemaining(remainingTime: string): string {
+  return `In ${formatWidgetRemainingDuration(remainingTime)}`;
+}
+
+function formatWidgetRemainingDuration(remainingTime: string): string {
   const [hours = 0, minutes = 0] = remainingTime
     .split(':')
     .map(value => Number.parseInt(value, 10));
 
   if (hours > 0) {
-    return `In ${hours}h ${minutes}m`;
+    return `${hours}h ${minutes}m`;
   }
 
-  return `In ${minutes}m`;
-}
-
-function stripInPrefix(remainingTime: string): string {
-  return remainingTime.replace(/^In\s+/, '');
+  return `${minutes}m`;
 }
 
 function calculatePreviewProgress(
@@ -608,25 +601,21 @@ const styles = StyleSheet.create({
   },
   smallIconWrap: {
     position: 'absolute',
-    top: 24,
-    right: 22,
+    top: 14,
+    right: 12,
   },
   smallTopCopy: {
-    marginTop: 24,
-    marginLeft: 22,
-    marginRight: 88,
+    marginTop: 28,
+    marginLeft: 20,
+    marginRight: 70,
     gap: 4,
   },
   smallCurrentName: {
     color: colors.onSurface,
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 24,
+    lineHeight: 29,
   },
   smallRemaining: {
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  smallPrayerTime: {
     fontSize: 14,
     lineHeight: 18,
   },
@@ -636,8 +625,8 @@ const styles = StyleSheet.create({
   },
   smallFooter: {
     marginTop: 'auto',
-    marginHorizontal: 22,
-    marginBottom: 20,
+    marginHorizontal: 20,
+    marginBottom: 18,
     gap: spacing.sm,
   },
   progressTrack: {

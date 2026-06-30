@@ -139,7 +139,7 @@ abstract class PrayerWidgetProvider(
             PendingIntent.FLAG_UPDATE_CURRENT,
         ) ?: return
         val now = System.currentTimeMillis()
-        val triggerAtMillis = ((now / ONE_MINUTE_MS) + 1) * ONE_MINUTE_MS + 200L
+        val triggerAtMillis = ((now / ONE_MINUTE_MS) + 1) * ONE_MINUTE_MS + 50L
 
         scheduleMinuteAlarm(alarmManager, triggerAtMillis, pendingIntent)
     }
@@ -218,12 +218,8 @@ private fun renderSmallWidget(
     data: PrayerWidgetData,
 ) {
     views.setTextViewText(R.id.widget_small_current_prayer, data.current.namaz.label)
-    views.setTextViewText(R.id.widget_small_current_time, formatTime(data.current.time))
-    views.setTextViewText(R.id.widget_small_remaining, formatRemaining(data))
-    views.setTextViewText(
-        R.id.widget_small_next,
-        "Next: ${data.next.namaz.label} · ${formatRemainingDuration(data)}",
-    )
+    views.setTextViewText(R.id.widget_small_remaining, formatSmallRemaining(data))
+    views.setTextViewText(R.id.widget_small_next, "Next: ${data.next.namaz.label}")
     views.setImageViewResource(R.id.widget_small_icon, data.current.namaz.icon)
     views.setProgressBar(R.id.widget_small_progress, 1_000, calculateIntervalProgress(data), false)
 }
@@ -365,11 +361,11 @@ private fun prayerTimesForDate(date: Date): List<NamazTime> {
     )
 
     return listOf(
-        NamazTime(Namaz.FAJR, prayerTimes.fajr),
-        NamazTime(Namaz.DHUHR, prayerTimes.dhuhr),
-        NamazTime(Namaz.ASR, prayerTimes.asr),
-        NamazTime(Namaz.MAGHRIB, prayerTimes.maghrib),
-        NamazTime(Namaz.ISHA, prayerTimes.isha),
+        NamazTime(Namaz.FAJR, truncateToMinute(prayerTimes.fajr)),
+        NamazTime(Namaz.DHUHR, truncateToMinute(prayerTimes.dhuhr)),
+        NamazTime(Namaz.ASR, truncateToMinute(prayerTimes.asr)),
+        NamazTime(Namaz.MAGHRIB, truncateToMinute(prayerTimes.maghrib)),
+        NamazTime(Namaz.ISHA, truncateToMinute(prayerTimes.isha)),
     )
 }
 
@@ -406,6 +402,15 @@ private fun dateComponents(date: Date): DateComponents {
         calendar.get(Calendar.MONTH) + 1,
         calendar.get(Calendar.DAY_OF_MONTH),
     )
+}
+
+private fun truncateToMinute(date: Date): Date {
+    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+    calendar.time = date
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+
+    return calendar.time
 }
 
 private fun formatTime(date: Date): String {
@@ -448,6 +453,10 @@ private fun formatRemaining(data: PrayerWidgetData): String {
     return "In ${formatRemainingDuration(data)}"
 }
 
+private fun formatSmallRemaining(data: PrayerWidgetData): String {
+    return "${formatRemainingDuration(data)} remaining"
+}
+
 private fun formatRemainingDuration(data: PrayerWidgetData): String {
     val remainingMillis = (data.next.time.time - data.now.time).coerceAtLeast(0)
     val totalMinutes = remainingMillis / 60_000
@@ -478,16 +487,32 @@ private fun scheduleMinuteAlarm(
     pendingIntent: PendingIntent,
 ) {
     try {
-        if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            !alarmManager.canScheduleExactAlarms()
-        ) {
-            alarmManager.set(AlarmManager.RTC, triggerAtMillis, pendingIntent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerAtMillis,
+                    pendingIntent,
+                )
+                return
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerAtMillis,
+                pendingIntent,
+            )
             return
         }
 
-        alarmManager.setExact(AlarmManager.RTC, triggerAtMillis, pendingIntent)
+        alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
     } catch (_: SecurityException) {
-        alarmManager.set(AlarmManager.RTC, triggerAtMillis, pendingIntent)
+        alarmManager.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAtMillis,
+            pendingIntent,
+        )
     }
 }
