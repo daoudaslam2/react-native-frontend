@@ -4,12 +4,12 @@ import android.app.PendingIntent
 import android.app.AlarmManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.os.Build
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.icu.util.IslamicCalendar
 import android.icu.util.TimeZone as IcuTimeZone
-import android.view.View
 import android.widget.RemoteViews
 import com.alsalah.MainActivity
 import com.alsalah.R
@@ -139,9 +139,9 @@ abstract class PrayerWidgetProvider(
             PendingIntent.FLAG_UPDATE_CURRENT,
         ) ?: return
         val now = System.currentTimeMillis()
-        val triggerAtMillis = ((now / ONE_MINUTE_MS) + 1) * ONE_MINUTE_MS + 1_000L
+        val triggerAtMillis = ((now / ONE_MINUTE_MS) + 1) * ONE_MINUTE_MS + 200L
 
-        alarmManager.set(AlarmManager.RTC, triggerAtMillis, pendingIntent)
+        scheduleMinuteAlarm(alarmManager, triggerAtMillis, pendingIntent)
     }
 
     private fun cancelRefresh(context: Context) {
@@ -218,10 +218,14 @@ private fun renderSmallWidget(
     data: PrayerWidgetData,
 ) {
     views.setTextViewText(R.id.widget_small_current_prayer, data.current.namaz.label)
+    views.setTextViewText(R.id.widget_small_current_time, formatTime(data.current.time))
     views.setTextViewText(R.id.widget_small_remaining, formatRemaining(data))
-    views.setTextViewText(R.id.widget_small_next, "Next: ${data.next.namaz.label}")
+    views.setTextViewText(
+        R.id.widget_small_next,
+        "Next: ${data.next.namaz.label} · ${formatRemainingDuration(data)}",
+    )
     views.setImageViewResource(R.id.widget_small_icon, data.current.namaz.icon)
-    views.setViewVisibility(R.id.widget_small_progress_fill, View.VISIBLE)
+    views.setProgressBar(R.id.widget_small_progress, 1_000, calculateIntervalProgress(data), false)
 }
 
 private fun renderMediumWidget(
@@ -441,13 +445,49 @@ private fun formatHijriDate(date: Date): String {
 }
 
 private fun formatRemaining(data: PrayerWidgetData): String {
+    return "In ${formatRemainingDuration(data)}"
+}
+
+private fun formatRemainingDuration(data: PrayerWidgetData): String {
     val remainingMillis = (data.next.time.time - data.now.time).coerceAtLeast(0)
     val totalMinutes = remainingMillis / 60_000
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
 
     return when {
-        hours > 0 -> "In ${hours}h ${minutes}m"
-        else -> "In ${minutes}m"
+        hours > 0 -> "${hours}h ${minutes}m"
+        else -> "${minutes}m"
+    }
+}
+
+private fun calculateIntervalProgress(data: PrayerWidgetData): Int {
+    val totalMillis = data.next.time.time - data.current.time.time
+
+    if (totalMillis <= 0) {
+        return 0
+    }
+
+    val elapsedMillis = (data.now.time - data.current.time.time).coerceIn(0, totalMillis)
+
+    return ((elapsedMillis * 1_000) / totalMillis).toInt()
+}
+
+private fun scheduleMinuteAlarm(
+    alarmManager: AlarmManager,
+    triggerAtMillis: Long,
+    pendingIntent: PendingIntent,
+) {
+    try {
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            !alarmManager.canScheduleExactAlarms()
+        ) {
+            alarmManager.set(AlarmManager.RTC, triggerAtMillis, pendingIntent)
+            return
+        }
+
+        alarmManager.setExact(AlarmManager.RTC, triggerAtMillis, pendingIntent)
+    } catch (_: SecurityException) {
+        alarmManager.set(AlarmManager.RTC, triggerAtMillis, pendingIntent)
     }
 }

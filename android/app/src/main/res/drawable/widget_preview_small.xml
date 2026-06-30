@@ -10,21 +10,27 @@
         android:fillColor="@color/widget_card"
         android:pathData="M28,28h194v194h-194z" />
     <path
+        android:fillColor="@color/widget_ring"
+        android:pathData="M222,126 C169,126 126,83 126,30 L158,30 C158,65 187,94 222,94 Z" />
+    <path
         android:fillColor="@color/widget_text"
-        android:pathData="M54,72h66v18h-66z" />
-    <path
-        android:fillColor="@color/widget_primary"
-        android:pathData="M54,102h80v12h-80z" />
-    <path
-        android:fillColor="@color/widget_primary"
-        android:pathData="M164,62h52v52h-52z" />
+        android:pathData="M54,62h70v22h-70z" />
     <path
         android:fillColor="@color/widget_muted"
-        android:pathData="M54,174h112v13h-112z" />
-    <path
-        android:fillColor="@color/widget_track"
-        android:pathData="M54,200h142v8h-142z" />
+        android:pathData="M54,96h50v10h-50z" />
     <path
         android:fillColor="@color/widget_primary"
-        android:pathData="M54,200h96v8h-96z" />
+        android:pathData="M54,116h78v11h-78z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M166,58h48v48h-48z" />
+    <path
+        android:fillColor="@color/widget_muted"
+        android:pathData="M54,176h132v12h-132z" />
+    <path
+        android:fillColor="@color/widget_track"
+        android:pathData="M54,202h142v7h-142z" />
+    <path
+        android:fillColor="@color/widget_primary"
+        android:pathData="M54,202h86v7h-86z" />
 </vector>

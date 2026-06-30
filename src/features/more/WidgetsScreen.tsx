@@ -35,10 +35,12 @@ interface WidgetPreviewData {
   next: WidgetPrayer;
   prayers: WidgetPrayer[];
   currentTime: string;
+  currentPrayerTime: string;
   displayDate: string;
   hijriDate: string;
   location: string;
   remainingTime: string;
+  progressPercent: number;
 }
 
 const inactiveColor = '#969995';
@@ -159,6 +161,13 @@ function SmallWidgetPreview({
           {data.current.name}
         </AppText>
         <AppText
+          variant="label"
+          color="onSurfaceVariant"
+          weight="700"
+          style={styles.smallPrayerTime}>
+          {data.currentPrayerTime}
+        </AppText>
+        <AppText
           variant="bodyLarge"
           color="primary"
           weight="700"
@@ -172,10 +181,15 @@ function SmallWidgetPreview({
           color="onSurfaceVariant"
           weight="700"
           style={styles.smallNext}>
-          Next: {data.next.name}
+          Next: {data.next.name} · {stripInPrefix(data.remainingTime)}
         </AppText>
         <View style={styles.progressTrack}>
-          <View style={styles.progressFill} />
+          <View
+            style={[
+              styles.progressFill,
+              { width: `${data.progressPercent}%` },
+            ]}
+          />
         </View>
       </View>
     </View>
@@ -433,6 +447,7 @@ function createPreviewData({
     next,
     prayers,
     currentTime: formatPrayerTime(now, use24HourTime, FIXED_PRAYER_LOCATION.timeZone),
+    currentPrayerTime: formatPrayerTime(current.time, use24HourTime),
     displayDate: new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
       day: 'numeric',
@@ -442,6 +457,7 @@ function createPreviewData({
     hijriDate: compactHijriDate(hijriDate),
     location: 'Lahore, PK',
     remainingTime: formatWidgetRemaining(remainingTime),
+    progressPercent: calculatePreviewProgress(now, current, next),
   };
 }
 
@@ -483,6 +499,63 @@ function formatWidgetRemaining(remainingTime: string): string {
   return `In ${minutes}m`;
 }
 
+function stripInPrefix(remainingTime: string): string {
+  return remainingTime.replace(/^In\s+/, '');
+}
+
+function calculatePreviewProgress(
+  now: Date,
+  current: WidgetPrayer,
+  next: WidgetPrayer,
+): number {
+  const currentMinutes = toTimeMinutes(current.time);
+  let nextMinutes = toTimeMinutes(next.time);
+  let nowMinutes = getLahoreMinutes(now);
+
+  if (nextMinutes <= currentMinutes) {
+    nextMinutes += 24 * 60;
+  }
+
+  if (nowMinutes < currentMinutes) {
+    nowMinutes += 24 * 60;
+  }
+
+  const totalMinutes = nextMinutes - currentMinutes;
+
+  if (totalMinutes <= 0) {
+    return 0;
+  }
+
+  const elapsedMinutes = Math.min(
+    Math.max(nowMinutes - currentMinutes, 0),
+    totalMinutes,
+  );
+
+  return Math.round((elapsedMinutes / totalMinutes) * 100);
+}
+
+function getLahoreMinutes(date: Date): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+    timeZone: FIXED_PRAYER_LOCATION.timeZone,
+  }).formatToParts(date);
+  const hour = Number(parts.find(part => part.type === 'hour')?.value ?? 0);
+  const minute = Number(parts.find(part => part.type === 'minute')?.value ?? 0);
+
+  return hour * 60 + minute;
+}
+
+function toTimeMinutes(time: string): number {
+  const [hour = 0, minute = 0] = time
+    .split(':')
+    .map(value => Number.parseInt(value, 10));
+
+  return hour * 60 + minute;
+}
+
 const styles = StyleSheet.create({
   screenContent: {
     paddingBottom: 32,
@@ -516,7 +589,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderRadius: 28,
     backgroundColor: colors.surfaceLowest,
-    padding: 26,
+    padding: 0,
     shadowColor: '#000000',
     shadowOpacity: 0.06,
     shadowRadius: 28,
@@ -525,21 +598,24 @@ const styles = StyleSheet.create({
   },
   softRingSmall: {
     position: 'absolute',
-    top: -20,
-    right: -18,
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    borderWidth: 14,
+    top: -2,
+    right: -2,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    borderWidth: 12,
     borderColor: '#eef3f0',
   },
   smallIconWrap: {
     position: 'absolute',
-    top: 32,
-    right: 26,
+    top: 24,
+    right: 22,
   },
   smallTopCopy: {
-    gap: 6,
+    marginTop: 24,
+    marginLeft: 22,
+    marginRight: 88,
+    gap: 4,
   },
   smallCurrentName: {
     color: colors.onSurface,
@@ -550,12 +626,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
   },
+  smallPrayerTime: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
   smallNext: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 18,
   },
   smallFooter: {
     marginTop: 'auto',
+    marginHorizontal: 22,
+    marginBottom: 20,
     gap: spacing.sm,
   },
   progressTrack: {
