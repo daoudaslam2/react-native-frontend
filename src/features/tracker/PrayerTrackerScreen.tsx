@@ -165,12 +165,7 @@ export function PrayerTrackerScreen(): React.JSX.Element {
         </View>
         <Pressable
           accessibilityRole="button"
-          onPress={() =>
-            navigation.navigate({
-              name: 'Qaza',
-              params: { screen: 'QazaHome' },
-            })
-          }
+          onPress={() => navigation.navigate('Qaza')}
           style={({ pressed }) => [
             styles.qazaButton,
             pressed && styles.pressed,

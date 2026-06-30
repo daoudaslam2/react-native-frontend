@@ -21,13 +21,11 @@ import { PrayerTrackerScreen } from '../features/tracker/PrayerTrackerScreen';
 import { colors, radius, spacing } from '../theme';
 import type {
   MainTabParamList,
-  MoreStackParamList,
-  QazaStackParamList,
+  RootStackParamList,
 } from './types';
 
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
-const MoreStack = createNativeStackNavigator<MoreStackParamList>();
-const QazaStack = createNativeStackNavigator<QazaStackParamList>();
 
 const tabConfig: Record<
   keyof MainTabParamList,
@@ -45,45 +43,37 @@ const tabConfig: Record<
 export function AppNavigator(): React.JSX.Element {
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
-        tabBar={renderBottomNavigation}>
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Tracker" component={PrayerTrackerScreen} />
-        <Tab.Screen name="Qaza" component={QazaStackNavigator} />
-        <Tab.Screen name="More" component={MoreStackNavigator} />
-      </Tab.Navigator>
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen name="MainTabs" component={MainTabNavigator} />
+        <RootStack.Screen
+          name="UpdateQazaCounts"
+          component={UpdateQazaCountsScreen}
+        />
+        <RootStack.Screen name="Widgets" component={WidgetsScreen} />
+        <RootStack.Screen name="Qibla" component={QiblaScreen} />
+        <RootStack.Screen name="Settings" component={SettingsScreen} />
+      </RootStack.Navigator>
     </NavigationContainer>
+  );
+}
+
+function MainTabNavigator(): React.JSX.Element {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+      tabBar={renderBottomNavigation}>
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Tracker" component={PrayerTrackerScreen} />
+      <Tab.Screen name="Qaza" component={QazaScreen} />
+      <Tab.Screen name="More" component={MoreScreen} />
+    </Tab.Navigator>
   );
 }
 
 function renderBottomNavigation(props: BottomTabBarProps): React.JSX.Element {
   return <BottomNavigation {...props} />;
-}
-
-function MoreStackNavigator(): React.JSX.Element {
-  return (
-    <MoreStack.Navigator screenOptions={{ headerShown: false }}>
-      <MoreStack.Screen name="MoreHome" component={MoreScreen} />
-      <MoreStack.Screen name="Widgets" component={WidgetsScreen} />
-      <MoreStack.Screen name="Qibla" component={QiblaScreen} />
-      <MoreStack.Screen name="Settings" component={SettingsScreen} />
-    </MoreStack.Navigator>
-  );
-}
-
-function QazaStackNavigator(): React.JSX.Element {
-  return (
-    <QazaStack.Navigator screenOptions={{ headerShown: false }}>
-      <QazaStack.Screen name="QazaHome" component={QazaScreen} />
-      <QazaStack.Screen
-        name="UpdateQazaCounts"
-        component={UpdateQazaCountsScreen}
-      />
-    </QazaStack.Navigator>
-  );
 }
 
 function BottomNavigation({

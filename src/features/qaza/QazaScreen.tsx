@@ -9,12 +9,12 @@ import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
-import type { QazaStackParamList } from '../../navigation/types';
+import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
 import { getTotalQaza, useQazaStore } from './qazaStore';
 
-type QazaNavigation = NativeStackNavigationProp<QazaStackParamList, 'QazaHome'>;
+type QazaNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function QazaScreen(): React.JSX.Element {
   const navigation = useNavigation<QazaNavigation>();

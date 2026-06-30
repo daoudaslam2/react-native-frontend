@@ -1,5 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon, type IconName } from '../../components/Icon';
@@ -17,6 +19,7 @@ import {
   type PrayerSettingOption,
 } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
+import type { RootStackParamList } from '../../navigation/types';
 import {
   getIshaDeadlineBounds,
   type IshaDeadlineBounds,
@@ -25,7 +28,13 @@ import { colors, radius, spacing } from '../../theme';
 import { formatPrayerTime } from '../../utils/dateTime';
 import { useSettingsStore } from './settingsStore';
 
+type SettingsNavigation = NativeStackNavigationProp<
+  RootStackParamList,
+  'Settings'
+>;
+
 export function SettingsScreen(): React.JSX.Element {
+  const navigation = useNavigation<SettingsNavigation>();
   const now = useNow(60_000);
   const settings = useSettingsStore();
   const ishaDeadlineBounds = getIshaDeadlineBounds({
@@ -37,7 +46,18 @@ export function SettingsScreen(): React.JSX.Element {
 
   return (
     <Screen contentContainerStyle={styles.content}>
-      <AppText variant="headlineMobile">Settings</AppText>
+      <View style={styles.topBar}>
+        <Pressable
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+          <Icon name="arrowLeft" size={28} color={colors.primary} />
+        </Pressable>
+        <AppText variant="headlineMobile" weight="700" align="center">
+          Settings
+        </AppText>
+      </View>
 
       <SettingsSection title="General">
         <SettingsRow icon="palette" label="Theme" value={settings.theme} />
@@ -416,6 +436,20 @@ function ToggleRow({
 const styles = StyleSheet.create({
   content: {
     gap: spacing.xl,
+  },
+  topBar: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   section: {
     gap: spacing.sm,

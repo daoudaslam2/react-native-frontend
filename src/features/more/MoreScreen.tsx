@@ -7,16 +7,17 @@ import { AppText } from '../../components/AppText';
 import { Icon, type IconName } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
-import type { MoreStackParamList } from '../../navigation/types';
+import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme';
 
-type MoreNavigation = NativeStackNavigationProp<MoreStackParamList, 'MoreHome'>;
+type MoreNavigation = NativeStackNavigationProp<RootStackParamList>;
+type MoreRoute = 'Widgets' | 'Qibla' | 'Settings';
 
 interface MoreItem {
   title: string;
   subtitle: string;
   icon: IconName;
-  screen: keyof Omit<MoreStackParamList, 'MoreHome'>;
+  screen: MoreRoute;
 }
 
 const moreItems: MoreItem[] = [

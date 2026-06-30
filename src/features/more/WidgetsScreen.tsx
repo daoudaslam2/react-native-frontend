@@ -16,7 +16,7 @@ import { Screen } from '../../components/Screen';
 import { OBLIGATORY_PRAYERS } from '../../constants/prayers';
 import { FIXED_PRAYER_LOCATION } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
-import type { MoreStackParamList } from '../../navigation/types';
+import type { RootStackParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
@@ -26,7 +26,7 @@ import { getPrayerTrackingDate } from '../tracker/trackerRules';
 import { requestWidgetPin, type WidgetPinSize } from './widgetPinning';
 
 type WidgetsNavigation = NativeStackNavigationProp<
-  MoreStackParamList,
+  RootStackParamList,
   'Widgets'
 >;
 

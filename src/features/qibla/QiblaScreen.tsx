@@ -1,19 +1,38 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Compass } from '../../components/Compass';
 import { Icon } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
+import type { RootStackParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 
+type QiblaNavigation = NativeStackNavigationProp<RootStackParamList, 'Qibla'>;
+
 export function QiblaScreen(): React.JSX.Element {
+  const navigation = useNavigation<QiblaNavigation>();
   const summary = prayerRepository.getSummary();
 
   return (
     <Screen contentContainerStyle={styles.content}>
+      <View style={styles.topBar}>
+        <Pressable
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+          <Icon name="arrowLeft" size={28} color={colors.primary} />
+        </Pressable>
+        <AppText variant="headlineMobile" weight="700" align="center">
+          Qibla
+        </AppText>
+      </View>
+
       <View style={styles.location}>
         <View style={styles.currentLocation}>
           <Icon name="location" size={18} color={colors.onSurfaceVariant} />
@@ -53,9 +72,21 @@ export function QiblaScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
+    gap: spacing.xl,
+  },
+  topBar: {
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xl,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   location: {
     alignItems: 'center',
@@ -85,5 +116,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryContainer,
     paddingHorizontal: spacing.lg,
     paddingVertical: 12,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

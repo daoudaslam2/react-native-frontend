@@ -9,14 +9,14 @@ import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
-import type { QazaStackParamList } from '../../navigation/types';
+import type { RootStackParamList } from '../../navigation/types';
 import { colors, fontFamilies, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
 import { qazaPrayerSubtitles } from './qazaConstants';
 import { type QazaCounts, useQazaStore } from './qazaStore';
 
 type UpdateQazaNavigation = NativeStackNavigationProp<
-  QazaStackParamList,
+  RootStackParamList,
   'UpdateQazaCounts'
 >;
 
