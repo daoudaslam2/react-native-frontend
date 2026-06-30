@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Alert,
   Pressable,
   StyleSheet,
   useWindowDimensions,
@@ -22,6 +23,7 @@ import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
 import { formatPrayerTime } from '../../utils/dateTime';
 import { useSettingsStore } from '../settings/settingsStore';
 import { getPrayerTrackingDate } from '../tracker/trackerRules';
+import { requestWidgetPin, type WidgetPinSize } from './widgetPinning';
 
 type WidgetsNavigation = NativeStackNavigationProp<
   MoreStackParamList,
@@ -48,6 +50,8 @@ const inactiveColor = '#969995';
 export function WidgetsScreen(): React.JSX.Element {
   const navigation = useNavigation<WidgetsNavigation>();
   const { width } = useWindowDimensions();
+  const [pendingWidgetSize, setPendingWidgetSize] =
+    React.useState<WidgetPinSize | null>(null);
   const now = useNow();
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
   const calculationMethod = useSettingsStore(state => state.calculationMethod);
@@ -73,6 +77,27 @@ export function WidgetsScreen(): React.JSX.Element {
     use24HourTime,
   });
   const previewWidth = Math.min(width - spacing.container * 2, 330);
+  const handleAddWidget = React.useCallback(async (widgetSize: WidgetPinSize) => {
+    setPendingWidgetSize(widgetSize);
+
+    try {
+      const result = await requestWidgetPin(widgetSize);
+
+      if (!result.requested) {
+        Alert.alert(
+          'Widget pinning unavailable',
+          'Open the Android widget picker and choose Al-Salah from the widget list.',
+        );
+      }
+    } catch {
+      Alert.alert(
+        'Could not add widget',
+        'Open the Android widget picker and choose Al-Salah from the widget list.',
+      );
+    } finally {
+      setPendingWidgetSize(null);
+    }
+  }, []);
 
   return (
     <Screen contentContainerStyle={styles.screenContent}>
@@ -91,20 +116,28 @@ export function WidgetsScreen(): React.JSX.Element {
 
       <View style={styles.intro}>
         <AppText variant="bodyLarge" color="onSurfaceVariant" align="center">
-          Preview the Android widgets available from your home screen widget
-          picker.
+          Preview and add Android home screen widgets.
         </AppText>
       </View>
 
-      <WidgetSection title="Small (2x2)">
+      <WidgetSection
+        title="Small (2x2)"
+        isAdding={pendingWidgetSize === 'small'}
+        onAddWidget={() => handleAddWidget('small')}>
         <SmallWidgetPreview data={previewData} size={Math.min(previewWidth, 224)} />
       </WidgetSection>
 
-      <WidgetSection title="Medium (4x2)">
+      <WidgetSection
+        title="Medium (4x2)"
+        isAdding={pendingWidgetSize === 'medium'}
+        onAddWidget={() => handleAddWidget('medium')}>
         <MediumWidgetPreview data={previewData} width={previewWidth} />
       </WidgetSection>
 
-      <WidgetSection title="Large (4x4)">
+      <WidgetSection
+        title="Large (4x4)"
+        isAdding={pendingWidgetSize === 'large'}
+        onAddWidget={() => handleAddWidget('large')}>
         <LargeWidgetPreview
           data={previewData}
           width={previewWidth}
@@ -118,9 +151,13 @@ export function WidgetsScreen(): React.JSX.Element {
 function WidgetSection({
   title,
   children,
+  isAdding,
+  onAddWidget,
 }: {
   title: string;
   children: React.ReactNode;
+  isAdding: boolean;
+  onAddWidget: () => void;
 }): React.JSX.Element {
   return (
     <View style={styles.section}>
@@ -134,7 +171,40 @@ function WidgetSection({
         {title}
       </AppText>
       {children}
+      <AddWidgetButton
+        isAdding={isAdding}
+        title={title}
+        onPress={onAddWidget}
+      />
     </View>
+  );
+}
+
+function AddWidgetButton({
+  isAdding,
+  title,
+  onPress,
+}: {
+  isAdding: boolean;
+  title: string;
+  onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <Pressable
+      accessibilityLabel={`Add ${title} widget`}
+      accessibilityRole="button"
+      disabled={isAdding}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.addWidgetButton,
+        pressed && styles.pressed,
+        isAdding && styles.addWidgetButtonDisabled,
+      ]}>
+      <Icon name="add" size={18} color={colors.onPrimary} />
+      <AppText variant="label" color="onPrimary" weight="700">
+        {isAdding ? 'Opening...' : 'Add Widget'}
+      </AppText>
+    </Pressable>
   );
 }
 
@@ -591,12 +661,12 @@ const styles = StyleSheet.create({
   },
   softRingSmall: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    borderWidth: 9,
+    top: -15,
+    right: -15,
+    width: 94,
+    height: 94,
+    borderRadius: 47,
+    borderWidth: 10,
     borderColor: '#eef3f0',
   },
   smallIconWrap: {
@@ -605,10 +675,10 @@ const styles = StyleSheet.create({
     right: 10,
   },
   smallTopCopy: {
-    marginTop: 26,
+    marginTop: 22,
     marginLeft: 18,
     marginRight: 74,
-    gap: 4,
+    gap: 1,
   },
   smallCurrentName: {
     color: colors.onSurface,
@@ -640,6 +710,19 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
     backgroundColor: colors.primary,
+  },
+  addWidgetButton: {
+    minHeight: 44,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+  },
+  addWidgetButtonDisabled: {
+    opacity: 0.7,
   },
   mediumWidget: {
     minHeight: 154,
