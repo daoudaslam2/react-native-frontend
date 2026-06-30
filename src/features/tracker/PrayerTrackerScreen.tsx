@@ -168,14 +168,6 @@ export function PrayerTrackerScreen(): React.JSX.Element {
           </AppText>
         </Pressable>
       </Surface>
-
-      <Surface style={styles.noteCard} radiusSize="md">
-        <Icon name="info" color={colors.onSurfaceVariant} />
-        <AppText variant="body" color="onSurfaceVariant" style={styles.noteText}>
-          Tracker outcomes are intentionally simple: a prayer is either
-          completed or added to Qaza. Pending prayers are not counted.
-        </AppText>
-      </Surface>
     </Screen>
   );
 }
@@ -506,15 +498,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryContainer,
     paddingHorizontal: spacing.lg,
     paddingVertical: 12,
-  },
-  noteCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.surfaceHigh,
-  },
-  noteText: {
-    flex: 1,
   },
   pressed: {
     opacity: 0.7,
