@@ -151,7 +151,7 @@ function SmallWidgetPreview({
       <View style={styles.smallIconWrap}>
         <PrayerIcon
           name={data.current.key}
-          size={50}
+          size={54}
           color={colors.onPrimary}
           backgroundColor={colors.primaryContainer}
         />
@@ -601,19 +601,19 @@ const styles = StyleSheet.create({
   },
   smallIconWrap: {
     position: 'absolute',
-    top: 14,
-    right: 12,
+    top: 12,
+    right: 10,
   },
   smallTopCopy: {
     marginTop: 28,
-    marginLeft: 20,
-    marginRight: 70,
+    marginLeft: 18,
+    marginRight: 74,
     gap: 4,
   },
   smallCurrentName: {
     color: colors.onSurface,
-    fontSize: 24,
-    lineHeight: 29,
+    fontSize: 26,
+    lineHeight: 31,
   },
   smallRemaining: {
     fontSize: 14,
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
   },
   smallFooter: {
     marginTop: 'auto',
-    marginHorizontal: 20,
+    marginHorizontal: 18,
     marginBottom: 18,
     gap: spacing.sm,
   },
