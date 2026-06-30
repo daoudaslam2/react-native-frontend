@@ -612,8 +612,8 @@ const styles = StyleSheet.create({
   },
   smallCurrentName: {
     color: colors.onSurface,
-    fontSize: 26,
-    lineHeight: 31,
+    fontSize: 28,
+    lineHeight: 33,
   },
   smallRemaining: {
     fontSize: 14,

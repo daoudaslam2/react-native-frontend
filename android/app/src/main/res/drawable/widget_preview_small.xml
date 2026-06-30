@@ -14,7 +14,7 @@
         android:pathData="M222,126 C169,126 126,83 126,30 L158,30 C158,65 187,94 222,94 Z" />
     <path
         android:fillColor="@color/widget_text"
-        android:pathData="M46,66h64v20h-64z" />
+        android:pathData="M46,64h70v22h-70z" />
     <path
         android:fillColor="@color/widget_primary"
         android:pathData="M46,106h86v10h-86z" />

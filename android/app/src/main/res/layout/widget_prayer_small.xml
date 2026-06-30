@@ -47,7 +47,7 @@
         android:singleLine="true"
         android:text="Asr"
         android:textColor="@color/widget_text"
-        android:textSize="26sp"
+        android:textSize="28sp"
         android:textStyle="bold" />
 
     <TextView
