@@ -20,7 +20,7 @@
         android:pathData="M46,106h86v10h-86z" />
     <path
         android:fillColor="@color/widget_primary"
-        android:pathData="M174,42h48v48h-48z" />
+        android:pathData="M178,44h44v44h-44z" />
     <path
         android:fillColor="@color/widget_muted"
         android:pathData="M46,178h94v12h-94z" />

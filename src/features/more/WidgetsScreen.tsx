@@ -151,7 +151,7 @@ function SmallWidgetPreview({
       <View style={styles.smallIconWrap}>
         <PrayerIcon
           name={data.current.key}
-          size={54}
+          size={50}
           color={colors.onPrimary}
           backgroundColor={colors.primaryContainer}
         />

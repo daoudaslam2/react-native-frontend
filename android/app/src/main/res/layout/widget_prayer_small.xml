@@ -15,14 +15,14 @@
 
     <FrameLayout
         android:id="@+id/widget_small_icon_bg"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="12dp"
         android:layout_marginEnd="10dp"
         android:background="@drawable/widget_green_circle"
-        android:padding="6dp">
+        android:padding="5dp">
 
         <ImageView
             android:id="@+id/widget_small_icon"
