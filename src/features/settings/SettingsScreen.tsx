@@ -7,17 +7,33 @@ import { Screen } from '../../components/Screen';
 import {
   ASR_METHOD_OPTIONS,
   CALCULATION_METHOD_OPTIONS,
+  FIXED_PRAYER_LOCATION,
+  ISHA_DEADLINE_STEP_MINUTES,
+  MAX_ISHA_DEADLINE_MINUTES,
   getAsrMethodLabel,
   getCalculationMethodLabel,
   type AsrMethodKey,
   type CalculationMethodKey,
   type PrayerSettingOption,
 } from '../../constants/prayerSettings';
+import { useNow } from '../../hooks/useNow';
+import {
+  getIshaDeadlineBounds,
+  type IshaDeadlineBounds,
+} from '../../services/prayer/prayerCalculator';
 import { colors, radius, spacing } from '../../theme';
+import { formatPrayerTime } from '../../utils/dateTime';
 import { useSettingsStore } from './settingsStore';
 
 export function SettingsScreen(): React.JSX.Element {
+  const now = useNow(60_000);
   const settings = useSettingsStore();
+  const ishaDeadlineBounds = getIshaDeadlineBounds({
+    now,
+    calculationMethod: settings.calculationMethod,
+    asrMethod: settings.asrMethod,
+    ishaDeadlineMinutes: settings.ishaDeadlineMinutes,
+  });
 
   return (
     <Screen contentContainerStyle={styles.content}>
@@ -50,6 +66,12 @@ export function SettingsScreen(): React.JSX.Element {
           displayValue={getAsrMethodLabel(settings.asrMethod)}
           options={ASR_METHOD_OPTIONS}
           onSelect={settings.setAsrMethod}
+        />
+        <IshaDeadlineRow
+          value={settings.ishaDeadlineMinutes}
+          bounds={ishaDeadlineBounds}
+          use24HourTime={settings.use24HourTime}
+          onChange={settings.setIshaDeadlineMinutes}
         />
         <SettingsRow
           icon="location"
@@ -88,6 +110,165 @@ export function SettingsScreen(): React.JSX.Element {
       </SettingsSection>
     </Screen>
   );
+}
+
+function IshaDeadlineRow({
+  value,
+  bounds,
+  use24HourTime,
+  onChange,
+}: {
+  value: number | null;
+  bounds: IshaDeadlineBounds;
+  use24HourTime: boolean;
+  onChange: (minutes: number | null) => void;
+}): React.JSX.Element {
+  const currentLabel = formatPrayerTime(
+    bounds.resolved,
+    use24HourTime,
+    FIXED_PRAYER_LOCATION.timeZone,
+  );
+  const minimumLabel = formatPrayerTime(
+    bounds.minimum,
+    use24HourTime,
+    FIXED_PRAYER_LOCATION.timeZone,
+  );
+  const maximumLabel = formatPrayerTime(
+    bounds.maximum,
+    use24HourTime,
+    FIXED_PRAYER_LOCATION.timeZone,
+  );
+  const canDecrease = bounds.resolvedMinutes > bounds.minimumMinutes;
+  const canIncrease = bounds.resolvedMinutes < bounds.maximumMinutes;
+
+  return (
+    <View style={styles.deadlineRow}>
+      <View style={styles.optionHeader}>
+        <View style={styles.rowIcon}>
+          <Icon name="moon" color={colors.onSurfaceVariant} />
+        </View>
+        <View style={styles.rowText}>
+          <AppText variant="bodyLarge">Isha End Time</AppText>
+          <AppText variant="body" color="onSurfaceVariant" numberOfLines={1}>
+            {value === null ? 'Islamic midnight' : 'Custom'} - {currentLabel}
+          </AppText>
+        </View>
+      </View>
+
+      <View style={styles.deadlineControl}>
+        <DeadlineIconButton
+          icon="minus"
+          disabled={!canDecrease}
+          onPress={() => onChange(getSteppedIshaDeadline(bounds, -1))}
+        />
+        <View style={styles.deadlineValue}>
+          <AppText variant="headlineMobile" weight="700">
+            {currentLabel}
+          </AppText>
+          <AppText
+            variant="labelSmall"
+            color="onSurfaceVariant"
+            align="center">
+            {minimumLabel} - {maximumLabel}
+          </AppText>
+        </View>
+        <DeadlineIconButton
+          icon="add"
+          disabled={!canIncrease}
+          onPress={() => onChange(getSteppedIshaDeadline(bounds, 1))}
+        />
+      </View>
+
+      <View style={styles.deadlinePresets}>
+        <DeadlinePreset
+          label="Islamic midnight"
+          selected={value === null}
+          onPress={() => onChange(null)}
+        />
+        <DeadlinePreset
+          label="2:00 AM"
+          selected={bounds.resolvedMinutes === MAX_ISHA_DEADLINE_MINUTES}
+          onPress={() => onChange(MAX_ISHA_DEADLINE_MINUTES)}
+        />
+      </View>
+    </View>
+  );
+}
+
+function DeadlineIconButton({
+  icon,
+  disabled,
+  onPress,
+}: {
+  icon: 'add' | 'minus';
+  disabled: boolean;
+  onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.deadlineButton,
+        disabled && styles.deadlineButtonDisabled,
+        pressed && styles.pressed,
+      ]}>
+      <Icon
+        name={icon}
+        size={20}
+        color={disabled ? colors.outline : colors.primary}
+      />
+    </Pressable>
+  );
+}
+
+function DeadlinePreset({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.deadlinePreset,
+        selected && styles.deadlinePresetSelected,
+        pressed && styles.pressed,
+      ]}>
+      <AppText
+        variant="labelSmall"
+        color={selected ? 'onPrimary' : 'onSurfaceVariant'}
+        weight="700">
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
+
+function getSteppedIshaDeadline(
+  bounds: IshaDeadlineBounds,
+  direction: -1 | 1,
+): number {
+  if (direction > 0) {
+    const nextStep =
+      Math.ceil((bounds.resolvedMinutes + 1) / ISHA_DEADLINE_STEP_MINUTES) *
+      ISHA_DEADLINE_STEP_MINUTES;
+
+    return Math.min(nextStep, bounds.maximumMinutes);
+  }
+
+  const previousStep =
+    Math.floor((bounds.resolvedMinutes - 1) / ISHA_DEADLINE_STEP_MINUTES) *
+    ISHA_DEADLINE_STEP_MINUTES;
+
+  return Math.max(previousStep, bounds.minimumMinutes);
 }
 
 function SettingsSection({
@@ -268,6 +449,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     gap: spacing.md,
+  },
+  deadlineRow: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    gap: spacing.md,
+  },
+  deadlineControl: {
+    paddingLeft: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  deadlineButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceHigh,
+  },
+  deadlineButtonDisabled: {
+    opacity: 0.45,
+  },
+  deadlineValue: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  deadlinePresets: {
+    paddingLeft: 52,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  deadlinePreset: {
+    minHeight: 34,
+    borderRadius: radius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.outlineVariant,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceLowest,
+  },
+  deadlinePresetSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
   },
   optionHeader: {
     minHeight: 48,

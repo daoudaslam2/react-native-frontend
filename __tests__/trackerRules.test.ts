@@ -1,3 +1,4 @@
+import { MAX_ISHA_DEADLINE_MINUTES } from '../src/constants/prayerSettings';
 import {
   createInitialPrayerLogs,
   getAutoMissedPrayers,
@@ -9,31 +10,43 @@ import {
 import { calculatePrayerSchedule } from '../src/services/prayer/prayerCalculator';
 
 describe('tracker cutoff rules', () => {
-  it('keeps the previous prayer day active before 2 AM', () => {
+  it('uses the current prayer day after the default Isha deadline', () => {
     const now = new Date('2026-06-30T01:30:00+05:00');
 
-    expect(getPrayerTrackingDateKey(now)).toBe('2026-06-29');
-    expect(isAtOrAfterMissedCutoff(now)).toBe(false);
-  });
-
-  it('moves to the current prayer day at 2 AM', () => {
-    const now = new Date('2026-06-30T02:00:00+05:00');
-
     expect(getPrayerTrackingDateKey(now)).toBe('2026-06-30');
-    expect(getPreviousPrayerDateKey(now)).toBe('2026-06-29');
     expect(isAtOrAfterMissedCutoff(now)).toBe(true);
   });
 
-  it('uses the new day prayer timeline after 2 AM', () => {
+  it('keeps the previous prayer day active before a custom 2 AM deadline', () => {
+    const now = new Date('2026-06-30T01:30:00+05:00');
+    const options = { ishaDeadlineMinutes: MAX_ISHA_DEADLINE_MINUTES };
+
+    expect(getPrayerTrackingDateKey(now, options)).toBe('2026-06-29');
+    expect(isAtOrAfterMissedCutoff(now, options)).toBe(false);
+  });
+
+  it('moves to the current prayer day at the custom 2 AM deadline', () => {
+    const now = new Date('2026-06-30T02:00:00+05:00');
+    const options = { ishaDeadlineMinutes: MAX_ISHA_DEADLINE_MINUTES };
+
+    expect(getPrayerTrackingDateKey(now, options)).toBe('2026-06-30');
+    expect(getPreviousPrayerDateKey(now)).toBe('2026-06-29');
+    expect(isAtOrAfterMissedCutoff(now, options)).toBe(true);
+  });
+
+  it('uses the new day prayer timeline after the configured Isha deadline', () => {
     const beforeCutoff = new Date('2026-06-30T01:30:00+05:00');
     const afterCutoff = new Date('2026-06-30T02:00:00+05:00');
+    const options = { ishaDeadlineMinutes: MAX_ISHA_DEADLINE_MINUTES };
     const beforeSchedule = calculatePrayerSchedule({
       now: beforeCutoff,
-      scheduleDate: getPrayerTrackingDate(beforeCutoff),
+      scheduleDate: getPrayerTrackingDate(beforeCutoff, options),
+      ...options,
     });
     const afterSchedule = calculatePrayerSchedule({
       now: afterCutoff,
-      scheduleDate: getPrayerTrackingDate(afterCutoff),
+      scheduleDate: getPrayerTrackingDate(afterCutoff, options),
+      ...options,
     });
 
     expect(beforeSchedule.prayers[0].id).toBe('fajr-2026-06-29');

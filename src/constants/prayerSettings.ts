@@ -15,6 +15,9 @@ export interface PrayerSettingOption<T extends string> {
 
 export const DEFAULT_CALCULATION_METHOD: CalculationMethodKey = 'karachi';
 export const DEFAULT_ASR_METHOD: AsrMethodKey = 'hanafi';
+export const DEFAULT_ISHA_DEADLINE_MINUTES: number | null = null;
+export const ISHA_DEADLINE_STEP_MINUTES = 15;
+export const MAX_ISHA_DEADLINE_MINUTES = 26 * 60;
 
 export const FIXED_PRAYER_LOCATION = {
   label: 'Lahore, Pakistan',
@@ -115,4 +118,19 @@ export function normalizeAsrMethod(value: unknown): AsrMethodKey {
   }
 
   return DEFAULT_ASR_METHOD;
+}
+
+export function normalizeIshaDeadlineMinutes(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return DEFAULT_ISHA_DEADLINE_MINUTES;
+  }
+
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return DEFAULT_ISHA_DEADLINE_MINUTES;
+  }
+
+  return Math.min(
+    Math.max(Math.round(value), 0),
+    MAX_ISHA_DEADLINE_MINUTES,
+  );
 }

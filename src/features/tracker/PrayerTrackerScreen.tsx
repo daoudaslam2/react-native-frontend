@@ -141,21 +141,30 @@ function TrackerPrayerRow({
   prayer: ObligatoryPrayerKey;
 }): React.JSX.Element {
   const now = useNow(60_000);
-  const trackingDateKey = getPrayerTrackingDateKey(now);
-  const scheduleDate = getPrayerTrackingDate(now);
+  const use24HourTime = useSettingsStore(state => state.use24HourTime);
+  const calculationMethod = useSettingsStore(state => state.calculationMethod);
+  const asrMethod = useSettingsStore(state => state.asrMethod);
+  const ishaDeadlineMinutes = useSettingsStore(
+    state => state.ishaDeadlineMinutes,
+  );
+  const trackingOptions = {
+    calculationMethod,
+    asrMethod,
+    ishaDeadlineMinutes,
+  };
+  const trackingDateKey = getPrayerTrackingDateKey(now, trackingOptions);
+  const scheduleDate = getPrayerTrackingDate(now, trackingOptions);
   const log = useTrackerStore(
     state => state.logsByDate[trackingDateKey]?.[prayer],
   );
   const ensurePrayerDate = useTrackerStore(state => state.ensurePrayerDate);
   const markPrayer = useTrackerStore(state => state.markPrayer);
   const addMissed = useQazaStore(state => state.addMissed);
-  const use24HourTime = useSettingsStore(state => state.use24HourTime);
-  const calculationMethod = useSettingsStore(state => state.calculationMethod);
-  const asrMethod = useSettingsStore(state => state.asrMethod);
   const prayerTimeStatus = getPrayerTimeStatus(
     prayer,
     calculationMethod,
     asrMethod,
+    ishaDeadlineMinutes,
     now,
     scheduleDate,
   );
@@ -192,6 +201,7 @@ function TrackerPrayerRow({
             {getFormattedPrayerTime(prayer, use24HourTime, {
               calculationMethod,
               asrMethod,
+              ishaDeadlineMinutes,
               scheduleDate,
             })}
           </AppText>
@@ -316,12 +326,19 @@ function getPrayerTimeStatus(
   prayer: ObligatoryPrayerKey,
   calculationMethod: CalculationMethodKey,
   asrMethod: AsrMethodKey,
+  ishaDeadlineMinutes: number | null,
   now: Date,
   scheduleDate: Date,
 ): PrayerStatus {
   return (
     prayerRepository
-      .getTodayPrayerTimes({ now, scheduleDate, calculationMethod, asrMethod })
+      .getTodayPrayerTimes({
+        now,
+        scheduleDate,
+        calculationMethod,
+        asrMethod,
+        ishaDeadlineMinutes,
+      })
       .find(item => item.key === prayer)?.status ?? 'upcoming'
   );
 }

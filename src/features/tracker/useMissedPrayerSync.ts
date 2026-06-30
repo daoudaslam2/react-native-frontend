@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { useNow } from '../../hooks/useNow';
 import { useQazaStore } from '../qaza/qazaStore';
+import { useSettingsStore } from '../settings/settingsStore';
 import {
   getAutoMissedPrayers,
   getPreviousPrayerDateKey,
@@ -17,9 +18,20 @@ export function useMissedPrayerSync(): void {
   );
   const markMissedForQaza = useTrackerStore(state => state.markMissedForQaza);
   const addMissed = useQazaStore(state => state.addMissed);
+  const calculationMethod = useSettingsStore(state => state.calculationMethod);
+  const asrMethod = useSettingsStore(state => state.asrMethod);
+  const ishaDeadlineMinutes = useSettingsStore(
+    state => state.ishaDeadlineMinutes,
+  );
 
   useEffect(() => {
-    if (!isAtOrAfterMissedCutoff(now)) {
+    if (
+      !isAtOrAfterMissedCutoff(now, {
+        calculationMethod,
+        asrMethod,
+        ishaDeadlineMinutes,
+      })
+    ) {
       return;
     }
 
@@ -35,5 +47,14 @@ export function useMissedPrayerSync(): void {
         addMissed(prayer);
       }
     });
-  }, [addMissed, logsByDate, markMissedForQaza, now, processedMissedKeys]);
+  }, [
+    addMissed,
+    asrMethod,
+    calculationMethod,
+    ishaDeadlineMinutes,
+    logsByDate,
+    markMissedForQaza,
+    now,
+    processedMissedKeys,
+  ]);
 }

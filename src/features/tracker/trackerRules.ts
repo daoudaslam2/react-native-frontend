@@ -1,12 +1,19 @@
 import { FIXED_PRAYER_LOCATION } from '../../constants/prayerSettings';
 import { OBLIGATORY_PRAYERS } from '../../constants/prayers';
+import {
+  getActivePrayerDate,
+  type PrayerCalculationOptions,
+} from '../../services/prayer/prayerCalculator';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
-import { getZonedDateParts, getZonedHour } from '../../utils/dateTime';
+import { getZonedDateParts } from '../../utils/dateTime';
 import type { PrayerLog, PrayerLogStatus } from './trackerStore';
 
 export type PrayerLogs = Record<ObligatoryPrayerKey, PrayerLog>;
 
-export const MISSED_PRAYER_CUTOFF_HOUR = 2;
+type PrayerTrackingOptions = Pick<
+  PrayerCalculationOptions,
+  'calculationMethod' | 'asrMethod' | 'ishaDeadlineMinutes'
+>;
 
 export function createInitialPrayerLogs(): PrayerLogs {
   return {
@@ -18,27 +25,39 @@ export function createInitialPrayerLogs(): PrayerLogs {
   };
 }
 
-export function getPrayerTrackingDate(now: Date): Date {
-  const dayOffset = isBeforeMissedCutoff(now) ? -1 : 0;
-
-  return createDateReference(now, dayOffset);
+export function getPrayerTrackingDate(
+  now: Date,
+  options: PrayerTrackingOptions = {},
+): Date {
+  return getActivePrayerDate({ ...options, now });
 }
 
-export function getPrayerTrackingDateKey(now: Date): string {
-  return formatDateKey(getPrayerTrackingDate(now));
+export function getPrayerTrackingDateKey(
+  now: Date,
+  options: PrayerTrackingOptions = {},
+): string {
+  return formatDateKey(getPrayerTrackingDate(now, options));
 }
 
 export function getPreviousPrayerDateKey(now: Date): string {
   return formatDateKey(createDateReference(now, -1));
 }
 
-export function isBeforeMissedCutoff(now: Date): boolean {
-  return getZonedHour(now, FIXED_PRAYER_LOCATION.timeZone) <
-    MISSED_PRAYER_CUTOFF_HOUR;
+export function isBeforeMissedCutoff(
+  now: Date,
+  options: PrayerTrackingOptions = {},
+): boolean {
+  return !isAtOrAfterMissedCutoff(now, options);
 }
 
-export function isAtOrAfterMissedCutoff(now: Date): boolean {
-  return !isBeforeMissedCutoff(now);
+export function isAtOrAfterMissedCutoff(
+  now: Date,
+  options: PrayerTrackingOptions = {},
+): boolean {
+  return (
+    getPrayerTrackingDateKey(now, options) ===
+    formatDateKey(createDateReference(now, 0))
+  );
 }
 
 export function formatDateKey(date: Date): string {

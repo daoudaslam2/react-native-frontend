@@ -16,13 +16,28 @@ import type {
 } from '../../types/prayer';
 import { formatPrayerTime } from '../../utils/dateTime';
 import { useSettingsStore } from '../settings/settingsStore';
+import { getPrayerTrackingDate } from '../tracker/trackerRules';
 
 export function PrayerTimesScreen(): React.JSX.Element {
   const now = useNow();
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
   const calculationMethod = useSettingsStore(state => state.calculationMethod);
   const asrMethod = useSettingsStore(state => state.asrMethod);
-  const queryOptions = { now, calculationMethod, asrMethod };
+  const ishaDeadlineMinutes = useSettingsStore(
+    state => state.ishaDeadlineMinutes,
+  );
+  const trackingOptions = {
+    calculationMethod,
+    asrMethod,
+    ishaDeadlineMinutes,
+  };
+  const queryOptions = {
+    now,
+    scheduleDate: getPrayerTrackingDate(now, trackingOptions),
+    calculationMethod,
+    asrMethod,
+    ishaDeadlineMinutes,
+  };
   const summary = prayerRepository.getSummary(queryOptions);
   const prayers = prayerRepository.getTodayPrayerTimes(queryOptions);
 

@@ -30,14 +30,28 @@ export function HomeScreen(): React.JSX.Element {
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
   const calculationMethod = useSettingsStore(state => state.calculationMethod);
   const asrMethod = useSettingsStore(state => state.asrMethod);
-  const trackingDateKey = getPrayerTrackingDateKey(now);
-  const scheduleDate = getPrayerTrackingDate(now);
+  const ishaDeadlineMinutes = useSettingsStore(
+    state => state.ishaDeadlineMinutes,
+  );
+  const trackingOptions = {
+    calculationMethod,
+    asrMethod,
+    ishaDeadlineMinutes,
+  };
+  const trackingDateKey = getPrayerTrackingDateKey(now, trackingOptions);
+  const scheduleDate = getPrayerTrackingDate(now, trackingOptions);
   const logs = useTrackerStore(
     state => state.logsByDate[trackingDateKey],
   );
   const ensurePrayerDate = useTrackerStore(state => state.ensurePrayerDate);
   const markPrayer = useTrackerStore(state => state.markPrayer);
-  const queryOptions = { now, scheduleDate, calculationMethod, asrMethod };
+  const queryOptions = {
+    now,
+    scheduleDate,
+    calculationMethod,
+    asrMethod,
+    ishaDeadlineMinutes,
+  };
   const summary = prayerRepository.getSummary(queryOptions);
   const prayers = prayerRepository
     .getTodayPrayerTimes(queryOptions)

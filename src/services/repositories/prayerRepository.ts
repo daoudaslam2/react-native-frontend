@@ -14,6 +14,7 @@ export interface PrayerQueryOptions {
   scheduleDate?: Date;
   calculationMethod?: CalculationMethodKey;
   asrMethod?: AsrMethodKey;
+  ishaDeadlineMinutes?: number | null;
 }
 
 const trackerStats: PrayerTrackerStats = {

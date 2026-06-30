@@ -51,6 +51,31 @@ class WidgetPinningModule(
         }
     }
 
+    @ReactMethod
+    fun setIshaDeadlineMinutes(minutes: Double, promise: Promise) {
+        try {
+            setConfiguredIshaDeadlineMinutes(
+                reactContext,
+                minutes.toInt().coerceIn(0, MAX_ISHA_DEADLINE_MINUTES),
+            )
+            refreshPrayerWidgets(reactContext)
+            promise.resolve(true)
+        } catch (error: RuntimeException) {
+            promise.reject("WIDGET_SETTING_FAILED", error)
+        }
+    }
+
+    @ReactMethod
+    fun clearIshaDeadlineMinutes(promise: Promise) {
+        try {
+            setConfiguredIshaDeadlineMinutes(reactContext, null)
+            refreshPrayerWidgets(reactContext)
+            promise.resolve(true)
+        } catch (error: RuntimeException) {
+            promise.reject("WIDGET_SETTING_FAILED", error)
+        }
+    }
+
     private fun isPinningSupported(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return false

@@ -28,11 +28,7 @@ private const val LAHORE_LATITUDE = 31.502480
 private const val LAHORE_LONGITUDE = 74.321451
 private const val LOCATION_LABEL = "Lahore, PK"
 private const val TIME_ZONE_ID = "Asia/Karachi"
-private const val CUTOFF_HOUR = 2
 private const val ONE_MINUTE_MS = 60_000L
-private const val ACTION_REFRESH_SMALL = "com.alsalah.widgets.REFRESH_SMALL"
-private const val ACTION_REFRESH_MEDIUM = "com.alsalah.widgets.REFRESH_MEDIUM"
-private const val ACTION_REFRESH_LARGE = "com.alsalah.widgets.REFRESH_LARGE"
 
 private val WIDGET_TIME_ZONE: TimeZone = TimeZone.getTimeZone(TIME_ZONE_ID)
 
@@ -200,7 +196,7 @@ abstract class PrayerWidgetProvider(
         )
 
         views.setOnClickPendingIntent(rootViewId, pendingIntent)
-        render(context, views, calculateWidgetData())
+        render(context, views, calculateWidgetData(context))
 
         return views
     }
@@ -346,15 +342,16 @@ private fun setLargePrayerRow(
     views.setTextViewText(timeViewId, formatTime(item.time))
 }
 
-private fun calculateWidgetData(now: Date = Date()): PrayerWidgetData {
-    val trackingDate = getTrackingDate(now)
+private fun calculateWidgetData(context: Context, now: Date = Date()): PrayerWidgetData {
+    val ishaDeadlineMinutes = getConfiguredIshaDeadlineMinutes(context)
+    val trackingDate = getTrackingDate(context, now)
     val yesterday = addDays(trackingDate, -1)
     val tomorrow = addDays(trackingDate, 1)
     val dayAfterTomorrow = addDays(trackingDate, 2)
     val timeline = prayerTimesForDate(trackingDate)
-    val windows = prayerWindowsForDate(yesterday, trackingDate) +
-        prayerWindowsForDate(trackingDate, tomorrow) +
-        prayerWindowsForDate(tomorrow, dayAfterTomorrow)
+    val windows = prayerWindowsForDate(yesterday, trackingDate, ishaDeadlineMinutes) +
+        prayerWindowsForDate(trackingDate, tomorrow, ishaDeadlineMinutes) +
+        prayerWindowsForDate(tomorrow, dayAfterTomorrow, ishaDeadlineMinutes)
     val activeWindow = windows.firstOrNull { !now.before(it.start) && now.before(it.end) }
     val nextWindow = windows.firstOrNull { it.start.after(now) } ?: windows.last()
     val displayWindow = activeWindow ?: nextWindow
@@ -390,7 +387,11 @@ private fun prayerTimesForDate(date: Date): List<NamazTime> {
     )
 }
 
-private fun prayerWindowsForDate(date: Date, nextDate: Date): List<NamazWindow> {
+private fun prayerWindowsForDate(
+    date: Date,
+    nextDate: Date,
+    ishaDeadlineMinutes: Int?,
+): List<NamazWindow> {
     val prayerTimes = dayPrayerTimesForDate(date)
     val nextPrayerTimes = dayPrayerTimesForDate(nextDate)
 
@@ -402,7 +403,12 @@ private fun prayerWindowsForDate(date: Date, nextDate: Date): List<NamazWindow> 
         NamazWindow(
             Namaz.ISHA,
             prayerTimes.isha,
-            calculateIslamicMidnight(prayerTimes.maghrib, nextPrayerTimes.fajr),
+            resolveIshaDeadline(
+                date,
+                prayerTimes.maghrib,
+                nextPrayerTimes.fajr,
+                ishaDeadlineMinutes,
+            ),
         ),
     )
 }
@@ -431,18 +437,62 @@ private fun calculateIslamicMidnight(maghrib: Date, nextFajr: Date): Date {
     return Date(maghrib.time + ((nextFajr.time - maghrib.time) / 2))
 }
 
-private fun getTrackingDate(now: Date): Date {
+private fun resolveIshaDeadline(
+    date: Date,
+    maghrib: Date,
+    nextFajr: Date,
+    ishaDeadlineMinutes: Int?,
+): Date {
+    val minimum = calculateIslamicMidnight(maghrib, nextFajr)
+    val maximum = createIshaDeadlineDate(date, MAX_ISHA_DEADLINE_MINUTES)
+    val configuredMinutes = ishaDeadlineMinutes ?: return minimum
+    val candidate = createIshaDeadlineDate(
+        date,
+        configuredMinutes.coerceIn(0, MAX_ISHA_DEADLINE_MINUTES),
+    )
+
+    return when {
+        candidate.before(minimum) -> minimum
+        candidate.after(maximum) -> maximum
+        else -> candidate
+    }
+}
+
+private fun getTrackingDate(context: Context, now: Date): Date {
+    val today = createDateReference(now, 0)
+    val yesterday = createDateReference(now, -1)
+    val yesterdayPrayerTimes = dayPrayerTimesForDate(yesterday)
+    val todayPrayerTimes = dayPrayerTimesForDate(today)
+    val previousIshaDeadline = resolveIshaDeadline(
+        yesterday,
+        yesterdayPrayerTimes.maghrib,
+        todayPrayerTimes.fajr,
+        getConfiguredIshaDeadlineMinutes(context),
+    )
+
+    return if (now.before(previousIshaDeadline)) yesterday else today
+}
+
+private fun createDateReference(now: Date, dayOffset: Int): Date {
     val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
     calendar.time = now
-
-    if (calendar.get(Calendar.HOUR_OF_DAY) < CUTOFF_HOUR) {
-        calendar.add(Calendar.DATE, -1)
-    }
-
+    calendar.add(Calendar.DATE, dayOffset)
     calendar.set(Calendar.HOUR_OF_DAY, 12)
     calendar.set(Calendar.MINUTE, 0)
     calendar.set(Calendar.SECOND, 0)
     calendar.set(Calendar.MILLISECOND, 0)
+
+    return calendar.time
+}
+
+private fun createIshaDeadlineDate(date: Date, minutesFromDayStart: Int): Date {
+    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+    calendar.time = date
+    calendar.set(Calendar.HOUR_OF_DAY, 0)
+    calendar.set(Calendar.MINUTE, 0)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+    calendar.add(Calendar.MINUTE, minutesFromDayStart)
 
     return calendar.time
 }

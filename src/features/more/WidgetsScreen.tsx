@@ -56,11 +56,20 @@ export function WidgetsScreen(): React.JSX.Element {
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
   const calculationMethod = useSettingsStore(state => state.calculationMethod);
   const asrMethod = useSettingsStore(state => state.asrMethod);
-  const queryOptions = {
-    now,
-    scheduleDate: getPrayerTrackingDate(now),
+  const ishaDeadlineMinutes = useSettingsStore(
+    state => state.ishaDeadlineMinutes,
+  );
+  const trackingOptions = {
     calculationMethod,
     asrMethod,
+    ishaDeadlineMinutes,
+  };
+  const queryOptions = {
+    now,
+    scheduleDate: getPrayerTrackingDate(now, trackingOptions),
+    calculationMethod,
+    asrMethod,
+    ishaDeadlineMinutes,
   };
   const summary = prayerRepository.getSummary(queryOptions);
   const prayers = prayerRepository
