@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.IslamicCalendar
 import android.icu.util.TimeZone as IcuTimeZone
+import android.util.TypedValue
 import android.widget.RemoteViews
 import com.alsalah.MainActivity
 import com.alsalah.R
@@ -231,11 +232,23 @@ private fun renderSmallWidget(
     views: RemoteViews,
     data: PrayerWidgetData,
 ) {
-    views.setTextViewText(R.id.widget_small_current_prayer, data.current.namaz.label)
+    val currentLabel = data.current.namaz.label
+    views.setTextViewText(R.id.widget_small_current_prayer, currentLabel)
+    views.setTextViewTextSize(
+        R.id.widget_small_current_prayer,
+        TypedValue.COMPLEX_UNIT_SP,
+        getSmallWidgetTitleSize(currentLabel),
+    )
     views.setTextViewText(R.id.widget_small_remaining, formatSmallRemaining(data))
     views.setTextViewText(R.id.widget_small_next, formatSmallFooter(data))
     views.setImageViewResource(R.id.widget_small_icon, data.current.namaz.icon)
     views.setProgressBar(R.id.widget_small_progress, 1_000, calculateIntervalProgress(data), false)
+}
+
+private fun getSmallWidgetTitleSize(label: String): Float = when {
+    label.length >= 7 -> 24f
+    label.length >= 5 -> 26f
+    else -> 28f
 }
 
 private fun renderMediumWidget(
