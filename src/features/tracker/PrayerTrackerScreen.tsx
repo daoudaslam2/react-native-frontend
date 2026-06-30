@@ -141,7 +141,7 @@ export function PrayerTrackerScreen(): React.JSX.Element {
         />
         <SmallMetricCard
           icon="timer"
-          label="Pending"
+          label="Pending Today"
           value={metrics.pendingPrayers.toString()}
         />
         <SmallMetricCard
@@ -442,12 +442,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   statValue: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
+    alignItems: 'flex-start',
+    gap: 0,
   },
   statUnit: {
-    paddingBottom: spacing.sm,
+    marginTop: -spacing.xs,
   },
   weekCard: {
     gap: spacing.lg,
