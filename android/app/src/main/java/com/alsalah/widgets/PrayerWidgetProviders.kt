@@ -5,13 +5,59 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.icu.util.IslamicCalendar
+import android.icu.util.TimeZone as IcuTimeZone
+import android.view.View
 import android.widget.RemoteViews
 import com.alsalah.MainActivity
 import com.alsalah.R
+import com.batoulapps.adhan.CalculationMethod
+import com.batoulapps.adhan.Coordinates
+import com.batoulapps.adhan.Madhab
+import com.batoulapps.adhan.PrayerTimes
+import com.batoulapps.adhan.data.DateComponents
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+
+private const val LAHORE_LATITUDE = 31.502480
+private const val LAHORE_LONGITUDE = 74.321451
+private const val LOCATION_LABEL = "Lahore, PK"
+private const val TIME_ZONE_ID = "Asia/Karachi"
+private const val CUTOFF_HOUR = 2
+
+private val WIDGET_TIME_ZONE: TimeZone = TimeZone.getTimeZone(TIME_ZONE_ID)
+
+enum class Namaz(
+    val label: String,
+    val icon: Int,
+) {
+    FAJR("Fajr", R.drawable.ic_namaz_fajr),
+    DHUHR("Dhuhr", R.drawable.ic_namaz_dhuhr),
+    ASR("Asr", R.drawable.ic_namaz_asr),
+    MAGHRIB("Maghrib", R.drawable.ic_namaz_maghrib),
+    ISHA("Isha", R.drawable.ic_namaz_isha),
+}
+
+data class NamazTime(
+    val namaz: Namaz,
+    val time: Date,
+)
+
+data class PrayerWidgetData(
+    val now: Date,
+    val current: NamazTime,
+    val next: NamazTime,
+    val timeline: List<NamazTime>,
+    val currentIndex: Int,
+)
 
 abstract class PrayerWidgetProvider(
     private val layoutId: Int,
     private val rootViewId: Int,
+    private val render: (Context, RemoteViews, PrayerWidgetData) -> Unit,
 ) : AppWidgetProvider() {
 
     override fun onUpdate(
@@ -38,6 +84,7 @@ abstract class PrayerWidgetProvider(
         )
 
         views.setOnClickPendingIntent(rootViewId, pendingIntent)
+        render(context, views, calculateWidgetData())
 
         return views
     }
@@ -46,14 +93,266 @@ abstract class PrayerWidgetProvider(
 class SmallPrayerWidgetProvider : PrayerWidgetProvider(
     R.layout.widget_prayer_small,
     R.id.widget_prayer_small_root,
+    ::renderSmallWidget,
 )
 
 class MediumPrayerWidgetProvider : PrayerWidgetProvider(
     R.layout.widget_prayer_medium,
     R.id.widget_prayer_medium_root,
+    ::renderMediumWidget,
 )
 
 class LargePrayerWidgetProvider : PrayerWidgetProvider(
     R.layout.widget_prayer_large,
     R.id.widget_prayer_large_root,
+    ::renderLargeWidget,
 )
+
+private fun renderSmallWidget(
+    context: Context,
+    views: RemoteViews,
+    data: PrayerWidgetData,
+) {
+    views.setTextViewText(R.id.widget_small_current_prayer, data.current.namaz.label)
+    views.setTextViewText(R.id.widget_small_remaining, formatRemaining(data))
+    views.setTextViewText(R.id.widget_small_next, "Next: ${data.next.namaz.label}")
+    views.setImageViewResource(R.id.widget_small_icon, data.current.namaz.icon)
+    views.setViewVisibility(R.id.widget_small_progress_fill, View.VISIBLE)
+}
+
+private fun renderMediumWidget(
+    context: Context,
+    views: RemoteViews,
+    data: PrayerWidgetData,
+) {
+    val focusIndex = data.timeline.indexOf(data.next)
+        .takeIf { it >= 0 }
+        ?: data.currentIndex
+    val focusedItems = (-2..2).map { offset ->
+        data.timeline[(focusIndex + offset).coerceIn(0, data.timeline.lastIndex)]
+    }
+
+    views.setTextViewText(R.id.widget_medium_time, formatTime(data.now))
+    views.setTextViewText(R.id.widget_medium_status, "${data.next.namaz.label} is next")
+    views.setTextViewText(R.id.widget_medium_place, LOCATION_LABEL)
+    views.setTextViewText(R.id.widget_medium_hijri, formatHijriDate(data.now))
+
+    setMediumInactiveSlot(
+        views,
+        R.id.widget_medium_slot_0_icon,
+        R.id.widget_medium_slot_0_name,
+        focusedItems[0],
+    )
+    setMediumInactiveSlot(
+        views,
+        R.id.widget_medium_slot_1_icon,
+        R.id.widget_medium_slot_1_name,
+        focusedItems[1],
+    )
+    views.setImageViewResource(R.id.widget_medium_focus_icon, data.next.namaz.icon)
+    views.setTextViewText(R.id.widget_medium_focus_name, data.next.namaz.label)
+    setMediumInactiveSlot(
+        views,
+        R.id.widget_medium_slot_3_icon,
+        R.id.widget_medium_slot_3_name,
+        focusedItems[3],
+    )
+    setMediumInactiveSlot(
+        views,
+        R.id.widget_medium_slot_4_icon,
+        R.id.widget_medium_slot_4_name,
+        focusedItems[4],
+    )
+}
+
+private fun renderLargeWidget(
+    context: Context,
+    views: RemoteViews,
+    data: PrayerWidgetData,
+) {
+    val previous = data.timeline[(data.currentIndex - 1).coerceAtLeast(0)]
+    val firstNext = data.next
+    val secondNext = data.timeline[(data.currentIndex + 2).coerceAtMost(data.timeline.lastIndex)]
+
+    views.setTextViewText(R.id.widget_large_date, formatDisplayDate(data.now))
+    views.setTextViewText(R.id.widget_large_time, formatTime(data.now))
+    views.setTextViewText(R.id.widget_large_seconds, ": ${formatSeconds(data.now)}")
+    views.setTextViewText(R.id.widget_large_current_name, data.current.namaz.label)
+    views.setTextViewText(R.id.widget_large_current_remaining, formatRemaining(data))
+    views.setTextViewText(R.id.widget_large_current_time, formatTime(data.current.time))
+    views.setImageViewResource(R.id.widget_large_current_icon, data.current.namaz.icon)
+
+    setLargePrayerRow(
+        views,
+        R.id.widget_large_dhuhr_icon,
+        R.id.widget_large_dhuhr_name,
+        R.id.widget_large_dhuhr_time,
+        previous,
+    )
+    setLargePrayerRow(
+        views,
+        R.id.widget_large_maghrib_icon,
+        R.id.widget_large_maghrib_name,
+        R.id.widget_large_maghrib_time,
+        firstNext,
+    )
+    setLargePrayerRow(
+        views,
+        R.id.widget_large_isha_icon,
+        R.id.widget_large_isha_name,
+        R.id.widget_large_isha_time,
+        secondNext,
+    )
+}
+
+private fun setMediumInactiveSlot(
+    views: RemoteViews,
+    iconViewId: Int,
+    labelViewId: Int,
+    item: NamazTime,
+) {
+    views.setImageViewResource(iconViewId, item.namaz.icon)
+    views.setTextViewText(labelViewId, item.namaz.label)
+}
+
+private fun setLargePrayerRow(
+    views: RemoteViews,
+    iconViewId: Int,
+    labelViewId: Int,
+    timeViewId: Int,
+    item: NamazTime,
+) {
+    views.setImageViewResource(iconViewId, item.namaz.icon)
+    views.setTextViewText(labelViewId, item.namaz.label)
+    views.setTextViewText(timeViewId, formatTime(item.time))
+}
+
+private fun calculateWidgetData(now: Date = Date()): PrayerWidgetData {
+    val trackingDate = getTrackingDate(now)
+    val yesterday = addDays(trackingDate, -1)
+    val tomorrow = addDays(trackingDate, 1)
+    val sequence = listOf(prayerTimesForDate(yesterday).last()) +
+        prayerTimesForDate(trackingDate) +
+        prayerTimesForDate(tomorrow)
+    val currentIndex = sequence.indexOfLast { !it.time.after(now) }
+        .takeIf { it >= 0 }
+        ?: 0
+    val next = sequence.firstOrNull { it.time.after(now) }
+        ?: sequence[(currentIndex + 1).coerceAtMost(sequence.lastIndex)]
+
+    return PrayerWidgetData(
+        now = now,
+        current = sequence[currentIndex],
+        next = next,
+        timeline = sequence,
+        currentIndex = currentIndex,
+    )
+}
+
+private fun prayerTimesForDate(date: Date): List<NamazTime> {
+    val params = CalculationMethod.KARACHI.getParameters()
+    params.madhab = Madhab.HANAFI
+
+    val prayerTimes = PrayerTimes(
+        Coordinates(LAHORE_LATITUDE, LAHORE_LONGITUDE),
+        dateComponents(date),
+        params,
+    )
+
+    return listOf(
+        NamazTime(Namaz.FAJR, prayerTimes.fajr),
+        NamazTime(Namaz.DHUHR, prayerTimes.dhuhr),
+        NamazTime(Namaz.ASR, prayerTimes.asr),
+        NamazTime(Namaz.MAGHRIB, prayerTimes.maghrib),
+        NamazTime(Namaz.ISHA, prayerTimes.isha),
+    )
+}
+
+private fun getTrackingDate(now: Date): Date {
+    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+    calendar.time = now
+
+    if (calendar.get(Calendar.HOUR_OF_DAY) < CUTOFF_HOUR) {
+        calendar.add(Calendar.DATE, -1)
+    }
+
+    calendar.set(Calendar.HOUR_OF_DAY, 12)
+    calendar.set(Calendar.MINUTE, 0)
+    calendar.set(Calendar.SECOND, 0)
+    calendar.set(Calendar.MILLISECOND, 0)
+
+    return calendar.time
+}
+
+private fun addDays(date: Date, days: Int): Date {
+    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+    calendar.time = date
+    calendar.add(Calendar.DATE, days)
+
+    return calendar.time
+}
+
+private fun dateComponents(date: Date): DateComponents {
+    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+    calendar.time = date
+
+    return DateComponents(
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH) + 1,
+        calendar.get(Calendar.DAY_OF_MONTH),
+    )
+}
+
+private fun formatTime(date: Date): String {
+    return SimpleDateFormat("HH:mm", Locale.US).apply {
+        timeZone = WIDGET_TIME_ZONE
+    }.format(date)
+}
+
+private fun formatSeconds(date: Date): String {
+    return SimpleDateFormat("ss", Locale.US).apply {
+        timeZone = WIDGET_TIME_ZONE
+    }.format(date)
+}
+
+private fun formatDisplayDate(date: Date): String {
+    return SimpleDateFormat("EEEE, d MMM", Locale.US).apply {
+        timeZone = WIDGET_TIME_ZONE
+    }.format(date)
+}
+
+private fun formatHijriDate(date: Date): String {
+    val calendar = IslamicCalendar(IcuTimeZone.getTimeZone(TIME_ZONE_ID), Locale.US)
+    calendar.timeInMillis = date.time
+    val monthNames = listOf(
+        "Muharram",
+        "Safar",
+        "Rabi al-Awwal",
+        "Rabi al-Thani",
+        "Jumada al-Awwal",
+        "Jumada al-Thani",
+        "Rajab",
+        "Sha'ban",
+        "Ramadan",
+        "Shawwal",
+        "Dhu al-Qadah",
+        "Dhu al-Hijjah",
+    )
+    val day = calendar.get(IslamicCalendar.DAY_OF_MONTH)
+    val month = monthNames[calendar.get(IslamicCalendar.MONTH)]
+    val year = calendar.get(IslamicCalendar.YEAR)
+
+    return "$day $month $year"
+}
+
+private fun formatRemaining(data: PrayerWidgetData): String {
+    val remainingMillis = (data.next.time.time - data.now.time).coerceAtLeast(0)
+    val totalMinutes = remainingMillis / 60_000
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+
+    return when {
+        hours > 0 -> "In ${hours}h ${minutes}m"
+        else -> "In ${minutes}m"
+    }
+}

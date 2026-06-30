@@ -10,7 +10,7 @@ import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
 import type { QazaStackParamList } from '../../navigation/types';
-import { colors, radius, spacing } from '../../theme';
+import { colors, fontFamilies, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
 import { qazaPrayerSubtitles } from './qazaConstants';
 import { type QazaCounts, useQazaStore } from './qazaStore';
@@ -299,9 +299,9 @@ const styles = StyleSheet.create({
     width: 64,
     minHeight: 50,
     color: colors.onSurface,
+    fontFamily: fontFamilies.bold,
     fontSize: 30,
     lineHeight: 36,
-    fontWeight: '700',
     textAlign: 'center',
     padding: 0,
   },

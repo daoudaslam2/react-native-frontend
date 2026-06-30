@@ -1,7 +1,13 @@
 import React from 'react';
 import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 
-import { colors, typography, type ColorToken, type TextVariant } from '../theme';
+import {
+  colors,
+  fontFamilyForWeight,
+  typography,
+  type ColorToken,
+  type TextVariant,
+} from '../theme';
 
 interface AppTextProps extends TextProps {
   variant?: TextVariant;
@@ -21,6 +27,8 @@ export function AppText({
   children,
   ...rest
 }: AppTextProps): React.JSX.Element {
+  const weightedFontFamily = weight ? fontFamilyForWeight(weight) : undefined;
+
   return (
     <Text
       {...rest}
@@ -29,8 +37,8 @@ export function AppText({
         typography[variant],
         {
           color: colors[color],
+          fontFamily: weightedFontFamily,
           textAlign: align,
-          fontWeight: weight,
           textTransform: transform,
         },
         style,
