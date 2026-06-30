@@ -128,8 +128,8 @@ function TimelineRow({
 }): React.JSX.Element {
   const isCurrent = prayer.status === 'current';
   const isNext = prayer.status === 'next';
-  const isCompleted = logStatus === 'completed' || logStatus === 'late';
-  const isMissed = logStatus === 'missed' || logStatus === 'qaza';
+  const isCompleted = logStatus === 'completed';
+  const isQaza = logStatus === 'qaza';
   const canMarkComplete =
     (prayer.status === 'current' || prayer.status === 'past') &&
     isPrayerActionable(logStatus);
@@ -142,7 +142,7 @@ function TimelineRow({
         isNext && styles.timelineRowNext,
         prayer.status === 'past' && styles.timelineRowPast,
         isCompleted && styles.timelineRowCompleted,
-        isMissed && styles.timelineRowMissed,
+        isQaza && styles.timelineRowMissed,
       ]}>
       <View style={styles.timelineLabel}>
         <View
@@ -170,9 +170,9 @@ function TimelineRow({
               color={isCurrent ? 'primaryFixed' : 'primary'}>
               Completed
             </AppText>
-          ) : isMissed ? (
+          ) : isQaza ? (
             <AppText variant="labelSmall" color="error">
-              Missed
+              Qaza
             </AppText>
           ) : isCurrent ? (
             <AppText variant="labelSmall" color="primaryFixed">

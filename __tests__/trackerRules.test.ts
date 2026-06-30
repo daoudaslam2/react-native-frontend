@@ -55,10 +55,10 @@ describe('tracker cutoff rules', () => {
     expect(afterSchedule.summary.gregorianDate).toBe('Tue, Jun 30');
   });
 
-  it('auto-misses only unresolved prayers once', () => {
+  it('auto-adds only unresolved prayers to qaza once', () => {
     const logs = createInitialPrayerLogs();
     logs.fajr = { status: 'completed' };
-    logs.dhuhr = { status: 'late' };
+    logs.dhuhr = { status: 'completed' };
     logs.asr = { status: 'pending' };
     logs.maghrib = { status: 'qaza' };
     logs.isha = { status: 'upcoming' };

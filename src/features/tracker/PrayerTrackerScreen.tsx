@@ -29,8 +29,7 @@ interface TrackerMetrics {
   sevenDayCompletionPercent: number;
   thirtyDayCompletionPercent: number;
   completedPrayers: number;
-  latePrayers: number;
-  missedPrayers: number;
+  qazaPrayers: number;
   trackedDays: number;
   qazaTotal: number;
   highestQazaPrayer: string;
@@ -129,14 +128,9 @@ export function PrayerTrackerScreen(): React.JSX.Element {
           value={metrics.completedPrayers.toString()}
         />
         <SmallMetricCard
-          icon="timer"
-          label="Late"
-          value={metrics.latePrayers.toString()}
-        />
-        <SmallMetricCard
-          icon="close"
-          label="Missed"
-          value={metrics.missedPrayers.toString()}
+          icon="task"
+          label="Qaza Logged"
+          value={metrics.qazaPrayers.toString()}
         />
         <SmallMetricCard
           icon="calendar"
@@ -178,8 +172,8 @@ export function PrayerTrackerScreen(): React.JSX.Element {
       <Surface style={styles.noteCard} radiusSize="md">
         <Icon name="info" color={colors.onSurfaceVariant} />
         <AppText variant="body" color="onSurfaceVariant" style={styles.noteText}>
-          Completion counts prayers logged as completed or late. Qaza and missed
-          prayers stay visible so they can be recovered intentionally.
+          Tracker outcomes are intentionally simple: a prayer is either
+          completed or added to Qaza. Pending prayers are not counted.
         </AppText>
       </Surface>
     </Screen>
@@ -252,9 +246,8 @@ function getTrackerMetrics({
   logsByDate: Record<string, PrayerLogs>;
   qazaCounts: QazaCounts;
 }): TrackerMetrics {
-  const completedPrayers = countStatuses(logsByDate, ['completed', 'late']);
-  const latePrayers = countStatuses(logsByDate, ['late']);
-  const missedPrayers = countStatuses(logsByDate, ['missed', 'qaza']);
+  const completedPrayers = countStatuses(logsByDate, ['completed']);
+  const qazaPrayers = countStatuses(logsByDate, ['qaza']);
   const weekKeys = getDateRange(activeDateKey, 7);
   const thirtyDayKeys = getDateRange(activeDateKey, 30);
 
@@ -264,8 +257,7 @@ function getTrackerMetrics({
     sevenDayCompletionPercent: getCompletionPercent(weekKeys, logsByDate),
     thirtyDayCompletionPercent: getCompletionPercent(thirtyDayKeys, logsByDate),
     completedPrayers,
-    latePrayers,
-    missedPrayers,
+    qazaPrayers,
     trackedDays: countTrackedDays(logsByDate),
     qazaTotal: getTotalQaza(qazaCounts),
     highestQazaPrayer: getHighestQazaPrayer(qazaCounts),
@@ -368,11 +360,11 @@ function isCompleteDay(logs?: PrayerLogs): boolean {
 }
 
 function isCompletedStatus(status: PrayerLogStatus): boolean {
-  return status === 'completed' || status === 'late';
+  return status === 'completed';
 }
 
 function isLoggedStatus(status: PrayerLogStatus): boolean {
-  return status !== 'pending' && status !== 'upcoming';
+  return status === 'completed' || status === 'qaza';
 }
 
 function getHighestQazaPrayer(counts: QazaCounts): string {

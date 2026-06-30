@@ -36,13 +36,13 @@ export function useMissedPrayerSync(): void {
     }
 
     const previousDateKey = getPreviousPrayerDateKey(now);
-    const missedPrayers = getAutoMissedPrayers({
+    const qazaPrayers = getAutoMissedPrayers({
       logs: logsByDate[previousDateKey],
       dateKey: previousDateKey,
       processedMissedKeys,
     });
 
-    missedPrayers.forEach(prayer => {
+    qazaPrayers.forEach(prayer => {
       if (markMissedForQaza(previousDateKey, prayer)) {
         addMissed(prayer);
       }
