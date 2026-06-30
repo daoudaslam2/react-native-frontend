@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -15,6 +15,7 @@ import type { ObligatoryPrayerKey } from '../../types/prayer';
 import { getTotalQaza, type QazaCounts, useQazaStore } from '../qaza/qazaStore';
 import { useSettingsStore } from '../settings/settingsStore';
 import {
+  createInitialPrayerLogs,
   formatDateKey,
   getPrayerTrackingDateKey,
   type PrayerLogs,
@@ -46,6 +47,7 @@ export function PrayerTrackerScreen(): React.JSX.Element {
   const navigation = useNavigation<TrackerNavigation>();
   const now = useNow(60_000);
   const logsByDate = useTrackerStore(state => state.logsByDate);
+  const ensurePrayerDate = useTrackerStore(state => state.ensurePrayerDate);
   const qazaCounts = useQazaStore(state => state.counts);
   const calculationMethod = useSettingsStore(state => state.calculationMethod);
   const asrMethod = useSettingsStore(state => state.asrMethod);
@@ -62,6 +64,10 @@ export function PrayerTrackerScreen(): React.JSX.Element {
     logsByDate,
     qazaCounts,
   });
+
+  useEffect(() => {
+    ensurePrayerDate(activeDateKey);
+  }, [activeDateKey, ensurePrayerDate]);
 
   return (
     <Screen patterned contentContainerStyle={styles.screenContent}>
@@ -244,27 +250,41 @@ function getTrackerMetrics({
   logsByDate: Record<string, PrayerLogs>;
   qazaCounts: QazaCounts;
 }): TrackerMetrics {
-  const completedPrayers = countStatuses(logsByDate, ['completed']);
-  const qazaPrayers = countStatuses(logsByDate, ['qaza']);
-  const pendingPrayers = countStatuses(logsByDate, ['pending', 'upcoming']);
+  const effectiveLogsByDate = {
+    ...logsByDate,
+    [activeDateKey]: logsByDate[activeDateKey] ?? createInitialPrayerLogs(),
+  };
+  const activeLogs = effectiveLogsByDate[activeDateKey];
+  const completedPrayers = countStatuses(effectiveLogsByDate, ['completed']);
+  const qazaPrayers = countStatuses(effectiveLogsByDate, ['qaza']);
+  const pendingPrayers = countPrayerStatuses(activeLogs, [
+    'pending',
+    'upcoming',
+  ]);
   const weekKeys = getDateRange(activeDateKey, 7);
   const thirtyDayKeys = getDateRange(activeDateKey, 30);
 
   return {
-    currentStreakDays: getCurrentStreakDays(activeDateKey, logsByDate),
-    bestStreakDays: getBestStreakDays(logsByDate),
-    sevenDayCompletionPercent: getCompletionPercent(weekKeys, logsByDate),
-    thirtyDayCompletionPercent: getCompletionPercent(thirtyDayKeys, logsByDate),
+    currentStreakDays: getCurrentStreakDays(activeDateKey, effectiveLogsByDate),
+    bestStreakDays: getBestStreakDays(effectiveLogsByDate),
+    sevenDayCompletionPercent: getCompletionPercent(
+      weekKeys,
+      effectiveLogsByDate,
+    ),
+    thirtyDayCompletionPercent: getCompletionPercent(
+      thirtyDayKeys,
+      effectiveLogsByDate,
+    ),
     completedPrayers,
     qazaPrayers,
     pendingPrayers,
-    trackedDays: countTrackedDays(logsByDate),
+    trackedDays: countTrackedDays(effectiveLogsByDate),
     qazaTotal: getTotalQaza(qazaCounts),
     highestQazaPrayer: getHighestQazaPrayer(qazaCounts),
     week: weekKeys.map(key => ({
       key,
       label: formatWeekdayLabel(key),
-      percent: getDayCompletionPercent(logsByDate[key]),
+      percent: getDayCompletionPercent(effectiveLogsByDate[key]),
       isCurrent: key === activeDateKey,
     })),
   };
@@ -275,13 +295,17 @@ function countStatuses(
   statuses: ReadonlyArray<PrayerLogStatus>,
 ): number {
   return Object.values(logsByDate).reduce((total, logs) => {
-    return (
-      total +
-      OBLIGATORY_PRAYERS.filter(prayer =>
-        statuses.includes(logs[prayer].status),
-      ).length
-    );
+    return total + countPrayerStatuses(logs, statuses);
   }, 0);
+}
+
+function countPrayerStatuses(
+  logs: PrayerLogs,
+  statuses: ReadonlyArray<PrayerLogStatus>,
+): number {
+  return OBLIGATORY_PRAYERS.filter(prayer =>
+    statuses.includes(logs[prayer].status),
+  ).length;
 }
 
 function countTrackedDays(logsByDate: Record<string, PrayerLogs>): number {
