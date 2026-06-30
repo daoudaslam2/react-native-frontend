@@ -1,0 +1,94 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_prayer_small_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_card_bg"
+    android:paddingStart="22dp"
+    android:paddingTop="22dp"
+    android:paddingEnd="22dp"
+    android:paddingBottom="22dp">
+
+    <ImageView
+        android:id="@+id/widget_small_ring"
+        android:layout_width="118dp"
+        android:layout_height="118dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="-54dp"
+        android:layout_marginEnd="-48dp"
+        android:background="@drawable/widget_soft_ring"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/widget_small_current_prayer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:text="Asr"
+        android:textColor="@color/widget_text"
+        android:textSize="40sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_small_remaining"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/widget_small_current_prayer"
+        android:layout_marginTop="6dp"
+        android:includeFontPadding="false"
+        android:text="In 1h 45m"
+        android:textColor="@color/widget_primary"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <FrameLayout
+        android:id="@+id/widget_small_icon_bg"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/widget_green_circle"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/widget_small_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_namaz_asr" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_small_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_small_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:text="Next: Maghrib"
+            android:textColor="@color/widget_muted"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/widget_small_progress"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/widget_progress_track">
+
+            <TextView
+                android:id="@+id/widget_small_progress_fill"
+                android:layout_width="132dp"
+                android:layout_height="match_parent"
+                android:background="@drawable/widget_progress_fill" />
+        </FrameLayout>
+    </LinearLayout>
+</RelativeLayout>
