@@ -17,6 +17,12 @@ export function SettingsScreen(): React.JSX.Element {
       <SettingsSection title="General">
         <SettingsRow icon="palette" label="Theme" value={settings.theme} />
         <SettingsRow icon="language" label="Language" value={settings.language} />
+        <ToggleRow
+          icon="timer"
+          label="24-Hour Time"
+          value={settings.use24HourTime}
+          onValueChange={settings.toggleUse24HourTime}
+        />
       </SettingsSection>
 
       <SettingsSection title="Prayer Settings">

@@ -11,6 +11,8 @@ import { useTrackerStore } from '../tracker/trackerStore';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
+import { formatPrayerTime } from '../../utils/dateTime';
+import { useSettingsStore } from '../settings/settingsStore';
 
 type TimelinePrayer = PrayerTime & { key: ObligatoryPrayerKey };
 
@@ -21,6 +23,7 @@ export function HomeScreen(): React.JSX.Element {
     .filter(isTimelinePrayer);
   const logs = useTrackerStore(state => state.logs);
   const markPrayer = useTrackerStore(state => state.markPrayer);
+  const use24HourTime = useSettingsStore(state => state.use24HourTime);
 
   return (
     <Screen patterned contentContainerStyle={styles.screenContent}>
@@ -37,7 +40,10 @@ export function HomeScreen(): React.JSX.Element {
         currentPrayer={summary.currentPrayer}
         remainingTime={summary.remainingTime}
         nextPrayer={summary.nextPrayer}
-        nextPrayerTime={summary.nextPrayerTime}
+        nextPrayerTime={formatPrayerTime(
+          summary.nextPrayerTime,
+          use24HourTime,
+        )}
       />
 
       <View style={styles.section}>
@@ -47,6 +53,7 @@ export function HomeScreen(): React.JSX.Element {
             <TimelineRow
               key={prayer.id}
               prayer={prayer}
+              use24HourTime={use24HourTime}
               isMarkedComplete={logs[prayer.key].status === 'completed'}
               onMarkComplete={() => markPrayer(prayer.key, 'completed')}
             />
@@ -71,10 +78,12 @@ function HomeHeader(): React.JSX.Element {
 function TimelineRow({
   prayer,
   isMarkedComplete,
+  use24HourTime,
   onMarkComplete,
 }: {
   prayer: TimelinePrayer;
   isMarkedComplete: boolean;
+  use24HourTime: boolean;
   onMarkComplete: () => void;
 }): React.JSX.Element {
   const isCompleted = prayer.status === 'completed' || isMarkedComplete;
@@ -124,7 +133,7 @@ function TimelineRow({
           variant={isCurrent ? 'title' : 'body'}
           color={isCurrent ? 'onPrimary' : 'onSurface'}
           weight={isCurrent ? '700' : '400'}>
-          {prayer.time}
+          {formatPrayerTime(prayer.time, use24HourTime)}
         </AppText>
         {isCurrent ? (
           <Pressable

@@ -12,7 +12,9 @@ import type { MainTabParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
+import { formatPrayerTime } from '../../utils/dateTime';
 import { useQazaStore } from '../qaza/qazaStore';
+import { useSettingsStore } from '../settings/settingsStore';
 import {
   type PrayerLogStatus,
   useTrackerStore,
@@ -131,6 +133,7 @@ function TrackerPrayerRow({
   const log = useTrackerStore(state => state.logs[prayer]);
   const markPrayer = useTrackerStore(state => state.markPrayer);
   const qazaComplete = useQazaStore(state => state.completeOne);
+  const use24HourTime = useSettingsStore(state => state.use24HourTime);
   const isCompleted = log.status === 'completed';
   const isCurrent = prayer === 'dhuhr' && log.status === 'pending';
   const isUpcoming = log.status === 'upcoming';
@@ -151,7 +154,7 @@ function TrackerPrayerRow({
             {PRAYER_LABELS[prayer]}
           </AppText>
           <AppText variant="label" color="onSurfaceVariant">
-            {displayPrayerTime(prayer)}
+            {displayPrayerTime(prayer, use24HourTime)}
           </AppText>
         </View>
         {renderStatus(log.status)}
@@ -257,16 +260,19 @@ function renderStatus(status: PrayerLogStatus): React.JSX.Element {
   );
 }
 
-function displayPrayerTime(prayer: ObligatoryPrayerKey): string {
+function displayPrayerTime(
+  prayer: ObligatoryPrayerKey,
+  use24HourTime: boolean,
+): string {
   const times: Record<ObligatoryPrayerKey, string> = {
-    fajr: '5:12 AM',
-    dhuhr: '12:34 PM',
-    asr: '4:15 PM',
-    maghrib: '6:45 PM',
-    isha: '8:10 PM',
+    fajr: '05:12',
+    dhuhr: '12:34',
+    asr: '16:15',
+    maghrib: '18:45',
+    isha: '20:10',
   };
 
-  return times[prayer];
+  return formatPrayerTime(times[prayer], use24HourTime);
 }
 
 const styles = StyleSheet.create({

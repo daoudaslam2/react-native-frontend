@@ -9,8 +9,10 @@ interface SettingsState {
   calculationMethod: string;
   asrMethod: string;
   locationMode: string;
+  use24HourTime: boolean;
   adhanNotifications: boolean;
   qazaReminders: boolean;
+  toggleUse24HourTime: () => void;
   toggleAdhanNotifications: () => void;
   toggleQazaReminders: () => void;
 }
@@ -23,8 +25,11 @@ export const useSettingsStore = create<SettingsState>()(
       calculationMethod: 'Muslim World League (MWL)',
       asrMethod: 'Standard (Shafii, Hanbali, Maliki)',
       locationMode: 'Auto (Current Location)',
+      use24HourTime: false,
       adhanNotifications: true,
       qazaReminders: true,
+      toggleUse24HourTime: () =>
+        set(state => ({ use24HourTime: !state.use24HourTime })),
       toggleAdhanNotifications: () =>
         set(state => ({ adhanNotifications: !state.adhanNotifications })),
       toggleQazaReminders: () =>

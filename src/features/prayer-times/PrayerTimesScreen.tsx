@@ -13,10 +13,13 @@ import type {
   PrayerKey,
   PrayerTime,
 } from '../../types/prayer';
+import { formatPrayerTime } from '../../utils/dateTime';
+import { useSettingsStore } from '../settings/settingsStore';
 
 export function PrayerTimesScreen(): React.JSX.Element {
   const summary = prayerRepository.getSummary();
   const prayers = prayerRepository.getTodayPrayerTimes();
+  const use24HourTime = useSettingsStore(state => state.use24HourTime);
 
   return (
     <Screen>
@@ -43,7 +46,7 @@ export function PrayerTimesScreen(): React.JSX.Element {
       <View style={styles.list}>
         {prayers.map(prayer => (
           <View key={prayer.id}>
-            <PrayerTimeRow prayer={prayer} />
+            <PrayerTimeRow prayer={prayer} use24HourTime={use24HourTime} />
           </View>
         ))}
       </View>
@@ -51,7 +54,13 @@ export function PrayerTimesScreen(): React.JSX.Element {
   );
 }
 
-function PrayerTimeRow({ prayer }: { prayer: PrayerTime }): React.JSX.Element {
+function PrayerTimeRow({
+  prayer,
+  use24HourTime,
+}: {
+  prayer: PrayerTime;
+  use24HourTime: boolean;
+}): React.JSX.Element {
   const isCurrent = prayer.status === 'current';
   const isCompleted = prayer.status === 'completed';
   const prayerIcon = getPrayerIconName(prayer.key);
@@ -106,7 +115,7 @@ function PrayerTimeRow({ prayer }: { prayer: PrayerTime }): React.JSX.Element {
       <AppText
         variant={isCurrent ? 'headline' : 'headlineMobile'}
         color={isCurrent ? 'onPrimary' : 'onSurface'}>
-        {prayer.time}
+        {formatPrayerTime(prayer.time, use24HourTime)}
       </AppText>
     </View>
   );
