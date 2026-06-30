@@ -128,28 +128,29 @@ export function WidgetsScreen(): React.JSX.Element {
 
       <View style={styles.intro}>
         <AppText variant="bodyLarge" color="onSurfaceVariant" align="center">
-          Preview and add Android home screen widgets.
+          Preview Android home screen widgets. Long press a widget preview to
+          add it.
         </AppText>
       </View>
 
       <WidgetSection
         title="Small (2x2)"
         isAdding={pendingWidgetSize === 'small'}
-        onAddWidget={() => handleAddWidget('small')}>
+        onLongPress={() => handleAddWidget('small')}>
         <SmallWidgetPreview data={previewData} size={Math.min(previewWidth, 224)} />
       </WidgetSection>
 
       <WidgetSection
         title="Medium (4x2)"
         isAdding={pendingWidgetSize === 'medium'}
-        onAddWidget={() => handleAddWidget('medium')}>
+        onLongPress={() => handleAddWidget('medium')}>
         <MediumWidgetPreview data={previewData} width={previewWidth} />
       </WidgetSection>
 
       <WidgetSection
         title="Large (4x4)"
         isAdding={pendingWidgetSize === 'large'}
-        onAddWidget={() => handleAddWidget('large')}>
+        onLongPress={() => handleAddWidget('large')}>
         <LargeWidgetPreview
           data={previewData}
           width={previewWidth}
@@ -164,12 +165,12 @@ function WidgetSection({
   title,
   children,
   isAdding,
-  onAddWidget,
+  onLongPress,
 }: {
   title: string;
   children: React.ReactNode;
   isAdding: boolean;
-  onAddWidget: () => void;
+  onLongPress: () => void;
 }): React.JSX.Element {
   return (
     <View style={styles.section}>
@@ -182,41 +183,21 @@ function WidgetSection({
         style={styles.sectionTitle}>
         {title}
       </AppText>
-      {children}
-      <AddWidgetButton
-        isAdding={isAdding}
-        title={title}
-        onPress={onAddWidget}
-      />
+      <Pressable
+        accessibilityLabel={`Long press to add ${title} widget`}
+        accessibilityRole="button"
+        accessibilityState={{ busy: isAdding }}
+        delayLongPress={350}
+        disabled={isAdding}
+        onLongPress={onLongPress}
+        style={({ pressed }) => [
+          styles.previewPressable,
+          pressed && styles.previewPressed,
+          isAdding && styles.previewDisabled,
+        ]}>
+        {children}
+      </Pressable>
     </View>
-  );
-}
-
-function AddWidgetButton({
-  isAdding,
-  title,
-  onPress,
-}: {
-  isAdding: boolean;
-  title: string;
-  onPress: () => void;
-}): React.JSX.Element {
-  return (
-    <Pressable
-      accessibilityLabel={`Add ${title} widget`}
-      accessibilityRole="button"
-      disabled={isAdding}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.addWidgetButton,
-        pressed && styles.pressed,
-        isAdding && styles.addWidgetButtonDisabled,
-      ]}>
-      <Icon name="add" size={18} color={colors.onPrimary} />
-      <AppText variant="label" color="onPrimary" weight="700">
-        {isAdding ? 'Opening...' : 'Add Widget'}
-      </AppText>
-    </Pressable>
   );
 }
 
@@ -745,17 +726,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.primary,
   },
-  addWidgetButton: {
-    minHeight: 44,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
+  previewPressable: {
+    borderRadius: 28,
   },
-  addWidgetButtonDisabled: {
+  previewPressed: {
+    transform: [{ scale: 0.99 }],
+  },
+  previewDisabled: {
     opacity: 0.7,
   },
   mediumWidget: {
