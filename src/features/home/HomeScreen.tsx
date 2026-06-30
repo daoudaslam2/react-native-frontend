@@ -60,6 +60,8 @@ export function HomeScreen(): React.JSX.Element {
 
       <PrayerGradientCard
         currentPrayer={summary.currentPrayer}
+        isPrayerActive={summary.isPrayerActive}
+        countdownLabel={summary.countdownLabel}
         remainingTime={summary.remainingTime}
         nextPrayer={summary.nextPrayer}
         nextPrayerTime={formatPrayerTime(

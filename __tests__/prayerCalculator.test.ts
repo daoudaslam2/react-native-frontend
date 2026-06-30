@@ -3,28 +3,51 @@ import { calculatePrayerSchedule } from '../src/services/prayer/prayerCalculator
 import { formatPrayerTime } from '../src/utils/dateTime';
 
 describe('prayer calculator', () => {
-  it('uses previous Isha before Fajr and points to today Fajr', () => {
+  it('waits for Fajr after the 2 AM tracking cutoff', () => {
     const schedule = calculatePrayerSchedule({
       now: new Date('2026-06-30T02:00:00+05:00'),
     });
 
-    expect(schedule.summary.currentPrayer).toBe('Isha');
+    expect(schedule.summary.currentPrayer).toBe('Fajr');
+    expect(schedule.summary.isPrayerActive).toBe(false);
+    expect(schedule.summary.countdownLabel).toBe('Starts in');
     expect(schedule.summary.nextPrayer).toBe('Fajr');
     expect(
       schedule.prayers.find(prayer => prayer.key === 'fajr')?.status,
     ).toBe('next');
   });
 
-  it('uses Fajr as the active obligatory prayer before Dhuhr', () => {
+  it('uses Fajr as active only until sunrise', () => {
     const schedule = calculatePrayerSchedule({
       now: new Date('2026-06-30T05:00:00+05:00'),
     });
 
     expect(schedule.summary.currentPrayer).toBe('Fajr');
+    expect(schedule.summary.isPrayerActive).toBe(true);
+    expect(schedule.summary.countdownLabel).toBe('Ends in');
+    expect(schedule.summary.countdownEndTime).toBe('05:01');
     expect(schedule.summary.nextPrayer).toBe('Dhuhr');
     expect(
       schedule.prayers.find(prayer => prayer.key === 'fajr')?.status,
     ).toBe('current');
+  });
+
+  it('waits for Dhuhr after sunrise instead of keeping Fajr current', () => {
+    const schedule = calculatePrayerSchedule({
+      now: new Date('2026-06-30T06:00:00+05:00'),
+    });
+
+    expect(schedule.summary.currentPrayer).toBe('Dhuhr');
+    expect(schedule.summary.isPrayerActive).toBe(false);
+    expect(schedule.summary.countdownLabel).toBe('Starts in');
+    expect(schedule.summary.countdownStartTime).toBe('05:01');
+    expect(schedule.summary.nextPrayer).toBe('Dhuhr');
+    expect(
+      schedule.prayers.find(prayer => prayer.key === 'fajr')?.status,
+    ).toBe('past');
+    expect(
+      schedule.prayers.find(prayer => prayer.key === 'dhuhr')?.status,
+    ).toBe('next');
   });
 
   it('rolls the next prayer to tomorrow Fajr after Isha', () => {
@@ -33,6 +56,7 @@ describe('prayer calculator', () => {
     });
 
     expect(schedule.summary.currentPrayer).toBe('Isha');
+    expect(schedule.summary.isPrayerActive).toBe(true);
     expect(schedule.summary.nextPrayer).toBe('Fajr');
     expect(
       schedule.prayers.find(prayer => prayer.key === 'isha')?.status,

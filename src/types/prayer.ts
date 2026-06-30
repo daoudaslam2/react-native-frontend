@@ -32,6 +32,10 @@ export interface PrayerSummary {
   hijriDate: string;
   gregorianDate: string;
   currentPrayer: string;
+  isPrayerActive: boolean;
+  countdownLabel: string;
+  countdownStartTime: string;
+  countdownEndTime: string;
   nextPrayer: string;
   nextPrayerTime: string;
   remainingTime: string;

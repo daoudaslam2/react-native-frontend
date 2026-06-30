@@ -44,10 +44,21 @@ interface PrayerEntry {
   date: Date;
 }
 
-interface ObligatoryPrayerEntry {
+type DayOffset = -1 | 0 | 1;
+
+interface PrayerWindow {
   key: ObligatoryPrayerKey;
-  date: Date;
-  dayOffset: -1 | 0 | 1;
+  start: Date;
+  end: Date;
+  dayOffset: DayOffset;
+}
+
+interface PrayerWindowState {
+  display: PrayerWindow;
+  next: PrayerWindow;
+  isPrayerActive: boolean;
+  countdownStart: Date;
+  countdownEnd: Date;
 }
 
 interface PrayerSchedule {
@@ -92,19 +103,28 @@ export function calculatePrayerSchedule(
     asrMethod,
     1,
   );
+  const dayAfterTomorrowPrayerTimes = createPrayerTimes(
+    scheduleDate,
+    calculationMethod,
+    asrMethod,
+    2,
+  );
 
   const todayEntries = createPrayerEntries(todayPrayerTimes);
   const yesterdayEntries = createPrayerEntries(yesterdayPrayerTimes);
   const tomorrowEntries = createPrayerEntries(tomorrowPrayerTimes);
-  const currentNext = getCurrentNextObligatoryPrayer(
-    now,
-    yesterdayEntries,
-    todayEntries,
-    tomorrowEntries,
+  const dayAfterTomorrowEntries = createPrayerEntries(
+    dayAfterTomorrowPrayerTimes,
   );
+  const todayWindows = createPrayerWindows(todayEntries, tomorrowEntries, 0);
+  const prayerState = getPrayerWindowState(now, [
+    ...createPrayerWindows(yesterdayEntries, todayEntries, -1),
+    ...todayWindows,
+    ...createPrayerWindows(tomorrowEntries, dayAfterTomorrowEntries, 1),
+  ]);
   const timestamp = now.toISOString();
   const prayers = todayEntries.map(entry =>
-    createPrayerTime(entry, now, currentNext, timestamp),
+    createPrayerTime(entry, now, prayerState, todayWindows, timestamp),
   );
 
   return {
@@ -116,14 +136,24 @@ export function calculatePrayerSchedule(
         scheduleDate,
         FIXED_PRAYER_LOCATION.timeZone,
       ),
-      currentPrayer: PRAYER_LABELS[currentNext.current.key],
-      nextPrayer: PRAYER_LABELS[currentNext.next.key],
+      currentPrayer: PRAYER_LABELS[prayerState.display.key],
+      isPrayerActive: prayerState.isPrayerActive,
+      countdownLabel: prayerState.isPrayerActive ? 'Ends in' : 'Starts in',
+      countdownStartTime: toPrayerTimeValue(
+        prayerState.countdownStart,
+        FIXED_PRAYER_LOCATION.timeZone,
+      ),
+      countdownEndTime: toPrayerTimeValue(
+        prayerState.countdownEnd,
+        FIXED_PRAYER_LOCATION.timeZone,
+      ),
+      nextPrayer: PRAYER_LABELS[prayerState.next.key],
       nextPrayerTime: toPrayerTimeValue(
-        currentNext.next.date,
+        prayerState.next.start,
         FIXED_PRAYER_LOCATION.timeZone,
       ),
       remainingTime: formatDuration(
-        currentNext.next.date.getTime() - now.getTime(),
+        prayerState.countdownEnd.getTime() - now.getTime(),
       ),
       calculationMethod: getCalculationMethodLabel(calculationMethod),
       distanceToMakkahKm: calculateDistanceKm(
@@ -209,65 +239,82 @@ function createPrayerEntries(prayerTimes: PrayerTimes): PrayerEntry[] {
   ];
 }
 
-function getCurrentNextObligatoryPrayer(
-  now: Date,
-  yesterdayEntries: PrayerEntry[],
-  todayEntries: PrayerEntry[],
-  tomorrowEntries: PrayerEntry[],
-): { current: ObligatoryPrayerEntry; next: ObligatoryPrayerEntry } {
-  const obligatoryEntries: ObligatoryPrayerEntry[] = [
+function createPrayerWindows(
+  entries: PrayerEntry[],
+  nextDayEntries: PrayerEntry[],
+  dayOffset: DayOffset,
+): PrayerWindow[] {
+  const fajr = getPrayerDate(entries, 'fajr');
+  const sunrise = getPrayerDate(entries, 'sunrise');
+  const dhuhr = getPrayerDate(entries, 'dhuhr');
+  const asr = getPrayerDate(entries, 'asr');
+  const maghrib = getPrayerDate(entries, 'maghrib');
+  const isha = getPrayerDate(entries, 'isha');
+  const nextFajr = getPrayerDate(nextDayEntries, 'fajr');
+
+  return [
+    { key: 'fajr', start: fajr, end: sunrise, dayOffset },
+    { key: 'dhuhr', start: dhuhr, end: asr, dayOffset },
+    { key: 'asr', start: asr, end: maghrib, dayOffset },
+    { key: 'maghrib', start: maghrib, end: isha, dayOffset },
     {
       key: 'isha',
-      date: getPrayerDate(yesterdayEntries, 'isha'),
-      dayOffset: -1,
-    },
-    ...toObligatoryEntries(todayEntries, 0),
-    {
-      key: 'fajr',
-      date: getPrayerDate(tomorrowEntries, 'fajr'),
-      dayOffset: 1,
+      start: isha,
+      end: calculateIslamicMidnight(maghrib, nextFajr),
+      dayOffset,
     },
   ];
-  const nowTime = now.getTime();
-  const current =
-    [...obligatoryEntries]
-      .reverse()
-      .find(entry => entry.date.getTime() <= nowTime) ?? obligatoryEntries[0];
-  const next =
-    obligatoryEntries.find(entry => entry.date.getTime() > nowTime) ??
-    obligatoryEntries[obligatoryEntries.length - 1];
-
-  return { current, next };
 }
 
-function toObligatoryEntries(
-  entries: PrayerEntry[],
-  dayOffset: 0,
-): ObligatoryPrayerEntry[] {
-  return entries
-    .filter((entry): entry is PrayerEntry & { key: ObligatoryPrayerKey } => {
-      return entry.key !== 'sunrise';
-    })
-    .map(entry => ({
-      key: entry.key,
-      date: entry.date,
-      dayOffset,
-    }));
+function getPrayerWindowState(
+  now: Date,
+  windows: PrayerWindow[],
+): PrayerWindowState {
+  const orderedWindows = [...windows].sort(
+    (first, second) => first.start.getTime() - second.start.getTime(),
+  );
+  const nowTime = now.getTime();
+  const activeWindow = orderedWindows.find(window => {
+    return window.start.getTime() <= nowTime && nowTime < window.end.getTime();
+  });
+  const nextWindow =
+    orderedWindows.find(window => window.start.getTime() > nowTime) ??
+    orderedWindows[orderedWindows.length - 1];
+
+  if (activeWindow) {
+    return {
+      display: activeWindow,
+      next: nextWindow,
+      isPrayerActive: true,
+      countdownStart: activeWindow.start,
+      countdownEnd: activeWindow.end,
+    };
+  }
+
+  const previousWindow = [...orderedWindows]
+    .reverse()
+    .find(window => window.end.getTime() <= nowTime);
+
+  return {
+    display: nextWindow,
+    next: nextWindow,
+    isPrayerActive: false,
+    countdownStart: previousWindow?.end ?? now,
+    countdownEnd: nextWindow.start,
+  };
 }
 
 function createPrayerTime(
   entry: PrayerEntry,
   now: Date,
-  currentNext: {
-    current: ObligatoryPrayerEntry;
-    next: ObligatoryPrayerEntry;
-  },
+  prayerState: PrayerWindowState,
+  todayWindows: PrayerWindow[],
   timestamp: string,
 ): PrayerTime {
   const time = toPrayerTimeValue(entry.date, FIXED_PRAYER_LOCATION.timeZone);
   const status =
     entry.key !== 'sunrise'
-      ? getObligatoryPrayerStatus(entry, now, currentNext)
+      ? getObligatoryPrayerStatus(entry, now, prayerState, todayWindows)
       : entry.date.getTime() < now.getTime()
         ? 'past'
         : 'upcoming';
@@ -288,23 +335,28 @@ function createPrayerTime(
 function getObligatoryPrayerStatus(
   entry: PrayerEntry,
   now: Date,
-  currentNext: {
-    current: ObligatoryPrayerEntry;
-    next: ObligatoryPrayerEntry;
-  },
+  prayerState: PrayerWindowState,
+  todayWindows: PrayerWindow[],
 ): PrayerTime['status'] {
   if (
-    currentNext.current.dayOffset === 0 &&
-    currentNext.current.key === entry.key
+    prayerState.isPrayerActive &&
+    prayerState.display.dayOffset === 0 &&
+    prayerState.display.key === entry.key
   ) {
     return 'current';
   }
 
-  if (currentNext.next.dayOffset === 0 && currentNext.next.key === entry.key) {
+  if (prayerState.next.dayOffset === 0 && prayerState.next.key === entry.key) {
     return 'next';
   }
 
-  return entry.date.getTime() < now.getTime() ? 'past' : 'upcoming';
+  const prayerWindow = todayWindows.find(window => window.key === entry.key);
+
+  if (prayerWindow && prayerWindow.end.getTime() <= now.getTime()) {
+    return 'past';
+  }
+
+  return 'upcoming';
 }
 
 function getPrayerDate(entries: PrayerEntry[], prayer: PrayerKey): Date {
@@ -315,6 +367,10 @@ function getPrayerDate(entries: PrayerEntry[], prayer: PrayerKey): Date {
   }
 
   return entry.date;
+}
+
+function calculateIslamicMidnight(maghrib: Date, nextFajr: Date): Date {
+  return new Date(maghrib.getTime() + (nextFajr.getTime() - maghrib.getTime()) / 2);
 }
 
 function formatPrayerDateKey(date: Date): string {

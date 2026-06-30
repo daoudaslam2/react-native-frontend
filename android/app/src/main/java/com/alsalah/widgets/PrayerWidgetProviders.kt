@@ -52,12 +52,30 @@ data class NamazTime(
     val time: Date,
 )
 
+data class DayPrayerTimes(
+    val fajr: Date,
+    val sunrise: Date,
+    val dhuhr: Date,
+    val asr: Date,
+    val maghrib: Date,
+    val isha: Date,
+)
+
+data class NamazWindow(
+    val namaz: Namaz,
+    val start: Date,
+    val end: Date,
+)
+
 data class PrayerWidgetData(
     val now: Date,
     val current: NamazTime,
     val next: NamazTime,
     val timeline: List<NamazTime>,
     val currentIndex: Int,
+    val isPrayerActive: Boolean,
+    val countdownStart: Date,
+    val countdownEnd: Date,
 )
 
 abstract class PrayerWidgetProvider(
@@ -219,7 +237,7 @@ private fun renderSmallWidget(
 ) {
     views.setTextViewText(R.id.widget_small_current_prayer, data.current.namaz.label)
     views.setTextViewText(R.id.widget_small_remaining, formatSmallRemaining(data))
-    views.setTextViewText(R.id.widget_small_next, "Next: ${data.next.namaz.label}")
+    views.setTextViewText(R.id.widget_small_next, formatSmallFooter(data))
     views.setImageViewResource(R.id.widget_small_icon, data.current.namaz.icon)
     views.setProgressBar(R.id.widget_small_progress, 1_000, calculateIntervalProgress(data), false)
 }
@@ -235,7 +253,7 @@ private fun renderMediumWidget(
     }
 
     views.setTextViewText(R.id.widget_medium_time, formatTime(data.now))
-    views.setTextViewText(R.id.widget_medium_status, "Next: ${data.next.namaz.label}")
+    views.setTextViewText(R.id.widget_medium_status, formatMediumStatus(data))
     views.setTextViewText(R.id.widget_medium_place, LOCATION_LABEL)
     views.setTextViewText(R.id.widget_medium_hijri, formatHijriDate(data.now))
 
@@ -332,25 +350,64 @@ private fun calculateWidgetData(now: Date = Date()): PrayerWidgetData {
     val trackingDate = getTrackingDate(now)
     val yesterday = addDays(trackingDate, -1)
     val tomorrow = addDays(trackingDate, 1)
-    val sequence = listOf(prayerTimesForDate(yesterday).last()) +
-        prayerTimesForDate(trackingDate) +
-        prayerTimesForDate(tomorrow)
-    val currentIndex = sequence.indexOfLast { !it.time.after(now) }
+    val dayAfterTomorrow = addDays(trackingDate, 2)
+    val timeline = prayerTimesForDate(trackingDate)
+    val windows = prayerWindowsForDate(yesterday, trackingDate) +
+        prayerWindowsForDate(trackingDate, tomorrow) +
+        prayerWindowsForDate(tomorrow, dayAfterTomorrow)
+    val activeWindow = windows.firstOrNull { !now.before(it.start) && now.before(it.end) }
+    val nextWindow = windows.firstOrNull { it.start.after(now) } ?: windows.last()
+    val displayWindow = activeWindow ?: nextWindow
+    val previousWindow = windows.asReversed().firstOrNull { !it.end.after(now) }
+    val displayTime = NamazTime(displayWindow.namaz, displayWindow.start)
+    val nextTime = NamazTime(nextWindow.namaz, nextWindow.start)
+    val currentIndex = timeline.indexOfLast { !it.time.after(displayWindow.start) }
         .takeIf { it >= 0 }
+        ?: timeline.indexOfFirst { it.namaz == displayWindow.namaz }.takeIf { it >= 0 }
         ?: 0
-    val next = sequence.firstOrNull { it.time.after(now) }
-        ?: sequence[(currentIndex + 1).coerceAtMost(sequence.lastIndex)]
 
     return PrayerWidgetData(
         now = now,
-        current = sequence[currentIndex],
-        next = next,
-        timeline = sequence,
-        currentIndex = currentIndex,
+        current = displayTime,
+        next = nextTime,
+        timeline = timeline,
+        currentIndex = currentIndex.coerceIn(0, timeline.lastIndex),
+        isPrayerActive = activeWindow != null,
+        countdownStart = activeWindow?.start ?: previousWindow?.end ?: now,
+        countdownEnd = activeWindow?.end ?: nextWindow.start,
     )
 }
 
 private fun prayerTimesForDate(date: Date): List<NamazTime> {
+    val prayerTimes = dayPrayerTimesForDate(date)
+
+    return listOf(
+        NamazTime(Namaz.FAJR, prayerTimes.fajr),
+        NamazTime(Namaz.DHUHR, prayerTimes.dhuhr),
+        NamazTime(Namaz.ASR, prayerTimes.asr),
+        NamazTime(Namaz.MAGHRIB, prayerTimes.maghrib),
+        NamazTime(Namaz.ISHA, prayerTimes.isha),
+    )
+}
+
+private fun prayerWindowsForDate(date: Date, nextDate: Date): List<NamazWindow> {
+    val prayerTimes = dayPrayerTimesForDate(date)
+    val nextPrayerTimes = dayPrayerTimesForDate(nextDate)
+
+    return listOf(
+        NamazWindow(Namaz.FAJR, prayerTimes.fajr, prayerTimes.sunrise),
+        NamazWindow(Namaz.DHUHR, prayerTimes.dhuhr, prayerTimes.asr),
+        NamazWindow(Namaz.ASR, prayerTimes.asr, prayerTimes.maghrib),
+        NamazWindow(Namaz.MAGHRIB, prayerTimes.maghrib, prayerTimes.isha),
+        NamazWindow(
+            Namaz.ISHA,
+            prayerTimes.isha,
+            calculateIslamicMidnight(prayerTimes.maghrib, nextPrayerTimes.fajr),
+        ),
+    )
+}
+
+private fun dayPrayerTimesForDate(date: Date): DayPrayerTimes {
     val params = CalculationMethod.KARACHI.getParameters()
     params.madhab = Madhab.HANAFI
 
@@ -360,13 +417,18 @@ private fun prayerTimesForDate(date: Date): List<NamazTime> {
         params,
     )
 
-    return listOf(
-        NamazTime(Namaz.FAJR, truncateToMinute(prayerTimes.fajr)),
-        NamazTime(Namaz.DHUHR, truncateToMinute(prayerTimes.dhuhr)),
-        NamazTime(Namaz.ASR, truncateToMinute(prayerTimes.asr)),
-        NamazTime(Namaz.MAGHRIB, truncateToMinute(prayerTimes.maghrib)),
-        NamazTime(Namaz.ISHA, truncateToMinute(prayerTimes.isha)),
+    return DayPrayerTimes(
+        fajr = truncateToMinute(prayerTimes.fajr),
+        sunrise = truncateToMinute(prayerTimes.sunrise),
+        dhuhr = truncateToMinute(prayerTimes.dhuhr),
+        asr = truncateToMinute(prayerTimes.asr),
+        maghrib = truncateToMinute(prayerTimes.maghrib),
+        isha = truncateToMinute(prayerTimes.isha),
     )
+}
+
+private fun calculateIslamicMidnight(maghrib: Date, nextFajr: Date): Date {
+    return Date(maghrib.time + ((nextFajr.time - maghrib.time) / 2))
 }
 
 private fun getTrackingDate(now: Date): Date {
@@ -450,15 +512,43 @@ private fun formatHijriDate(date: Date): String {
 }
 
 private fun formatRemaining(data: PrayerWidgetData): String {
-    return "In ${formatRemainingDuration(data)}"
+    val duration = formatRemainingDuration(data)
+
+    return if (data.isPrayerActive) {
+        "$duration remaining"
+    } else {
+        "In $duration"
+    }
 }
 
 private fun formatSmallRemaining(data: PrayerWidgetData): String {
-    return "${formatRemainingDuration(data)} remaining"
+    val duration = formatRemainingDuration(data)
+
+    return if (data.isPrayerActive) {
+        "$duration remaining"
+    } else {
+        "In $duration"
+    }
+}
+
+private fun formatSmallFooter(data: PrayerWidgetData): String {
+    return if (data.isPrayerActive) {
+        "Next: ${data.next.namaz.label}"
+    } else {
+        "Starts: ${formatTime(data.next.time)}"
+    }
+}
+
+private fun formatMediumStatus(data: PrayerWidgetData): String {
+    return if (data.isPrayerActive) {
+        "Next: ${data.next.namaz.label}"
+    } else {
+        "In ${formatRemainingDuration(data)}"
+    }
 }
 
 private fun formatRemainingDuration(data: PrayerWidgetData): String {
-    val remainingMillis = (data.next.time.time - data.now.time).coerceAtLeast(0)
+    val remainingMillis = (data.countdownEnd.time - data.now.time).coerceAtLeast(0)
     val totalMinutes = remainingMillis / 60_000
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
@@ -470,13 +560,13 @@ private fun formatRemainingDuration(data: PrayerWidgetData): String {
 }
 
 private fun calculateIntervalProgress(data: PrayerWidgetData): Int {
-    val totalMillis = data.next.time.time - data.current.time.time
+    val totalMillis = data.countdownEnd.time - data.countdownStart.time
 
     if (totalMillis <= 0) {
         return 0
     }
 
-    val elapsedMillis = (data.now.time - data.current.time.time).coerceIn(0, totalMillis)
+    val elapsedMillis = (data.now.time - data.countdownStart.time).coerceIn(0, totalMillis)
 
     return ((elapsedMillis * 1_000) / totalMillis).toInt()
 }

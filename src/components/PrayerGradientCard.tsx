@@ -7,6 +7,8 @@ import { AppText } from './AppText';
 
 interface PrayerGradientCardProps {
   currentPrayer: string;
+  isPrayerActive: boolean;
+  countdownLabel: string;
   remainingTime: string;
   nextPrayer: string;
   nextPrayerTime: string;
@@ -14,6 +16,8 @@ interface PrayerGradientCardProps {
 
 export function PrayerGradientCard({
   currentPrayer,
+  isPrayerActive,
+  countdownLabel,
   remainingTime,
   nextPrayer,
   nextPrayerTime,
@@ -31,7 +35,7 @@ export function PrayerGradientCard({
       </Svg>
       <View style={styles.currentBadge}>
         <AppText variant="labelSmall" color="primary" transform="uppercase">
-          Current
+          {isPrayerActive ? 'Current' : 'Next'}
         </AppText>
       </View>
       <AppText variant="display" color="onSurface" align="center">
@@ -41,7 +45,7 @@ export function PrayerGradientCard({
         <View style={styles.outerRing} />
         <View style={styles.clockInner}>
           <AppText variant="title" color="onSurfaceVariant">
-            Ends in
+            {countdownLabel}
           </AppText>
           <AppText variant="headline" color="primary" weight="700">
             {remainingTime}
@@ -54,7 +58,9 @@ export function PrayerGradientCard({
           variant="body"
           color="onSurfaceVariant"
           style={styles.nextText}>
-          Next: {nextPrayer} at {nextPrayerTime}
+          {isPrayerActive
+            ? `Next: ${nextPrayer} at ${nextPrayerTime}`
+            : `${nextPrayer} starts at ${nextPrayerTime}`}
         </AppText>
       </View>
     </View>

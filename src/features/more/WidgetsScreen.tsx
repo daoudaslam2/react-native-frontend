@@ -36,12 +36,12 @@ interface WidgetPreviewData {
   current: WidgetPrayer;
   next: WidgetPrayer;
   prayers: WidgetPrayer[];
+  isPrayerActive: boolean;
   currentTime: string;
   displayDate: string;
   hijriDate: string;
   location: string;
-  remainingDuration: string;
-  remainingTime: string;
+  countdownText: string;
   progressPercent: number;
 }
 
@@ -72,6 +72,9 @@ export function WidgetsScreen(): React.JSX.Element {
     currentPrayerName: summary.currentPrayer,
     nextPrayerName: summary.nextPrayer,
     nextPrayerTime: summary.nextPrayerTime,
+    isPrayerActive: summary.isPrayerActive,
+    countdownStartTime: summary.countdownStartTime,
+    countdownEndTime: summary.countdownEndTime,
     hijriDate: summary.hijriDate,
     remainingTime: summary.remainingTime,
     use24HourTime,
@@ -235,7 +238,7 @@ function SmallWidgetPreview({
           color="primary"
           weight="700"
           style={styles.smallRemaining}>
-          {data.remainingDuration} remaining
+          {data.countdownText}
         </AppText>
       </View>
       <View style={styles.smallFooter}>
@@ -244,7 +247,9 @@ function SmallWidgetPreview({
           color="onSurfaceVariant"
           weight="700"
           style={styles.smallNext}>
-          Next: {data.next.name}
+          {data.isPrayerActive
+            ? `Next: ${data.next.name}`
+            : `Starts: ${formatPrayerTime(data.next.time, true)}`}
         </AppText>
         <View style={styles.progressTrack}>
           <View
@@ -275,11 +280,13 @@ function MediumWidgetPreview({
             {data.currentTime}
           </AppText>
           <AppText
-            variant="bodyLarge"
-            color="primary"
-            weight="700"
-            style={styles.mediumStatus}>
-            Next: {data.next.name}
+          variant="bodyLarge"
+          color="primary"
+          weight="700"
+          style={styles.mediumStatus}>
+            {data.isPrayerActive
+              ? `Next: ${data.next.name}`
+              : data.countdownText}
           </AppText>
         </View>
         <View style={styles.mediumLocation}>
@@ -395,7 +402,7 @@ function LargeWidgetPreview({
               color="primary"
               weight="700"
               style={styles.largeCurrentRemaining}>
-              {data.remainingTime}
+              {data.countdownText}
             </AppText>
           </View>
           <AppText variant="title" weight="700" style={styles.largeCurrentTime}>
@@ -474,6 +481,9 @@ function createPreviewData({
   currentPrayerName,
   nextPrayerName,
   nextPrayerTime,
+  isPrayerActive,
+  countdownStartTime,
+  countdownEndTime,
   hijriDate,
   remainingTime,
   use24HourTime,
@@ -483,13 +493,19 @@ function createPreviewData({
   currentPrayerName: string;
   nextPrayerName: string;
   nextPrayerTime: string;
+  isPrayerActive: boolean;
+  countdownStartTime: string;
+  countdownEndTime: string;
   hijriDate: string;
   remainingTime: string;
   use24HourTime: boolean;
 }): WidgetPreviewData {
+  const displayPrayerName = isPrayerActive ? currentPrayerName : nextPrayerName;
   const current =
-    prayers.find(prayer => prayer.status === 'current') ??
-    prayers.find(prayer => prayer.name === currentPrayerName) ??
+    prayers.find(prayer =>
+      isPrayerActive ? prayer.status === 'current' : prayer.status === 'next',
+    ) ??
+    prayers.find(prayer => prayer.name === displayPrayerName) ??
     prayers[0];
   const nextFromSchedule =
     prayers.find(prayer => prayer.status === 'next') ??
@@ -509,6 +525,7 @@ function createPreviewData({
     current,
     next,
     prayers,
+    isPrayerActive,
     currentTime: formatPrayerTime(now, use24HourTime, FIXED_PRAYER_LOCATION.timeZone),
     displayDate: new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
@@ -518,9 +535,12 @@ function createPreviewData({
     }).format(now),
     hijriDate: compactHijriDate(hijriDate),
     location: 'Lahore, PK',
-    remainingDuration: formatWidgetRemainingDuration(remainingTime),
-    remainingTime: formatWidgetRemaining(remainingTime),
-    progressPercent: calculatePreviewProgress(now, current, next),
+    countdownText: formatWidgetCountdown(remainingTime, isPrayerActive),
+    progressPercent: calculatePreviewProgress(
+      now,
+      countdownStartTime,
+      countdownEndTime,
+    ),
   };
 }
 
@@ -550,8 +570,13 @@ function compactHijriDate(hijriDate: string): string {
   return hijriDate.replace(' AH', '');
 }
 
-function formatWidgetRemaining(remainingTime: string): string {
-  return `In ${formatWidgetRemainingDuration(remainingTime)}`;
+function formatWidgetCountdown(
+  remainingTime: string,
+  isPrayerActive: boolean,
+): string {
+  const duration = formatWidgetRemainingDuration(remainingTime);
+
+  return isPrayerActive ? `${duration} remaining` : `In ${duration}`;
 }
 
 function formatWidgetRemainingDuration(remainingTime: string): string {
@@ -568,29 +593,29 @@ function formatWidgetRemainingDuration(remainingTime: string): string {
 
 function calculatePreviewProgress(
   now: Date,
-  current: WidgetPrayer,
-  next: WidgetPrayer,
+  countdownStartTime: string,
+  countdownEndTime: string,
 ): number {
-  const currentMinutes = toTimeMinutes(current.time);
-  let nextMinutes = toTimeMinutes(next.time);
+  const startMinutes = toTimeMinutes(countdownStartTime);
+  let endMinutes = toTimeMinutes(countdownEndTime);
   let nowMinutes = getLahoreMinutes(now);
 
-  if (nextMinutes <= currentMinutes) {
-    nextMinutes += 24 * 60;
+  if (endMinutes <= startMinutes) {
+    endMinutes += 24 * 60;
   }
 
-  if (nowMinutes < currentMinutes) {
+  if (nowMinutes < startMinutes) {
     nowMinutes += 24 * 60;
   }
 
-  const totalMinutes = nextMinutes - currentMinutes;
+  const totalMinutes = endMinutes - startMinutes;
 
   if (totalMinutes <= 0) {
     return 0;
   }
 
   const elapsedMinutes = Math.min(
-    Math.max(nowMinutes - currentMinutes, 0),
+    Math.max(nowMinutes - startMinutes, 0),
     totalMinutes,
   );
 
@@ -608,7 +633,7 @@ function getLahoreMinutes(date: Date): number {
   const hour = Number(parts.find(part => part.type === 'hour')?.value ?? 0);
   const minute = Number(parts.find(part => part.type === 'minute')?.value ?? 0);
 
-  return hour * 60 + minute;
+  return (hour === 24 ? 0 : hour) * 60 + minute;
 }
 
 function toTimeMinutes(time: string): number {

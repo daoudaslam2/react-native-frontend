@@ -85,7 +85,9 @@ export function getZonedHour(date: Date, timeZone: string): number {
     timeZone,
   }).formatToParts(date);
 
-  return getNumericPart(parts, 'hour');
+  const hour = getNumericPart(parts, 'hour');
+
+  return hour === 24 ? 0 : hour;
 }
 
 function parsePrayerTime(time: string): dayjs.Dayjs {
