@@ -17,17 +17,9 @@ export interface PrayerQueryOptions {
 }
 
 const trackerStats: PrayerTrackerStats = {
-  currentStreakDays: 12,
-  monthlyCompletionPercent: 92,
-  weeklyCompletion: [
-    { day: 'M', percent: 60 },
-    { day: 'T', percent: 80 },
-    { day: 'W', percent: 100 },
-    { day: 'T', percent: 100 },
-    { day: 'F', percent: 40 },
-    { day: 'S', percent: 70 },
-    { day: 'S', percent: 20, isToday: true },
-  ],
+  currentStreakDays: 0,
+  monthlyCompletionPercent: 0,
+  weeklyCompletion: [],
 };
 
 export interface PrayerRepository {
