@@ -5,6 +5,7 @@ import {
   View,
   type ScrollViewProps,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '../theme';
 
@@ -19,6 +20,9 @@ export function Screen({
   contentContainerStyle,
   ...rest
 }: ScreenProps): React.JSX.Element {
+  const insets = useSafeAreaInsets();
+  const paddingTop = insets.top + spacing.md;
+
   return (
     <View style={styles.container}>
       {patterned ? <PatternOverlay /> : null}
@@ -26,7 +30,11 @@ export function Screen({
         {...rest}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.content, contentContainerStyle]}>
+        contentContainerStyle={[
+          styles.content,
+          contentContainerStyle,
+          { paddingTop },
+        ]}>
         {children}
       </ScrollView>
     </View>

@@ -19,6 +19,7 @@ export type IconName =
   | 'close'
   | 'cloud'
   | 'compass'
+  | 'editList'
   | 'fire'
   | 'home'
   | 'info'
@@ -145,6 +146,15 @@ function renderIcon(
         <>
           <Circle cx="12" cy="12" r="9" {...strokeProps} />
           <Path d="M15.5 8.5 13.7 13.7 8.5 15.5l1.8-5.2 5.2-1.8Z" fill={fillColor} stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      );
+    case 'editList':
+      return (
+        <>
+          <Line x1="4" y1="7" x2="14" y2="7" {...strokeProps} />
+          <Line x1="4" y1="12" x2="12" y2="12" {...strokeProps} />
+          <Line x1="4" y1="17" x2="9" y2="17" {...strokeProps} />
+          <Path d="M14.5 18.5 20 13l-2.5-2.5-5.5 5.5-.7 3.2 3.2-.7Z" fill={fillColor} stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
         </>
       );
     case 'fire':

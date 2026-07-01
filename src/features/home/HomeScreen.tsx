@@ -66,7 +66,9 @@ export function HomeScreen(): React.JSX.Element {
       <HomeHeader />
 
       <View style={styles.greeting}>
-        <AppText variant="title">As-salamu alaykum, User</AppText>
+        <AppText variant="title" weight="700">
+          As-salamu alaykum, User
+        </AppText>
         <AppText variant="body" color="onSurfaceVariant">
           {summary.hijriDate} • {summary.gregorianDate}
         </AppText>
@@ -85,7 +87,9 @@ export function HomeScreen(): React.JSX.Element {
       />
 
       <View style={styles.section}>
-        <AppText variant="title">Today's Timeline</AppText>
+        <AppText variant="title" weight="700">
+          Today's Timeline
+        </AppText>
         <View style={styles.list}>
           {prayers.map(prayer => (
             <TimelineRow

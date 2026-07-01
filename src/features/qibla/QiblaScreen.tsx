@@ -40,7 +40,9 @@ export function QiblaScreen(): React.JSX.Element {
             Fixed Location
           </AppText>
         </View>
-        <AppText variant="title">{summary.location}</AppText>
+        <AppText variant="title" weight="700">
+          {summary.location}
+        </AppText>
         <AppText variant="body" color="outline">
           {summary.distanceToMakkahKm.toLocaleString()} km to Makkah
         </AppText>
@@ -52,7 +54,7 @@ export function QiblaScreen(): React.JSX.Element {
         <View style={styles.calibrationIcon}>
           <Icon name="rotate" color={colors.outline} />
         </View>
-        <AppText variant="title" align="center">
+        <AppText variant="title" weight="700" align="center">
           Needs Calibration?
         </AppText>
         <AppText variant="body" color="onSurfaceVariant" align="center">

@@ -53,7 +53,9 @@ export function MoreScreen(): React.JSX.Element {
           </AppText>
         </View>
         <View style={styles.headerText}>
-          <AppText variant="headlineMobile">More</AppText>
+          <AppText variant="headlineMobile" weight="700">
+            More
+          </AppText>
           <AppText variant="bodyLarge" color="onSurfaceVariant">
             Tools, preferences and account options
           </AppText>
@@ -62,7 +64,9 @@ export function MoreScreen(): React.JSX.Element {
 
       <Surface style={styles.profileCard} radiusSize="lg">
         <View style={styles.profileCopy}>
-          <AppText variant="title">Local Profile</AppText>
+          <AppText variant="title" weight="700">
+            Local Profile
+          </AppText>
           <AppText variant="body" color="onSurfaceVariant">
             Al-Salah is running locally with dummy data. Sync can be added later
             without changing the screen layer.

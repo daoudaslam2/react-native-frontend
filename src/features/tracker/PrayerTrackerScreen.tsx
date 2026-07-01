@@ -71,7 +71,9 @@ export function PrayerTrackerScreen(): React.JSX.Element {
   return (
     <Screen patterned contentContainerStyle={styles.screenContent}>
       <View style={styles.header}>
-        <AppText variant="display">Tracker</AppText>
+        <AppText variant="display" weight="700">
+          Tracker
+        </AppText>
         <AppText variant="bodyLarge" color="onSurfaceVariant">
           Your prayer consistency at a glance
         </AppText>
@@ -98,7 +100,9 @@ export function PrayerTrackerScreen(): React.JSX.Element {
         <View style={styles.sectionHeader}>
           <View style={styles.statLabel}>
             <Icon name="chart" color={colors.primary} />
-            <AppText variant="title">Weekly Completion</AppText>
+            <AppText variant="title" weight="700">
+              Weekly Completion
+            </AppText>
           </View>
           <AppText variant="label" color="onSurfaceVariant">
             {metrics.thirtyDayCompletionPercent}% in 30 days
@@ -152,7 +156,9 @@ export function PrayerTrackerScreen(): React.JSX.Element {
 
       <Surface style={styles.qazaEntry} radiusSize="lg">
         <View style={styles.qazaEntryText}>
-          <AppText variant="title">Qaza Balance</AppText>
+          <AppText variant="title" weight="700">
+            Qaza Balance
+          </AppText>
           <AppText variant="body" color="onSurfaceVariant">
             {metrics.qazaTotal} remaining - Highest: {metrics.highestQazaPrayer}
           </AppText>

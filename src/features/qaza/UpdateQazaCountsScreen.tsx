@@ -56,9 +56,9 @@ export function UpdateQazaCountsScreen(): React.JSX.Element {
           accessibilityRole="button"
           onPress={() => navigation.goBack()}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
-          <Icon name="arrowLeft" size={28} color={colors.primary} />
+          <Icon name="arrowLeft" size={26} color={colors.primary} />
         </Pressable>
-        <AppText variant="headlineMobile" weight="700" align="center">
+        <AppText variant="title" weight="700" align="center">
           Update Counts
         </AppText>
       </View>
@@ -90,8 +90,8 @@ export function UpdateQazaCountsScreen(): React.JSX.Element {
         accessibilityRole="button"
         onPress={saveCounts}
         style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]}>
-        <Icon name="checkCircle" size={28} color={colors.onPrimaryContainer} />
-        <AppText variant="bodyLarge" color="onPrimaryContainer" weight="700">
+        <Icon name="checkCircle" size={24} color={colors.onPrimaryContainer} />
+        <AppText variant="body" color="onPrimaryContainer" weight="700">
           Save Changes
         </AppText>
       </Pressable>
@@ -113,16 +113,16 @@ function QazaEditRow({
   onDecrease: () => void;
 }): React.JSX.Element {
   return (
-    <Surface padded={false} style={styles.row} radiusSize="xl">
+    <Surface padded={false} style={styles.row} radiusSize="lg">
       <View style={styles.prayerDetails}>
         <View style={styles.prayerIcon}>
-          <PrayerIcon name={prayer} size={56} />
+          <PrayerIcon name={prayer} size={42} />
         </View>
         <View style={styles.prayerText}>
-          <AppText variant="title" weight="700" numberOfLines={1}>
+          <AppText variant="bodyLarge" weight="700" numberOfLines={1}>
             {PRAYER_LABELS[prayer]}
           </AppText>
-          <AppText variant="label" color="onSurfaceVariant" weight="700">
+          <AppText variant="label" color="onSurfaceVariant">
             {qazaPrayerSubtitles[prayer]}
           </AppText>
         </View>
@@ -172,7 +172,7 @@ function CounterButton({
       hitSlop={6}
       onPress={onPress}
       style={({ pressed }) => [styles.counterButton, pressed && styles.pressed]}>
-      <Icon name={icon} size={26} color={colors.onSurfaceVariant} />
+      <Icon name={icon} size={22} color={colors.onSurfaceVariant} />
     </Pressable>
   );
 }
@@ -218,96 +218,97 @@ function parseDraftCount(value: string): number {
 const styles = StyleSheet.create({
   screenContent: {
     flexGrow: 1,
-    paddingTop: spacing.xl,
     paddingBottom: 32,
-    gap: spacing.xl,
+    gap: spacing.lg,
   },
   topBar: {
-    minHeight: 44,
+    minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backButton: {
     position: 'absolute',
     left: 0,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   description: {
     alignSelf: 'center',
-    maxWidth: 330,
+    maxWidth: 320,
   },
   rows: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   row: {
-    minHeight: 112,
-    paddingHorizontal: 14,
-    paddingVertical: spacing.md,
-    borderWidth: 0,
+    minHeight: 78,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderColor: 'rgba(228, 226, 221, 0.65)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
     shadowOpacity: 0.05,
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
   },
   prayerDetails: {
     flex: 1,
-    minWidth: 112,
+    minWidth: 100,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
   prayerIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
   },
   prayerText: {
     flex: 1,
     minWidth: 0,
-    gap: 2,
+    gap: 0,
+    justifyContent: 'center',
   },
   counterControls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: spacing.sm,
+    gap: 6,
   },
   counterButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceContainer,
   },
   inputWrap: {
-    width: 64,
+    width: 52,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: colors.surfaceDim,
   },
   input: {
-    width: 64,
-    minHeight: 50,
+    width: 52,
+    minHeight: 42,
     color: colors.onSurface,
     fontFamily: fontFamilies.bold,
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 24,
+    lineHeight: 30,
     textAlign: 'center',
     padding: 0,
   },
   saveButton: {
-    minHeight: 82,
+    minHeight: 58,
     marginTop: 'auto',
+    marginBottom: spacing.md,
     borderRadius: radius.full,
     backgroundColor: colors.primaryContainer,
     flexDirection: 'row',

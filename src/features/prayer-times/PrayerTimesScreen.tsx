@@ -48,7 +48,7 @@ export function PrayerTimesScreen(): React.JSX.Element {
           <View style={styles.locationText}>
             <View style={styles.locationTitle}>
               <Icon name="location" size={18} color={colors.primary} filled />
-              <AppText variant="title" color="primary">
+              <AppText variant="title" color="primary" weight="700">
                 {summary.location}
               </AppText>
             </View>
