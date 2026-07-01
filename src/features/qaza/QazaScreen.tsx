@@ -12,38 +12,67 @@ import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
-import { useQazaStore } from './qazaStore';
+import { qazaPrayerSubtitles } from './qazaConstants';
+import { getTotalQaza, useQazaStore } from './qazaStore';
 
 type QazaNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function QazaScreen(): React.JSX.Element {
   const navigation = useNavigation<QazaNavigation>();
+  const counts = useQazaStore(state => state.counts);
+  const total = getTotalQaza(counts);
 
   return (
     <Screen>
       <View style={styles.header}>
-        <AppText variant="headline" weight="700">
+        <AppText variant="headline" weight="700" style={styles.headerTitle}>
           Qaza Counter
         </AppText>
-        <AppText variant="bodyLarge" color="onSurfaceVariant">
-          Manage your missed prayers
+        <AppText
+          variant="body"
+          color="onSurfaceVariant"
+          style={styles.headerNote}>
+          Manage your missed prayers. These counts show your remaining Qaza.
+          Tap the check to complete one Qaza.
         </AppText>
-        <Pressable
-          accessibilityLabel="Edit all Qaza counts"
-          accessibilityRole="button"
-          onPress={() => navigation.navigate('UpdateQazaCounts')}
-          style={({ pressed }) => [styles.editLink, pressed && styles.pressed]}>
-          <Icon name="editList" size={20} color={colors.primary} />
-          <AppText variant="label" color="primary">
-            Edit All Counts
-          </AppText>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            accessibilityLabel="Edit all Qaza counts"
+            accessibilityRole="button"
+            onPress={() => navigation.navigate('UpdateQazaCounts')}
+            style={({ pressed }) => [styles.editLink, pressed && styles.pressed]}>
+            <Icon name="editList" size={20} color={colors.primary} />
+            <AppText variant="label" color="primary">
+              Edit All Counts
+            </AppText>
+          </Pressable>
+          <View style={styles.totalPill}>
+            <AppText variant="label" color="primary" weight="700">
+              Total:
+            </AppText>
+            <AppText variant="label" color="primary" weight="700">
+              {total}
+            </AppText>
+          </View>
+        </View>
       </View>
 
-      <View style={styles.cards}>
-        {OBLIGATORY_PRAYERS.map(prayer => (
-          <QazaCard key={prayer} prayer={prayer} />
-        ))}
+      <View style={styles.listSection}>
+        <View style={styles.listHeader}>
+          <AppText
+            variant="labelSmall"
+            color="onSurfaceVariant"
+            transform="uppercase"
+            align="right">
+            Remaining Qaza
+          </AppText>
+        </View>
+
+        <View style={styles.cards}>
+          {OBLIGATORY_PRAYERS.map(prayer => (
+            <QazaCard key={prayer} prayer={prayer} />
+          ))}
+        </View>
       </View>
     </Screen>
   );
@@ -68,7 +97,7 @@ function QazaCard({
           {PRAYER_LABELS[prayer]}
         </AppText>
         <AppText variant="label" color="onSurfaceVariant">
-          Qaza remaining
+          {qazaPrayerSubtitles[prayer]}
         </AppText>
       </View>
       <View style={styles.cardActions}>
@@ -104,6 +133,19 @@ const styles = StyleSheet.create({
   header: {
     gap: spacing.sm,
   },
+  headerTitle: {
+    fontSize: 36,
+    lineHeight: 44,
+  },
+  headerNote: {
+    maxWidth: 330,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
   editLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -113,6 +155,25 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
     paddingRight: spacing.sm,
     paddingBottom: spacing.xs,
+  },
+  totalPill: {
+    minHeight: 32,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0, 106, 57, 0.1)',
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  listSection: {
+    gap: spacing.xs,
+  },
+  listHeader: {
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.md,
   },
   cards: {
     gap: spacing.sm,
