@@ -6,36 +6,42 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppText } from '../../components/AppText';
 import { Icon, type IconName } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
-import { Surface } from '../../components/Surface';
 import type { RootStackParamList } from '../../navigation/types';
+import { resetLocalAppData } from '../../services/localData/resetLocalAppData';
 import { colors, radius, spacing } from '../../theme';
+import { useAuthStore } from '../auth/authStore';
+import {
+  type BackupSyncFrequency,
+  getBackupSyncFrequencyLabel,
+  useBackupSyncStore,
+} from '../settings/backupSyncStore';
 
 type MoreNavigation = NativeStackNavigationProp<RootStackParamList>;
 type MoreRoute = 'Widgets' | 'Qibla' | 'Settings';
 
-interface MoreItem {
+interface MoreModule {
   title: string;
   subtitle: string;
   icon: IconName;
   screen: MoreRoute;
 }
 
-const moreItems: MoreItem[] = [
+const moreModules: MoreModule[] = [
   {
     title: 'Widgets',
-    subtitle: 'Preview Android home screen widgets',
+    subtitle: 'Android home widgets',
     icon: 'widgets',
     screen: 'Widgets',
   },
   {
-    title: 'Qibla Compass',
-    subtitle: 'Direction to Makkah and calibration',
+    title: 'Qibla',
+    subtitle: 'Compass direction',
     icon: 'compass',
     screen: 'Qibla',
   },
   {
     title: 'Settings',
-    subtitle: 'Prayer methods, reminders and privacy',
+    subtitle: 'Prayer and app options',
     icon: 'settings',
     screen: 'Settings',
   },
@@ -43,141 +49,282 @@ const moreItems: MoreItem[] = [
 
 export function MoreScreen(): React.JSX.Element {
   const navigation = useNavigation<MoreNavigation>();
+  const displayName = useAuthStore(state => state.displayName);
+  const email = useAuthStore(state => state.email);
+  const authMode = useAuthStore(state => state.authMode);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const onboardingCompleted = useAuthStore(
+    state => state.onboardingCompleted,
+  );
+  const autoSyncFrequency = useBackupSyncStore(
+    state => state.autoSyncFrequency,
+  );
+  const isSyncedProfile =
+    isAuthenticated && onboardingCompleted && authMode === 'localUser';
+  const profileName = displayName.trim() || 'Guest User';
+  const profileEmail = isSyncedProfile && email ? email : 'Login to sync';
+  const handleLogout = React.useCallback(() => {
+    resetLocalAppData().finally(() => {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    });
+  }, [navigation]);
 
   return (
-    <Screen>
-      <View style={styles.header}>
-        <View style={styles.profileAvatar}>
-          <AppText variant="headlineMobile" color="primary" weight="700">
-            U
+    <Screen contentContainerStyle={styles.content}>
+      <View style={styles.profileHeader}>
+        <View style={styles.avatar}>
+          <AppText variant="title" color="primary" weight="700">
+            {getProfileInitial(profileName)}
           </AppText>
         </View>
-        <View style={styles.headerText}>
-          <AppText variant="headlineMobile" weight="700">
-            More
+        <View style={styles.profileText}>
+          <AppText variant="headlineMobile" weight="700" numberOfLines={1}>
+            {profileName}
           </AppText>
-          <AppText variant="bodyLarge" color="onSurfaceVariant">
-            Tools, preferences and account options
+          <AppText
+            variant="body"
+            color="onSurfaceVariant"
+            numberOfLines={1}
+            style={styles.profileEmail}>
+            {profileEmail}
           </AppText>
         </View>
+        {isSyncedProfile ? (
+            <Pressable
+              accessibilityLabel="Log out"
+              accessibilityRole="button"
+              onPress={handleLogout}
+              style={({ pressed }) => [
+                styles.logoutButton,
+                pressed && styles.pressed,
+            ]}>
+            <Icon name="logout" size={30} color={colors.error} />
+            <AppText variant="label" color="error" weight="700">
+              Logout
+            </AppText>
+          </Pressable>
+        ) : null}
       </View>
 
-      <Surface style={styles.profileCard} radiusSize="lg">
-        <View style={styles.profileCopy}>
-          <AppText variant="title" weight="700">
-            Local Profile
-          </AppText>
-          <AppText variant="body" color="onSurfaceVariant">
-            Al-Salah is running locally with dummy data. Sync can be added later
-            without changing the screen layer.
-          </AppText>
-        </View>
-        <View style={styles.localBadge}>
-          <Icon name="shield" size={16} color={colors.primary} />
-          <AppText variant="labelSmall" color="primary">
-            Offline
-          </AppText>
-        </View>
-      </Surface>
+      <ProfileStatusCard
+        isSyncedProfile={isSyncedProfile}
+        autoSyncFrequency={autoSyncFrequency}
+        onPress={() => navigation.navigate('BackupSync')}
+      />
 
-      <View style={styles.items}>
-        {moreItems.map(item => (
-          <MoreRow
-            key={item.screen}
-            item={item}
-            onPress={() => navigation.navigate(item.screen)}
+      <View style={styles.moduleList}>
+        {moreModules.map(module => (
+          <ModuleRow
+            key={module.screen}
+            module={module}
+            onPress={() => navigation.navigate(module.screen)}
           />
         ))}
       </View>
+
     </Screen>
   );
 }
 
-function MoreRow({
-  item,
+function ProfileStatusCard({
+  isSyncedProfile,
+  autoSyncFrequency,
   onPress,
 }: {
-  item: MoreItem;
+  isSyncedProfile: boolean;
+  autoSyncFrequency: BackupSyncFrequency;
+  onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <View style={styles.statusCard}>
+      <View style={styles.statusTopRow}>
+        <View style={styles.statusIcon}>
+          <Icon
+            name={isSyncedProfile ? 'cloud' : 'shield'}
+            color={colors.primary}
+          />
+        </View>
+        <View style={styles.statusCopy}>
+          <AppText variant="bodyLarge" weight="700">
+            {isSyncedProfile ? 'Synced profile' : 'Offline profile'}
+          </AppText>
+          <AppText variant="body" color="onSurfaceVariant">
+            {isSyncedProfile
+              ? `Automatic sync: ${getBackupSyncFrequencyLabel(autoSyncFrequency)}`
+              : 'Your data stays on this device until you enable backup.'}
+          </AppText>
+        </View>
+        <View style={styles.profileChip}>
+          <Icon name="shield" size={15} color={colors.primary} />
+          <AppText variant="labelSmall" color="primary" weight="700">
+            {isSyncedProfile ? 'Synced' : 'Offline'}
+          </AppText>
+        </View>
+      </View>
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.statusAction,
+          pressed && styles.pressed,
+        ]}>
+        <AppText variant="label" color="primary" weight="700">
+          {isSyncedProfile ? 'Manage Backup & Sync' : 'Set Up Backup & Sync'}
+        </AppText>
+        <Icon name="chevronRight" size={18} color={colors.primary} />
+      </Pressable>
+    </View>
+  );
+}
+
+function ModuleRow({
+  module,
+  onPress,
+}: {
+  module: MoreModule;
   onPress: () => void;
 }): React.JSX.Element {
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [pressed && styles.pressed]}>
-      <Surface style={styles.row} radiusSize="lg">
-        <View style={styles.rowIcon}>
-          <Icon name={item.icon} color={colors.primary} filled />
-        </View>
-        <View style={styles.rowText}>
-          <AppText variant="bodyLarge" weight="500">
-            {item.title}
-          </AppText>
-          <AppText variant="body" color="onSurfaceVariant">
-            {item.subtitle}
-          </AppText>
-        </View>
-        <Icon name="chevronRight" color={colors.onSurfaceVariant} />
-      </Surface>
+      style={({ pressed }) => [
+        styles.moduleRow,
+        pressed && styles.pressed,
+      ]}>
+      <View style={styles.moduleIcon}>
+        <Icon name={module.icon} color={colors.primary} />
+      </View>
+      <View style={styles.moduleText}>
+        <AppText variant="bodyLarge" weight="700" numberOfLines={1}>
+          {module.title}
+        </AppText>
+        <AppText variant="label" color="onSurfaceVariant" numberOfLines={2}>
+          {module.subtitle}
+        </AppText>
+      </View>
+      <Icon name="chevronRight" size={18} color={colors.onSurfaceVariant} />
     </Pressable>
   );
 }
 
+function getProfileInitial(name: string): string {
+  return name.trim().charAt(0).toUpperCase() || 'U';
+}
+
 const styles = StyleSheet.create({
-  header: {
+  content: {
+    gap: spacing.lg,
+  },
+  profileHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.md,
   },
-  profileAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  profileText: {
+    flex: 1,
+    gap: 0,
+    paddingTop: 2,
+  },
+  profileEmail: {
+    marginTop: -5,
+  },
+  avatar: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.secondaryContainer,
   },
-  headerText: {
-    flex: 1,
-    gap: spacing.xs,
-  },
-  profileCard: {
+  statusCard: {
+    borderRadius: radius.xl,
+    backgroundColor: colors.surfaceLowest,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.surfaceVariant,
     gap: spacing.md,
+    padding: spacing.md,
   },
-  profileCopy: {
+  statusTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
-  localBadge: {
-    alignSelf: 'flex-start',
+  statusIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primarySoft,
+  },
+  statusCopy: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  profileChip: {
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  statusAction: {
+    minHeight: 44,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(0, 106, 57, 0.1)',
+    backgroundColor: colors.primarySoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
   },
-  items: {
-    gap: spacing.md,
+  logoutButton: {
+    minHeight: 40,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.error,
+    backgroundColor: colors.transparent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
-  row: {
+  moduleList: {
+    gap: spacing.sm,
+  },
+  moduleRow: {
+    minHeight: 72,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.surfaceVariant,
+    backgroundColor: colors.surfaceLowest,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    padding: spacing.md,
   },
-  rowIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  moduleIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.secondaryContainer,
+    backgroundColor: colors.primarySoft,
   },
-  rowText: {
+  moduleText: {
     flex: 1,
-    gap: 2,
+    gap: 1,
   },
   pressed: {
-    opacity: 0.75,
+    opacity: 0.76,
     transform: [{ scale: 0.98 }],
   },
 });

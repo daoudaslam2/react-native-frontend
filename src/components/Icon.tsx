@@ -29,6 +29,7 @@ export type IconName =
   | 'info'
   | 'language'
   | 'location'
+  | 'logout'
   | 'menu'
   | 'minus'
   | 'minusOneCheck'
@@ -214,6 +215,14 @@ function renderIcon(
           <Circle cx="12" cy="10" r="2.4" fill={filled ? '#ffffff' : 'none'} stroke={filled ? '#ffffff' : color} strokeWidth="1.7" />
         </>
       );
+    case 'logout':
+      return (
+        <>
+          <Path d="M9.5 5H6.8A2.8 2.8 0 0 0 4 7.8v8.4A2.8 2.8 0 0 0 6.8 19h2.7" {...strokeProps} />
+          <Line x1="10" y1="12" x2="20" y2="12" {...strokeProps} />
+          <Polyline points="16 8 20 12 16 16" {...strokeProps} />
+        </>
+      );
     case 'menu':
       return (
         <>
@@ -279,7 +288,10 @@ function renderIcon(
       return (
         <>
           <Circle cx="12" cy="12" r="3" {...strokeProps} />
-          <Path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1-2 3.4-.2-.1a1.7 1.7 0 0 0-1.9.1 7.2 7.2 0 0 1-1.6.7 1.6 1.6 0 0 0-1.1 1.5V23H9v-.5A1.6 1.6 0 0 0 7.9 21a7.2 7.2 0 0 1-1.6-.7 1.7 1.7 0 0 0-1.9-.1l-.2.1-2-3.4.1-.1A1.6 1.6 0 0 0 2.6 15a7.7 7.7 0 0 1 0-2 1.6 1.6 0 0 0-.3-1.8l-.1-.1 2-3.4.2.1a1.7 1.7 0 0 0 1.9-.1A7.2 7.2 0 0 1 7.9 7 1.6 1.6 0 0 0 9 5.5V5h6v.5A1.6 1.6 0 0 0 16.1 7a7.2 7.2 0 0 1 1.6.7 1.7 1.7 0 0 0 1.9.1l.2-.1 2 3.4-.1.1a1.6 1.6 0 0 0-.3 1.8 7.7 7.7 0 0 1 0 2Z" {...strokeProps} />
+          <Path
+            d="M12 2.8 14.2 4l.5 2.2 2.2.7 2-1.2 2.1 3.6-1.8 1.5a7.6 7.6 0 0 1 0 2.4l1.8 1.5-2.1 3.6-2-1.2-2.2.7-.5 2.2L12 21.2 9.8 20l-.5-2.2-2.2-.7-2 1.2L3 14.7l1.8-1.5a7.6 7.6 0 0 1 0-2.4L3 9.3l2.1-3.6 2 1.2 2.2-.7.5-2.2L12 2.8Z"
+            {...strokeProps}
+          />
         </>
       );
     case 'sun':

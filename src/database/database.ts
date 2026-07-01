@@ -17,3 +17,15 @@ export async function prepareLocalDatabase(): Promise<void> {
     }
   }
 }
+
+export async function clearLocalDatabase(): Promise<void> {
+  try {
+    const database = open({ name: 'al_salah.db' });
+
+    await database.executeAsync('DELETE FROM app_metadata;');
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('SQLite reset skipped:', error);
+    }
+  }
+}
