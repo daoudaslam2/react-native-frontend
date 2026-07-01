@@ -31,25 +31,35 @@ type LocationSetupNavigation = NativeStackNavigationProp<
   'LocationSetup'
 >;
 
+type LocationMode = 'device' | 'manual';
+
 interface LocationSetupFieldErrors {
   name?: string;
+  deviceLocation?: string;
   latitude?: string;
   longitude?: string;
 }
 
 export function LocationSetupScreen(): React.JSX.Element {
   const navigation = useNavigation<LocationSetupNavigation>();
-  const displayName = useAuthStore(state => state.displayName);
+  const persistedDisplayName = useAuthStore(state => state.displayName);
+  const pendingDisplayName = useAuthStore(
+    state => state.pendingSession?.displayName ?? '',
+  );
   const onboardingCompleted = useAuthStore(
     state => state.onboardingCompleted,
   );
   const completeOnboarding = useAuthStore(state => state.completeOnboarding);
+  const updateAuthPrayerLocation = useAuthStore(
+    state => state.updatePrayerLocation,
+  );
   const setPrayerLocation = useSettingsStore(state => state.setPrayerLocation);
   const currentPrayerLocation = useSettingsStore(state => state.location);
   const initialPrayerLocation = onboardingCompleted
     ? currentPrayerLocation
     : null;
   const isEditingLocation = initialPrayerLocation !== null;
+  const displayName = pendingDisplayName || persistedDisplayName;
   const [name, setName] = React.useState(displayName);
   const [latitude, setLatitude] = React.useState(
     initialPrayerLocation ? initialPrayerLocation.latitude.toFixed(6) : '',
@@ -57,8 +67,13 @@ export function LocationSetupScreen(): React.JSX.Element {
   const [longitude, setLongitude] = React.useState(
     initialPrayerLocation ? initialPrayerLocation.longitude.toFixed(6) : '',
   );
+  const [locationMode, setLocationMode] = React.useState<LocationMode>(
+    initialPrayerLocation?.source === 'manual' ? 'manual' : 'device',
+  );
   const [selectedLocation, setSelectedLocation] =
-    React.useState<PrayerLocation | null>(initialPrayerLocation);
+    React.useState<PrayerLocation | null>(
+      initialPrayerLocation?.source === 'device' ? initialPrayerLocation : null,
+    );
   const [fieldErrors, setFieldErrors] =
     React.useState<LocationSetupFieldErrors>({});
   const [error, setError] = React.useState<string | null>(null);
@@ -73,6 +88,7 @@ export function LocationSetupScreen(): React.JSX.Element {
 
   const handleUseCurrentLocation = async () => {
     setError(null);
+    clearFieldError('deviceLocation');
     setIsLocating(true);
 
     try {
@@ -80,10 +96,12 @@ export function LocationSetupScreen(): React.JSX.Element {
       const location = createDevicePrayerLocation(coordinates);
 
       setSelectedLocation(location);
+      setLocationMode('device');
       setLatitude(location.latitude.toFixed(6));
       setLongitude(location.longitude.toFixed(6));
       setFieldErrors(current => ({
         ...current,
+        deviceLocation: undefined,
         latitude: undefined,
         longitude: undefined,
       }));
@@ -123,7 +141,7 @@ export function LocationSetupScreen(): React.JSX.Element {
       longitude: parsedLongitude,
     });
 
-    setSelectedLocation(location);
+    setSelectedLocation(null);
     setFieldErrors(current => ({
       ...current,
       latitude: undefined,
@@ -131,6 +149,17 @@ export function LocationSetupScreen(): React.JSX.Element {
     }));
     setError(null);
     return location;
+  };
+
+  const handleLocationModeChange = (mode: LocationMode) => {
+    setLocationMode(mode);
+    setError(null);
+    setFieldErrors(current => ({
+      ...current,
+      deviceLocation: undefined,
+      latitude: undefined,
+      longitude: undefined,
+    }));
   };
 
   const handleGoBack = () => {
@@ -151,11 +180,16 @@ export function LocationSetupScreen(): React.JSX.Element {
     const trimmedName = name.trim();
     const nextFieldErrors: LocationSetupFieldErrors = {};
 
-    if (!trimmedName) {
+    if (!isEditingLocation && !trimmedName) {
       nextFieldErrors.name = 'Enter your name to continue.';
     }
 
-    const location = selectedLocation ?? handleUseManualCoordinates();
+    const location =
+      locationMode === 'device' ? selectedLocation : handleUseManualCoordinates();
+
+    if (locationMode === 'device' && !selectedLocation) {
+      nextFieldErrors.deviceLocation = 'Get your current location to continue.';
+    }
 
     if (!location || nextFieldErrors.name) {
       setFieldErrors(current => ({
@@ -166,15 +200,26 @@ export function LocationSetupScreen(): React.JSX.Element {
     }
 
     setPrayerLocation(location);
+
+    if (isEditingLocation) {
+      updateAuthPrayerLocation(location);
+
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+        return;
+      }
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainTabs' }],
+      });
+      return;
+    }
+
     completeOnboarding({
       displayName: trimmedName,
       prayerLocation: location,
     });
-
-    if (isEditingLocation && navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
 
     navigation.reset({
       index: 0,
@@ -207,116 +252,155 @@ export function LocationSetupScreen(): React.JSX.Element {
         </AppText>
       </View>
 
-      <AuthTextField
-        label="Name"
-        value={name}
-        onChangeText={value => {
-          setName(value);
-          clearFieldError('name');
-        }}
-        placeholder="Your name"
-        autoCapitalize="words"
-        error={fieldErrors.name}
-      />
-
-      <View style={styles.locationCard}>
-        <View style={styles.locationHeader}>
-          <View style={styles.locationIcon}>
-            <Icon name="location" color={colors.primary} />
-          </View>
-          <View style={styles.locationCopy}>
-            <AppText variant="bodyLarge" weight="700">
-              Use current location
-            </AppText>
-            <AppText variant="body" color="onSurfaceVariant">
-              Used only to calculate prayer times and Qibla locally.
-            </AppText>
-          </View>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          disabled={isLocating}
-          onPress={handleUseCurrentLocation}
-          style={({ pressed }) => [
-            styles.outlineButton,
-            pressed && styles.pressed,
-            isLocating && styles.disabledButton,
-          ]}>
-          {isLocating ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <AppText variant="label" color="primary">
-              Get Location Permission
-            </AppText>
-          )}
-        </Pressable>
-      </View>
-
-      <View style={styles.manualSection}>
-        <AppText variant="bodyLarge" weight="700">
-          Enter coordinates manually
-        </AppText>
-        <View style={styles.coordinateGrid}>
-          <View style={styles.coordinateField}>
-            <AuthTextField
-              label="Latitude"
-              value={latitude}
-              onChangeText={value => {
-                setLatitude(value);
-                setSelectedLocation(null);
-                clearFieldError('latitude');
-              }}
-              placeholder="Latitude"
-              keyboardType="numbers-and-punctuation"
-              error={fieldErrors.latitude}
-            />
-          </View>
-          <View style={styles.coordinateField}>
-            <AuthTextField
-              label="Longitude"
-              value={longitude}
-              onChangeText={value => {
-                setLongitude(value);
-                setSelectedLocation(null);
-                clearFieldError('longitude');
-              }}
-              placeholder="Longitude"
-              keyboardType="numbers-and-punctuation"
-              error={fieldErrors.longitude}
-            />
-          </View>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          onPress={handleUseManualCoordinates}
-          style={({ pressed }) => [
-            styles.manualButton,
-            pressed && styles.pressed,
-          ]}>
-          <AppText variant="label" color="primary">
-            Use Manual Coordinates
-          </AppText>
-        </Pressable>
-        <AppText variant="label" color="onSurfaceVariant">
-          If you enter coordinates manually, prayer times will not update
-          automatically when your location changes. Update them later in
-          Settings.
-        </AppText>
-      </View>
-
-      {selectedLocation ? (
-        <View style={styles.selectedLocation}>
-          <Icon name="checkCircle" color={colors.primary} filled />
-          <View style={styles.selectedText}>
-            <AppText variant="label" color="primary">
-              {selectedLocation.label}
-            </AppText>
-            <AppText variant="labelSmall" color="onSurfaceVariant">
-              {formatCoordinatesLabel(selectedLocation)}
-            </AppText>
-          </View>
-        </View>
+      {!isEditingLocation ? (
+        <AuthTextField
+          label="Name"
+          value={name}
+          onChangeText={value => {
+            setName(value);
+            clearFieldError('name');
+          }}
+          placeholder="Your name"
+          autoCapitalize="words"
+          error={fieldErrors.name}
+        />
       ) : null}
+
+      <View style={styles.modeTabs}>
+        <LocationModeTab
+          icon="location"
+          label="Current"
+          active={locationMode === 'device'}
+          onPress={() => handleLocationModeChange('device')}
+        />
+        <LocationModeTab
+          icon="editList"
+          label="Manual"
+          active={locationMode === 'manual'}
+          onPress={() => handleLocationModeChange('manual')}
+        />
+      </View>
+
+      {locationMode === 'device' ? (
+        <View style={styles.locationModeSection}>
+          <View
+            style={[
+              styles.locationCard,
+              fieldErrors.deviceLocation && styles.cardError,
+            ]}>
+            <View style={styles.locationHeader}>
+              <View style={styles.locationIcon}>
+                <Icon name="location" color={colors.primary} />
+              </View>
+              <View style={styles.locationCopy}>
+                <View style={styles.cardTitleLine}>
+                  <AppText variant="bodyLarge" weight="700">
+                    Use current location
+                  </AppText>
+                  <View style={styles.recommendedBadge}>
+                    <Icon
+                      name="checkCircle"
+                      size={14}
+                      color={colors.primary}
+                    />
+                    <AppText variant="labelSmall" color="primary" weight="700">
+                      Recommended
+                    </AppText>
+                  </View>
+                </View>
+                <AppText variant="body" color="onSurfaceVariant">
+                  Used only to calculate prayer times and Qibla locally.
+                </AppText>
+              </View>
+            </View>
+
+            {selectedLocation ? (
+              <View style={styles.detectedLocation}>
+                <Icon name="checkCircle" size={20} color={colors.primary} />
+                <View style={styles.detectedText}>
+                  <AppText variant="label" color="primary" weight="700">
+                    Location detected
+                  </AppText>
+                  <AppText variant="labelSmall" color="onSurfaceVariant">
+                    {formatCoordinatesLabel(selectedLocation)}
+                  </AppText>
+                </View>
+              </View>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={isLocating}
+              onPress={handleUseCurrentLocation}
+              style={({ pressed }) => [
+                styles.outlineButton,
+                pressed && styles.pressed,
+                isLocating && styles.disabledButton,
+              ]}>
+              {isLocating ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <AppText variant="label" color="primary">
+                  Get Location Permission
+                </AppText>
+              )}
+            </Pressable>
+          </View>
+          {fieldErrors.deviceLocation ? (
+            <AppText variant="labelSmall" color="error">
+              {fieldErrors.deviceLocation}
+            </AppText>
+          ) : null}
+        </View>
+      ) : (
+        <View style={styles.manualSection}>
+          <AppText variant="bodyLarge" weight="700">
+            Enter coordinates manually
+          </AppText>
+          <View style={styles.coordinateGrid}>
+            <View style={styles.coordinateField}>
+              <AuthTextField
+                label="Latitude"
+                value={latitude}
+                onChangeText={value => {
+                  setLatitude(value);
+                  setSelectedLocation(null);
+                  clearFieldError('latitude');
+                }}
+                placeholder="Latitude"
+                keyboardType="numbers-and-punctuation"
+                error={fieldErrors.latitude}
+              />
+            </View>
+            <View style={styles.coordinateField}>
+              <AuthTextField
+                label="Longitude"
+                value={longitude}
+                onChangeText={value => {
+                  setLongitude(value);
+                  setSelectedLocation(null);
+                  clearFieldError('longitude');
+                }}
+                placeholder="Longitude"
+                keyboardType="numbers-and-punctuation"
+                error={fieldErrors.longitude}
+              />
+            </View>
+          </View>
+          <View style={styles.warningBox}>
+            <Icon name="info" size={20} color={colors.onSurfaceVariant} />
+            <AppText
+              variant="label"
+              color="onSurfaceVariant"
+              style={styles.warningText}>
+              If you enter coordinates manually, prayer times will not update
+              automatically when your location changes. Update them later in
+              Settings. If coordinates are wrong, prayer times and Qibla may be
+              inaccurate.
+            </AppText>
+          </View>
+        </View>
+      )}
 
       {error ? (
         <AppText variant="label" color="error">
@@ -332,10 +416,48 @@ export function LocationSetupScreen(): React.JSX.Element {
           pressed && styles.pressed,
         ]}>
         <AppText variant="label" color="onPrimaryContainer" weight="700">
-          Continue
+          {isEditingLocation ? 'Update Location' : 'Continue'}
         </AppText>
       </Pressable>
     </KeyboardAvoidingScreen>
+  );
+}
+
+function LocationModeTab({
+  icon,
+  label,
+  active,
+  onPress,
+}: {
+  icon: 'location' | 'editList';
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.modeTab,
+        active && styles.modeTabActive,
+        pressed && styles.pressed,
+      ]}>
+      <Icon
+        name={icon}
+        size={20}
+        color={active ? colors.onPrimaryContainer : colors.onSurfaceVariant}
+      />
+      <View style={styles.modeTabText}>
+        <AppText
+          variant="label"
+          color={active ? 'onPrimaryContainer' : 'onSurfaceVariant'}
+          weight="700">
+          {label}
+        </AppText>
+      </View>
+    </Pressable>
   );
 }
 
@@ -363,7 +485,6 @@ function validateManualCoordinates(
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
-    justifyContent: 'center',
     gap: spacing.lg,
   },
   topBar: {
@@ -379,11 +500,43 @@ const styles = StyleSheet.create({
   titleBlock: {
     gap: spacing.sm,
   },
+  modeTabs: {
+    minHeight: 56,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surfaceContainer,
+    flexDirection: 'row',
+    gap: spacing.sm,
+    padding: spacing.xs,
+  },
+  modeTab: {
+    flex: 1,
+    borderRadius: radius.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  modeTabActive: {
+    backgroundColor: colors.primaryContainer,
+  },
+  modeTabText: {
+    alignItems: 'flex-start',
+    gap: 2,
+  },
+  locationModeSection: {
+    gap: spacing.xs,
+  },
   locationCard: {
     gap: spacing.md,
     borderRadius: radius.xl,
     backgroundColor: colors.surfaceLowest,
     padding: spacing.md,
+  },
+  cardError: {
+    borderWidth: 1,
+    borderColor: colors.error,
   },
   locationHeader: {
     flexDirection: 'row',
@@ -401,6 +554,31 @@ const styles = StyleSheet.create({
   locationCopy: {
     flex: 1,
     gap: spacing.xs,
+  },
+  cardTitleLine: {
+    gap: spacing.xs,
+  },
+  recommendedBadge: {
+    alignSelf: 'flex-start',
+    borderRadius: radius.full,
+    backgroundColor: colors.primarySoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
+  detectedLocation: {
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.sm,
+  },
+  detectedText: {
+    flex: 1,
+    gap: 2,
   },
   outlineButton: {
     minHeight: 48,
@@ -423,27 +601,20 @@ const styles = StyleSheet.create({
   coordinateField: {
     flex: 1,
   },
-  manualButton: {
-    minHeight: 48,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
-  },
-  selectedLocation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+  warningBox: {
     borderRadius: radius.lg,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.surfaceLow,
+    flexDirection: 'row',
+    gap: spacing.sm,
     padding: spacing.md,
   },
-  selectedText: {
+  warningText: {
     flex: 1,
-    gap: 2,
   },
   primaryButton: {
     minHeight: 56,
+    marginTop: 'auto',
+    marginBottom: spacing.lg,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

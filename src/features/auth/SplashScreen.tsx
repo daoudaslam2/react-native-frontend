@@ -45,9 +45,7 @@ export function SplashScreen(): React.JSX.Element {
       const routeName =
         isAuthenticated && onboardingCompleted && resolvedLocation
           ? 'MainTabs'
-          : isAuthenticated
-            ? 'LocationSetup'
-            : 'Login';
+          : 'Login';
 
       navigation.reset({
         index: 0,

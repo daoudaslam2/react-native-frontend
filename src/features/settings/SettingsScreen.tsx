@@ -11,11 +11,11 @@ import {
   CALCULATION_METHOD_OPTIONS,
   ISHA_DEADLINE_STEP_MINUTES,
   MAX_ISHA_DEADLINE_MINUTES,
-  formatPrayerLocationLabel,
   getAsrMethodLabel,
   getCalculationMethodLabel,
   type AsrMethodKey,
   type CalculationMethodKey,
+  type PrayerLocation,
   type PrayerSettingOption,
 } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
@@ -108,11 +108,7 @@ export function SettingsScreen(): React.JSX.Element {
         <SettingsRow
           icon="location"
           label="Location"
-          value={
-            settings.location
-              ? formatPrayerLocationLabel(settings.location)
-              : 'Not set'
-          }
+          value={getLocationSettingLabel(settings.location)}
           onPress={() => navigation.navigate('LocationSetup')}
         />
       </SettingsSection>
@@ -307,6 +303,14 @@ function getSteppedIshaDeadline(
     ISHA_DEADLINE_STEP_MINUTES;
 
   return Math.max(previousStep, bounds.minimumMinutes);
+}
+
+function getLocationSettingLabel(location: PrayerLocation | null): string {
+  if (!location) {
+    return 'Not set';
+  }
+
+  return location.source === 'device' ? 'Current location' : 'Manual location';
 }
 
 function SettingsSection({
