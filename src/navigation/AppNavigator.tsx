@@ -36,7 +36,7 @@ const tabConfig: Record<
 > = {
   Home: { label: 'Home', icon: 'home' },
   Tracker: { label: 'Tracker', icon: 'chart' },
-  Qaza: { label: 'Qaza', icon: 'task' },
+  Qaza: { label: 'Qaza', icon: 'namaz' },
   More: { label: 'More', icon: 'menu' },
 };
 

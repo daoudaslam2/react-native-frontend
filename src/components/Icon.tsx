@@ -7,6 +7,8 @@ import Svg, {
   Rect,
 } from 'react-native-svg';
 
+import { NamazTabIcon } from './icons/NamazTabIcon';
+
 export type IconName =
   | 'add'
   | 'arrowLeft'
@@ -30,6 +32,7 @@ export type IconName =
   | 'minusOneCheck'
   | 'moon'
   | 'mosque'
+  | 'namaz'
   | 'palette'
   | 'qibla'
   | 'rotate'
@@ -53,6 +56,10 @@ export function Icon({
   color = '#1b1c19',
   filled = false,
 }: IconProps): React.JSX.Element {
+  if (name === 'namaz') {
+    return <NamazTabIcon color={color} selected={filled} size={size} />;
+  }
+
   const strokeProps = {
     stroke: color,
     strokeWidth: 1.9,
