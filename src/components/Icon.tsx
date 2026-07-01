@@ -27,6 +27,7 @@ export type IconName =
   | 'location'
   | 'menu'
   | 'minus'
+  | 'minusOneCheck'
   | 'moon'
   | 'mosque'
   | 'palette'
@@ -199,6 +200,13 @@ function renderIcon(
       );
     case 'minus':
       return <Line x1="5" y1="12" x2="19" y2="12" {...strokeProps} />;
+    case 'minusOneCheck':
+      return (
+        <>
+          <Polyline points="4.5 13 9.5 18 18 8.5" {...strokeProps} />
+          <Path d="M23.5 9.5V2.8l-2.4 1.4" {...strokeProps} />
+        </>
+      );
     case 'moon':
       return <Path d="M20 15.4A8.2 8.2 0 0 1 8.6 4a8.2 8.2 0 1 0 11.4 11.4Z" fill={fillColor} stroke={color} strokeWidth="1.9" />;
     case 'mosque':
