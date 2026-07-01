@@ -1,7 +1,21 @@
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Vibration,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
 import { AppText } from '../../components/AppText';
@@ -20,11 +34,22 @@ import {
   calculateQiblaDirection,
   getQiblaInstruction,
   getRelativeQiblaDirection,
+  getShortestAngleToQibla,
 } from '../../services/qibla/qiblaDirection';
 import { useCompassHeading } from '../../services/qibla/useCompassHeading';
 import { colors, radius, spacing } from '../../theme';
 
 type QiblaNavigation = NativeStackNavigationProp<RootStackParamList, 'Qibla'>;
+
+interface LayoutSize {
+  width: number;
+  height: number;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
 
 export function QiblaScreen(): React.JSX.Element {
   const navigation = useNavigation<QiblaNavigation>();
@@ -108,29 +133,59 @@ function QiblaFinder({
     qiblaDirection,
     heading: compass.heading,
   });
+  const shortestAngle = getShortestAngleToQibla(relativeDirection);
+  const isAligned = compass.heading !== null && shortestAngle <= 5;
+  const pulseKey = useAlignmentPulseKey(isAligned);
+  const [layoutSize, setLayoutSize] = React.useState<LayoutSize | null>(null);
+  const [waveOrigin, setWaveOrigin] = React.useState<Point | null>(null);
   const instruction = getQiblaInstruction({
     relativeDirection,
     hasHeading: compass.heading !== null,
   });
 
+  const handleFinderLayout = React.useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+
+    setLayoutSize({ width, height });
+  }, []);
+
+  const handleCompassLayout = React.useCallback((event: LayoutChangeEvent) => {
+    const { x, y, width, height } = event.nativeEvent.layout;
+
+    setWaveOrigin({
+      x: x + width / 2,
+      y: y + height / 2,
+    });
+  }, []);
+
   return (
-    <View style={styles.finderLayout}>
-      <View style={styles.instruction}>
+    <View style={styles.finderLayout} onLayout={handleFinderLayout}>
+      <AlignmentWave
+        layoutSize={layoutSize}
+        origin={waveOrigin}
+        pulseKey={pulseKey}
+      />
+
+      <View style={[styles.instruction, styles.foreground]}>
         <AppText variant="title" weight="700" align="center">
           {instruction}
         </AppText>
       </View>
 
-      <View style={styles.compassCenter}>
+      <View
+        style={[styles.compassCenter, styles.foreground]}
+        onLayout={handleCompassLayout}>
         <KaabaIcon size={36} />
         <Compass qiblaDirection={qiblaDirection} heading={compass.heading} />
       </View>
 
-      <AppText variant="label" color="onSurfaceVariant" align="center">
-        Keep the phone flat and rotate until the Qibla arrow points up.
-      </AppText>
+      <View style={styles.foreground}>
+        <AppText variant="label" color="onSurfaceVariant" align="center">
+          Keep the phone flat and rotate until the Qibla arrow points up.
+        </AppText>
+      </View>
 
-      <View style={styles.metrics}>
+      <View style={[styles.metrics, styles.foreground]}>
         <Metric label="Qibla" value={`${qiblaDirection}°`} />
         <Metric
           label="Heading"
@@ -149,13 +204,124 @@ function QiblaFinder({
       </View>
 
       {compass.error ? (
-        <Surface style={styles.sensorNotice} radiusSize="lg">
+        <Surface style={[styles.sensorNotice, styles.foreground]} radiusSize="lg">
           <Icon name="info" color={colors.outline} />
           <AppText variant="body" color="onSurfaceVariant" align="center">
             {compass.error}
           </AppText>
         </Surface>
       ) : null}
+    </View>
+  );
+}
+
+function useAlignmentPulseKey(isAligned: boolean): number {
+  const wasAlignedRef = React.useRef(false);
+  const [pulseKey, setPulseKey] = React.useState(0);
+
+  React.useEffect(() => {
+    if (isAligned && !wasAlignedRef.current) {
+      Vibration.vibrate(90);
+      setPulseKey(current => current + 1);
+    }
+
+    wasAlignedRef.current = isAligned;
+  }, [isAligned]);
+
+  return pulseKey;
+}
+
+function AlignmentWave({
+  layoutSize,
+  origin,
+  pulseKey,
+}: {
+  layoutSize: LayoutSize | null;
+  origin: Point | null;
+  pulseKey: number;
+}): React.JSX.Element | null {
+  const fillScale = useSharedValue(0);
+  const clearScale = useSharedValue(0);
+  const [isVisible, setIsVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!layoutSize || !origin || pulseKey === 0) {
+      return;
+    }
+
+    setIsVisible(true);
+    fillScale.value = 0;
+    clearScale.value = 0;
+
+    fillScale.value = withTiming(
+      1,
+      {
+        duration: 620,
+        easing: Easing.out(Easing.cubic),
+      },
+      finished => {
+        if (!finished) {
+          return;
+        }
+
+        clearScale.value = withTiming(
+          1,
+          {
+            duration: 760,
+            easing: Easing.out(Easing.cubic),
+          },
+          clearFinished => {
+            if (!clearFinished) {
+              return;
+            }
+
+            runOnJS(setIsVisible)(false);
+          },
+        );
+      },
+    );
+  }, [clearScale, fillScale, layoutSize, origin, pulseKey]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    opacity: 0.6,
+    transform: [{ scale: fillScale.value }],
+  }));
+  const clearStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: clearScale.value }],
+  }));
+
+  if (!layoutSize || !origin || !isVisible) {
+    return null;
+  }
+
+  const diameter =
+    Math.sqrt(layoutSize.width ** 2 + layoutSize.height ** 2) * 2.2;
+  const circlePosition = {
+    width: diameter,
+    height: diameter,
+    borderRadius: diameter / 2,
+    left: origin.x - diameter / 2,
+    top: origin.y - diameter / 2,
+  };
+
+  return (
+    <View pointerEvents="none" style={styles.alignmentWaveLayer}>
+      <Animated.View
+        style={[
+          styles.alignmentWaveCircle,
+          styles.alignmentWaveFill,
+          circlePosition,
+          fillStyle,
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.alignmentWaveCircle,
+          styles.alignmentWaveClear,
+          circlePosition,
+          clearStyle,
+        ]}
+      />
     </View>
   );
 }
@@ -266,6 +432,9 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   topBar: {
+    position: 'relative',
+    zIndex: 2,
+    elevation: 2,
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
@@ -309,6 +478,30 @@ const styles = StyleSheet.create({
   finderLayout: {
     flex: 1,
     gap: spacing.md,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  foreground: {
+    position: 'relative',
+    zIndex: 1,
+  },
+  alignmentWaveLayer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 0,
+    overflow: 'visible',
+  },
+  alignmentWaveCircle: {
+    position: 'absolute',
+  },
+  alignmentWaveFill: {
+    backgroundColor: colors.primary,
+  },
+  alignmentWaveClear: {
+    backgroundColor: colors.background,
   },
   instruction: {
     alignItems: 'center',
