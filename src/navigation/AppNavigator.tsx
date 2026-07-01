@@ -10,6 +10,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/AppText';
 import { Icon, type IconName } from '../components/Icon';
+import { LocationSetupScreen } from '../features/auth/LocationSetupScreen';
+import { LoginScreen } from '../features/auth/LoginScreen';
+import { SignUpScreen } from '../features/auth/SignUpScreen';
+import { SplashScreen } from '../features/auth/SplashScreen';
 import { HomeScreen } from '../features/home/HomeScreen';
 import { MoreScreen } from '../features/more/MoreScreen';
 import { WidgetsScreen } from '../features/more/WidgetsScreen';
@@ -44,6 +48,13 @@ export function AppNavigator(): React.JSX.Element {
   return (
     <NavigationContainer>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen name="Splash" component={SplashScreen} />
+        <RootStack.Screen name="Login" component={LoginScreen} />
+        <RootStack.Screen name="SignUp" component={SignUpScreen} />
+        <RootStack.Screen
+          name="LocationSetup"
+          component={LocationSetupScreen}
+        />
         <RootStack.Screen name="MainTabs" component={MainTabNavigator} />
         <RootStack.Screen
           name="UpdateQazaCounts"

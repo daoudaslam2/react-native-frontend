@@ -22,6 +22,8 @@ export type IconName =
   | 'cloud'
   | 'compass'
   | 'editList'
+  | 'eye'
+  | 'eyeOff'
   | 'fire'
   | 'home'
   | 'info'
@@ -163,6 +165,21 @@ function renderIcon(
           <Line x1="4" y1="12" x2="12" y2="12" {...strokeProps} />
           <Line x1="4" y1="17" x2="9" y2="17" {...strokeProps} />
           <Path d="M14.5 18.5 20 13l-2.5-2.5-5.5 5.5-.7 3.2 3.2-.7Z" fill={fillColor} stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      );
+    case 'eye':
+      return (
+        <>
+          <Path d="M3.5 12s3-5.5 8.5-5.5 8.5 5.5 8.5 5.5-3 5.5-8.5 5.5S3.5 12 3.5 12Z" {...strokeProps} />
+          <Circle cx="12" cy="12" r="2.4" {...strokeProps} />
+        </>
+      );
+    case 'eyeOff':
+      return (
+        <>
+          <Path d="M4 4 20 20" {...strokeProps} />
+          <Path d="M9.3 6.9A8.2 8.2 0 0 1 12 6.5c5.5 0 8.5 5.5 8.5 5.5a15 15 0 0 1-2.2 2.8" {...strokeProps} />
+          <Path d="M14 17.2a8.6 8.6 0 0 1-2 .3C6.5 17.5 3.5 12 3.5 12a14.7 14.7 0 0 1 3-3.5" {...strokeProps} />
         </>
       );
     case 'fire':

@@ -6,17 +6,34 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppText } from '../../components/AppText';
 import { Compass } from '../../components/Compass';
 import { Icon } from '../../components/Icon';
+import { MissingLocationState } from '../../components/MissingLocationState';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
+import type { PrayerLocation } from '../../constants/prayerSettings';
 import type { RootStackParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
+import { useSettingsStore } from '../settings/settingsStore';
 
 type QiblaNavigation = NativeStackNavigationProp<RootStackParamList, 'Qibla'>;
 
 export function QiblaScreen(): React.JSX.Element {
+  const location = useSettingsStore(state => state.location);
+
+  if (!location) {
+    return <MissingLocationState />;
+  }
+
+  return <QiblaContent location={location} />;
+}
+
+function QiblaContent({
+  location,
+}: {
+  location: PrayerLocation;
+}): React.JSX.Element {
   const navigation = useNavigation<QiblaNavigation>();
-  const summary = prayerRepository.getSummary();
+  const summary = prayerRepository.getSummary({ location });
 
   return (
     <Screen contentContainerStyle={styles.content}>
@@ -37,7 +54,7 @@ export function QiblaScreen(): React.JSX.Element {
         <View style={styles.currentLocation}>
           <Icon name="location" size={18} color={colors.onSurfaceVariant} />
           <AppText variant="label" color="onSurfaceVariant" transform="uppercase">
-            Fixed Location
+            {location.source === 'device' ? 'Device Location' : 'Manual Location'}
           </AppText>
         </View>
         <AppText variant="title" weight="700">

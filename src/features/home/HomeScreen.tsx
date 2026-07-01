@@ -4,14 +4,17 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
 import { LogoMark } from '../../components/LogoMark';
+import { MissingLocationState } from '../../components/MissingLocationState';
 import { PrayerIcon } from '../../components/PrayerIcon';
 import { PrayerGradientCard } from '../../components/PrayerGradientCard';
 import { Screen } from '../../components/Screen';
+import type { PrayerLocation } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
 import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
 import { formatPrayerTime } from '../../utils/dateTime';
+import { useAuthStore } from '../auth/authStore';
 import { useSettingsStore } from '../settings/settingsStore';
 import {
   getPrayerTrackingDate,
@@ -26,10 +29,25 @@ import {
 type TimelinePrayer = PrayerTime & { key: ObligatoryPrayerKey };
 
 export function HomeScreen(): React.JSX.Element {
+  const location = useSettingsStore(state => state.location);
+
+  if (!location) {
+    return <MissingLocationState />;
+  }
+
+  return <HomeContent location={location} />;
+}
+
+function HomeContent({
+  location,
+}: {
+  location: PrayerLocation;
+}): React.JSX.Element {
   const now = useNow();
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
   const calculationMethod = useSettingsStore(state => state.calculationMethod);
   const asrMethod = useSettingsStore(state => state.asrMethod);
+  const displayName = useAuthStore(state => state.displayName);
   const ishaDeadlineMinutes = useSettingsStore(
     state => state.ishaDeadlineMinutes,
   );
@@ -37,6 +55,7 @@ export function HomeScreen(): React.JSX.Element {
     calculationMethod,
     asrMethod,
     ishaDeadlineMinutes,
+    location,
   };
   const trackingDateKey = getPrayerTrackingDateKey(now, trackingOptions);
   const scheduleDate = getPrayerTrackingDate(now, trackingOptions);
@@ -51,6 +70,7 @@ export function HomeScreen(): React.JSX.Element {
     calculationMethod,
     asrMethod,
     ishaDeadlineMinutes,
+    location,
   };
   const summary = prayerRepository.getSummary(queryOptions);
   const prayers = prayerRepository
@@ -67,7 +87,7 @@ export function HomeScreen(): React.JSX.Element {
 
       <View style={styles.greeting}>
         <AppText variant="title" weight="700">
-          As-salamu alaykum, User
+          As-salamu alaykum, {displayName || 'User'}
         </AppText>
         <AppText variant="body" color="onSurfaceVariant">
           {summary.hijriDate} • {summary.gregorianDate}

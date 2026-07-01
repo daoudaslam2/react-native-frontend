@@ -1,8 +1,17 @@
 import { NativeModules, Platform } from 'react-native';
 
+import type { PrayerLocation } from '../../constants/prayerSettings';
+
 interface WidgetSettingsNativeModule {
   setIshaDeadlineMinutes?: (minutes: number) => Promise<boolean>;
   clearIshaDeadlineMinutes?: () => Promise<boolean>;
+  setPrayerLocation?: (
+    latitude: number,
+    longitude: number,
+    label: string,
+    timeZone: string,
+  ) => Promise<boolean>;
+  clearPrayerLocation?: () => Promise<boolean>;
 }
 
 const nativeWidgetSettings = NativeModules.AlSalahWidgetPinning as
@@ -20,6 +29,25 @@ export function syncWidgetIshaDeadlineMinutes(
     minutes === null
       ? nativeWidgetSettings.clearIshaDeadlineMinutes?.()
       : nativeWidgetSettings.setIshaDeadlineMinutes?.(minutes);
+
+  if (syncPromise) {
+    syncPromise.catch(() => undefined);
+  }
+}
+
+export function syncWidgetPrayerLocation(location: PrayerLocation | null): void {
+  if (Platform.OS !== 'android' || !nativeWidgetSettings) {
+    return;
+  }
+
+  const syncPromise = location
+    ? nativeWidgetSettings.setPrayerLocation?.(
+        location.latitude,
+        location.longitude,
+        location.label,
+        location.timeZone,
+      )
+    : nativeWidgetSettings.clearPrayerLocation?.();
 
   if (syncPromise) {
     syncPromise.catch(() => undefined);

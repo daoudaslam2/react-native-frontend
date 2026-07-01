@@ -11,12 +11,12 @@ import {
   CALCULATION_METHOD_OPTIONS,
   DEFAULT_ASR_METHOD,
   DEFAULT_CALCULATION_METHOD,
-  FIXED_PRAYER_LOCATION,
   MAX_ISHA_DEADLINE_MINUTES,
   getCalculationMethodLabel,
   normalizeIshaDeadlineMinutes,
   type AsrMethodKey,
   type CalculationMethodKey,
+  type PrayerLocation,
 } from '../../constants/prayerSettings';
 import { PRAYER_LABELS } from '../../constants/prayers';
 import type {
@@ -40,6 +40,7 @@ export interface PrayerCalculationOptions {
   calculationMethod?: CalculationMethodKey;
   asrMethod?: AsrMethodKey;
   ishaDeadlineMinutes?: number | null;
+  location: PrayerLocation;
 }
 
 interface PrayerEntry {
@@ -80,45 +81,50 @@ export interface IshaDeadlineBounds {
   resolvedMinutes: number;
 }
 
-const coordinates = new Coordinates(
-  FIXED_PRAYER_LOCATION.latitude,
-  FIXED_PRAYER_LOCATION.longitude,
-);
-
 const MAKKAH_COORDINATES = {
   latitude: 21.422487,
   longitude: 39.826206,
 };
 
+function createCoordinates(location: PrayerLocation): Coordinates {
+  return new Coordinates(location.latitude, location.longitude);
+}
+
 export function calculatePrayerSchedule(
-  options: PrayerCalculationOptions = {},
+  options: PrayerCalculationOptions,
 ): PrayerSchedule {
   const now = options.now ?? new Date();
   const scheduleDate = options.scheduleDate ?? now;
   const calculationMethod =
     options.calculationMethod ?? DEFAULT_CALCULATION_METHOD;
   const asrMethod = options.asrMethod ?? DEFAULT_ASR_METHOD;
+  const location = options.location;
+  const coordinates = createCoordinates(location);
   const todayPrayerTimes = createPrayerTimes(
     scheduleDate,
     calculationMethod,
     asrMethod,
+    location,
   );
   const yesterdayPrayerTimes = createPrayerTimes(
     scheduleDate,
     calculationMethod,
     asrMethod,
+    location,
     -1,
   );
   const tomorrowPrayerTimes = createPrayerTimes(
     scheduleDate,
     calculationMethod,
     asrMethod,
+    location,
     1,
   );
   const dayAfterTomorrowPrayerTimes = createPrayerTimes(
     scheduleDate,
     calculationMethod,
     asrMethod,
+    location,
     2,
   );
 
@@ -133,6 +139,7 @@ export function calculatePrayerSchedule(
     tomorrowEntries,
     0,
     options.ishaDeadlineMinutes,
+    location.timeZone,
   );
   const prayerState = getPrayerWindowState(now, [
     ...createPrayerWindows(
@@ -140,6 +147,7 @@ export function calculatePrayerSchedule(
       todayEntries,
       -1,
       options.ishaDeadlineMinutes,
+      location.timeZone,
     ),
     ...todayWindows,
     ...createPrayerWindows(
@@ -147,45 +155,53 @@ export function calculatePrayerSchedule(
       dayAfterTomorrowEntries,
       1,
       options.ishaDeadlineMinutes,
+      location.timeZone,
     ),
   ]);
   const timestamp = now.toISOString();
   const prayers = todayEntries.map(entry =>
-    createPrayerTime(entry, now, prayerState, todayWindows, timestamp),
+    createPrayerTime(
+      entry,
+      now,
+      prayerState,
+      todayWindows,
+      timestamp,
+      location.timeZone,
+    ),
   );
 
   return {
     prayers,
     summary: {
-      location: FIXED_PRAYER_LOCATION.label,
-      hijriDate: formatHijriDate(scheduleDate, FIXED_PRAYER_LOCATION.timeZone),
+      location: location.label,
+      hijriDate: formatHijriDate(scheduleDate, location.timeZone),
       gregorianDate: formatGregorianDate(
         scheduleDate,
-        FIXED_PRAYER_LOCATION.timeZone,
+        location.timeZone,
       ),
       currentPrayer: PRAYER_LABELS[prayerState.display.key],
       isPrayerActive: prayerState.isPrayerActive,
       countdownLabel: prayerState.isPrayerActive ? 'Ends in' : 'Starts in',
       countdownStartTime: toPrayerTimeValue(
         prayerState.countdownStart,
-        FIXED_PRAYER_LOCATION.timeZone,
+        location.timeZone,
       ),
       countdownEndTime: toPrayerTimeValue(
         prayerState.countdownEnd,
-        FIXED_PRAYER_LOCATION.timeZone,
+        location.timeZone,
       ),
       nextPrayer: PRAYER_LABELS[prayerState.next.key],
       nextPrayerTime: toPrayerTimeValue(
         prayerState.next.start,
-        FIXED_PRAYER_LOCATION.timeZone,
+        location.timeZone,
       ),
       remainingTime: formatDuration(
         prayerState.countdownEnd.getTime() - now.getTime(),
       ),
       calculationMethod: getCalculationMethodLabel(calculationMethod),
       distanceToMakkahKm: calculateDistanceKm(
-        FIXED_PRAYER_LOCATION.latitude,
-        FIXED_PRAYER_LOCATION.longitude,
+        location.latitude,
+        location.longitude,
         MAKKAH_COORDINATES.latitude,
         MAKKAH_COORDINATES.longitude,
       ),
@@ -195,21 +211,24 @@ export function calculatePrayerSchedule(
 }
 
 export function getIshaDeadlineBounds(
-  options: PrayerCalculationOptions = {},
+  options: PrayerCalculationOptions,
 ): IshaDeadlineBounds {
   const scheduleDate = options.scheduleDate ?? options.now ?? new Date();
   const calculationMethod =
     options.calculationMethod ?? DEFAULT_CALCULATION_METHOD;
   const asrMethod = options.asrMethod ?? DEFAULT_ASR_METHOD;
+  const location = options.location;
   const prayerTimes = createPrayerTimes(
     scheduleDate,
     calculationMethod,
     asrMethod,
+    location,
   );
   const nextPrayerTimes = createPrayerTimes(
     scheduleDate,
     calculationMethod,
     asrMethod,
+    location,
     1,
   );
   const minimum = calculateIslamicMidnight(
@@ -219,8 +238,11 @@ export function getIshaDeadlineBounds(
   const maximum = createIshaDeadlineDate(
     prayerTimes.isha,
     MAX_ISHA_DEADLINE_MINUTES,
+    location.timeZone,
   );
-  const minimumMinutes = Math.ceil(getDayMinutes(prayerTimes.isha, minimum));
+  const minimumMinutes = Math.ceil(
+    getDayMinutes(prayerTimes.isha, minimum, location.timeZone),
+  );
   const maximumMinutes = MAX_ISHA_DEADLINE_MINUTES;
   const configuredMinutes = normalizeIshaDeadlineMinutes(
     options.ishaDeadlineMinutes,
@@ -230,6 +252,7 @@ export function getIshaDeadlineBounds(
     prayerTimes.maghrib,
     nextPrayerTimes.fajr,
     configuredMinutes,
+    location.timeZone,
   );
   const resolvedMinutes =
     configuredMinutes === null
@@ -251,11 +274,12 @@ export function getIshaDeadlineBounds(
 }
 
 export function getActivePrayerDate(
-  options: PrayerCalculationOptions = {},
+  options: PrayerCalculationOptions,
 ): Date {
   const now = options.now ?? new Date();
-  const today = createDateReference(now, 0);
-  const yesterday = createDateReference(now, -1);
+  const location = options.location;
+  const today = createDateReference(now, 0, location.timeZone);
+  const yesterday = createDateReference(now, -1, location.timeZone);
   const previousDeadline = getIshaDeadlineBounds({
     ...options,
     now,
@@ -268,7 +292,7 @@ export function getActivePrayerDate(
 export function getFormattedPrayerTime(
   prayer: ObligatoryPrayerKey,
   use24HourTime: boolean,
-  options: PrayerCalculationOptions = {},
+  options: PrayerCalculationOptions,
 ): string {
   const prayerTime = calculatePrayerSchedule(options).prayers.find(
     item => item.key === prayer,
@@ -285,12 +309,17 @@ function createPrayerTimes(
   date: Date,
   calculationMethod: CalculationMethodKey,
   asrMethod: AsrMethodKey,
+  location: PrayerLocation,
   dayOffset = 0,
 ): PrayerTimes {
   const params = createCalculationParameters(calculationMethod, asrMethod);
-  const calculationDate = createCalculationDate(date, dayOffset);
+  const calculationDate = createCalculationDate(
+    date,
+    dayOffset,
+    location.timeZone,
+  );
 
-  return new PrayerTimes(coordinates, calculationDate, params);
+  return new PrayerTimes(createCoordinates(location), calculationDate, params);
 }
 
 function createCalculationParameters(
@@ -320,8 +349,12 @@ function getCalculationMethodFactory(
   }
 }
 
-function createCalculationDate(date: Date, dayOffset: number): Date {
-  const parts = getZonedDateParts(date, FIXED_PRAYER_LOCATION.timeZone);
+function createCalculationDate(
+  date: Date,
+  dayOffset: number,
+  timeZone: string,
+): Date {
+  const parts = getZonedDateParts(date, timeZone);
 
   return new Date(parts.year, parts.month - 1, parts.day + dayOffset);
 }
@@ -341,7 +374,8 @@ function createPrayerWindows(
   entries: PrayerEntry[],
   nextDayEntries: PrayerEntry[],
   dayOffset: DayOffset,
-  ishaDeadlineMinutes?: number | null,
+  ishaDeadlineMinutes: number | null | undefined,
+  timeZone: string,
 ): PrayerWindow[] {
   const fajr = getPrayerDate(entries, 'fajr');
   const sunrise = getPrayerDate(entries, 'sunrise');
@@ -359,7 +393,13 @@ function createPrayerWindows(
     {
       key: 'isha',
       start: isha,
-      end: resolveIshaDeadline(isha, maghrib, nextFajr, ishaDeadlineMinutes),
+      end: resolveIshaDeadline(
+        isha,
+        maghrib,
+        nextFajr,
+        ishaDeadlineMinutes,
+        timeZone,
+      ),
       dayOffset,
     },
   ];
@@ -409,8 +449,9 @@ function createPrayerTime(
   prayerState: PrayerWindowState,
   todayWindows: PrayerWindow[],
   timestamp: string,
+  timeZone: string,
 ): PrayerTime {
-  const time = toPrayerTimeValue(entry.date, FIXED_PRAYER_LOCATION.timeZone);
+  const time = toPrayerTimeValue(entry.date, timeZone);
   const status =
     entry.key !== 'sunrise'
       ? getObligatoryPrayerStatus(entry, now, prayerState, todayWindows)
@@ -419,7 +460,7 @@ function createPrayerTime(
         : 'upcoming';
 
   return {
-    id: `${entry.key}-${formatPrayerDateKey(entry.date)}`,
+    id: `${entry.key}-${formatPrayerDateKey(entry.date, timeZone)}`,
     key: entry.key,
     name: PRAYER_LABELS[entry.key],
     time,
@@ -476,17 +517,22 @@ function resolveIshaDeadline(
   isha: Date,
   maghrib: Date,
   nextFajr: Date,
-  ishaDeadlineMinutes?: number | null,
+  ishaDeadlineMinutes: number | null | undefined,
+  timeZone: string,
 ): Date {
   const minimum = calculateIslamicMidnight(maghrib, nextFajr);
-  const maximum = createIshaDeadlineDate(isha, MAX_ISHA_DEADLINE_MINUTES);
+  const maximum = createIshaDeadlineDate(
+    isha,
+    MAX_ISHA_DEADLINE_MINUTES,
+    timeZone,
+  );
   const configuredMinutes = normalizeIshaDeadlineMinutes(ishaDeadlineMinutes);
 
   if (configuredMinutes === null) {
     return minimum;
   }
 
-  const candidate = createIshaDeadlineDate(isha, configuredMinutes);
+  const candidate = createIshaDeadlineDate(isha, configuredMinutes, timeZone);
 
   if (candidate.getTime() < minimum.getTime()) {
     return minimum;
@@ -499,8 +545,12 @@ function resolveIshaDeadline(
   return candidate;
 }
 
-function createIshaDeadlineDate(dayDate: Date, minutesFromDayStart: number): Date {
-  const parts = getZonedDateParts(dayDate, FIXED_PRAYER_LOCATION.timeZone);
+function createIshaDeadlineDate(
+  dayDate: Date,
+  minutesFromDayStart: number,
+  timeZone: string,
+): Date {
+  const parts = getZonedDateParts(dayDate, timeZone);
 
   return new Date(
     parts.year,
@@ -511,8 +561,12 @@ function createIshaDeadlineDate(dayDate: Date, minutesFromDayStart: number): Dat
   );
 }
 
-function getDayMinutes(dayDate: Date, date: Date): number {
-  const dayStart = createIshaDeadlineDate(dayDate, 0);
+function getDayMinutes(
+  dayDate: Date,
+  date: Date,
+  timeZone: string,
+): number {
+  const dayStart = createIshaDeadlineDate(dayDate, 0, timeZone);
 
   return (date.getTime() - dayStart.getTime()) / 60_000;
 }
@@ -525,14 +579,18 @@ function clampIshaDeadlineMinutes(
   return Math.min(Math.max(minutes, minimumMinutes), maximumMinutes);
 }
 
-function createDateReference(now: Date, dayOffset: number): Date {
-  const parts = getZonedDateParts(now, FIXED_PRAYER_LOCATION.timeZone);
+function createDateReference(
+  now: Date,
+  dayOffset: number,
+  timeZone: string,
+): Date {
+  const parts = getZonedDateParts(now, timeZone);
 
   return new Date(Date.UTC(parts.year, parts.month - 1, parts.day + dayOffset, 12));
 }
 
-function formatPrayerDateKey(date: Date): string {
-  const parts = getZonedDateParts(date, FIXED_PRAYER_LOCATION.timeZone);
+function formatPrayerDateKey(date: Date, timeZone: string): string {
+  const parts = getZonedDateParts(date, timeZone);
   const month = parts.month.toString().padStart(2, '0');
   const day = parts.day.toString().padStart(2, '0');
 

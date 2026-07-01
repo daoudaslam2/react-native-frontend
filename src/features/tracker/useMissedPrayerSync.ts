@@ -23,19 +23,27 @@ export function useMissedPrayerSync(): void {
   const ishaDeadlineMinutes = useSettingsStore(
     state => state.ishaDeadlineMinutes,
   );
+  const location = useSettingsStore(state => state.location);
 
   useEffect(() => {
+    if (!location) {
+      return;
+    }
+
+    const trackingOptions = {
+      calculationMethod,
+      asrMethod,
+      ishaDeadlineMinutes,
+      location,
+    };
+
     if (
-      !isAtOrAfterMissedCutoff(now, {
-        calculationMethod,
-        asrMethod,
-        ishaDeadlineMinutes,
-      })
+      !isAtOrAfterMissedCutoff(now, trackingOptions)
     ) {
       return;
     }
 
-    const previousDateKey = getPreviousPrayerDateKey(now);
+    const previousDateKey = getPreviousPrayerDateKey(now, trackingOptions);
     const qazaPrayers = getAutoMissedPrayers({
       logs: logsByDate[previousDateKey],
       dateKey: previousDateKey,
@@ -52,6 +60,7 @@ export function useMissedPrayerSync(): void {
     asrMethod,
     calculationMethod,
     ishaDeadlineMinutes,
+    location,
     logsByDate,
     markMissedForQaza,
     now,

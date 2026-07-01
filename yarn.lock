@@ -1548,6 +1548,11 @@
     prompts "^2.4.2"
     semver "^7.5.2"
 
+"@react-native-community/geolocation@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@react-native-community/geolocation/-/geolocation-3.4.0.tgz#8b6ee024a71cf94526ab796af1e9ae140684802c"
+  integrity sha512-bzZH89/cwmpkPMKKveoC72C4JH0yF4St5Ceg/ZM9pA1SqX9MlRIrIrrOGZ/+yi++xAvFDiYfihtn9TvXWU9/rA==
+
 "@react-native/assets-registry@0.86.0":
   version "0.86.0"
   resolved "https://registry.yarnpkg.com/@react-native/assets-registry/-/assets-registry-0.86.0.tgz#560e78135969d1198aabfdc4ae74faae336463d0"
@@ -5753,6 +5758,11 @@ react-native-nitro-sqlite@^9.6.0:
   integrity sha512-a/N1yGhM8RvCCnaYhEHhh35YS+HDOAcGKeKFsp2ExCzIjP8vPXuzQtHylgLQLeAh7rUaism5q0QQFfogXm1SXA==
   dependencies:
     typeorm "0.3.27"
+
+react-native-permissions@^5.6.0:
+  version "5.6.0"
+  resolved "https://registry.yarnpkg.com/react-native-permissions/-/react-native-permissions-5.6.0.tgz#de5df5576c7762bc14da5b418bea025d300dacf6"
+  integrity sha512-iKq7rgAg9cQSy9e/7A6wCj0GYhw+o29Ob4OKC793fniDdwraDNu7D67X4holGJLChUDNzFZH1Qj+YWgrPNsGLw==
 
 react-native-reanimated@^4.5.0:
   version "4.5.0"

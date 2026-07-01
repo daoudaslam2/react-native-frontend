@@ -4,8 +4,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
 import { MetricChip } from '../../components/MetricChip';
+import { MissingLocationState } from '../../components/MissingLocationState';
 import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
+import type { PrayerLocation } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
 import { colors, radius, spacing } from '../../theme';
@@ -19,6 +21,20 @@ import { useSettingsStore } from '../settings/settingsStore';
 import { getPrayerTrackingDate } from '../tracker/trackerRules';
 
 export function PrayerTimesScreen(): React.JSX.Element {
+  const location = useSettingsStore(state => state.location);
+
+  if (!location) {
+    return <MissingLocationState />;
+  }
+
+  return <PrayerTimesContent location={location} />;
+}
+
+function PrayerTimesContent({
+  location,
+}: {
+  location: PrayerLocation;
+}): React.JSX.Element {
   const now = useNow();
   const use24HourTime = useSettingsStore(state => state.use24HourTime);
   const calculationMethod = useSettingsStore(state => state.calculationMethod);
@@ -30,6 +46,7 @@ export function PrayerTimesScreen(): React.JSX.Element {
     calculationMethod,
     asrMethod,
     ishaDeadlineMinutes,
+    location,
   };
   const queryOptions = {
     now,
@@ -37,6 +54,7 @@ export function PrayerTimesScreen(): React.JSX.Element {
     calculationMethod,
     asrMethod,
     ishaDeadlineMinutes,
+    location,
   };
   const summary = prayerRepository.getSummary(queryOptions);
   const prayers = prayerRepository.getTodayPrayerTimes(queryOptions);

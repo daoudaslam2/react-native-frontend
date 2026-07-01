@@ -1,6 +1,7 @@
 import {
   DEFAULT_CALCULATION_METHOD,
   MAX_ISHA_DEADLINE_MINUTES,
+  type PrayerLocation,
 } from '../src/constants/prayerSettings';
 import {
   calculatePrayerSchedule,
@@ -8,10 +9,19 @@ import {
 } from '../src/services/prayer/prayerCalculator';
 import { formatPrayerTime } from '../src/utils/dateTime';
 
+const TEST_PRAYER_LOCATION: PrayerLocation = {
+  label: 'Test location',
+  latitude: 31.50248,
+  longitude: 74.321451,
+  timeZone: 'Asia/Karachi',
+  source: 'manual',
+};
+
 describe('prayer calculator', () => {
   it('waits for Fajr after the default Isha deadline', () => {
     const schedule = calculatePrayerSchedule({
       now: new Date('2026-06-30T02:00:00+05:00'),
+      location: TEST_PRAYER_LOCATION,
     });
 
     expect(schedule.summary.currentPrayer).toBe('Fajr');
@@ -28,6 +38,7 @@ describe('prayer calculator', () => {
       now: new Date('2026-06-30T01:30:00+05:00'),
       scheduleDate: new Date('2026-06-29T12:00:00+05:00'),
       ishaDeadlineMinutes: MAX_ISHA_DEADLINE_MINUTES,
+      location: TEST_PRAYER_LOCATION,
     });
 
     expect(schedule.summary.currentPrayer).toBe('Isha');
@@ -42,6 +53,7 @@ describe('prayer calculator', () => {
       now: new Date('2026-06-30T02:30:00+05:00'),
       scheduleDate: new Date('2026-06-29T12:00:00+05:00'),
       ishaDeadlineMinutes: MAX_ISHA_DEADLINE_MINUTES + 60,
+      location: TEST_PRAYER_LOCATION,
     });
 
     expect(schedule.summary.currentPrayer).toBe('Fajr');
@@ -53,6 +65,7 @@ describe('prayer calculator', () => {
     const bounds = getIshaDeadlineBounds({
       scheduleDate: new Date('2026-06-29T12:00:00+05:00'),
       ishaDeadlineMinutes: 1,
+      location: TEST_PRAYER_LOCATION,
     });
 
     expect(bounds.resolved.getTime()).toBe(bounds.minimum.getTime());
@@ -61,6 +74,7 @@ describe('prayer calculator', () => {
   it('uses Fajr as active only until sunrise', () => {
     const schedule = calculatePrayerSchedule({
       now: new Date('2026-06-30T05:00:00+05:00'),
+      location: TEST_PRAYER_LOCATION,
     });
 
     expect(schedule.summary.currentPrayer).toBe('Fajr');
@@ -76,6 +90,7 @@ describe('prayer calculator', () => {
   it('waits for Dhuhr after sunrise instead of keeping Fajr current', () => {
     const schedule = calculatePrayerSchedule({
       now: new Date('2026-06-30T06:00:00+05:00'),
+      location: TEST_PRAYER_LOCATION,
     });
 
     expect(schedule.summary.currentPrayer).toBe('Dhuhr');
@@ -94,6 +109,7 @@ describe('prayer calculator', () => {
   it('rolls the next prayer to tomorrow Fajr after Isha', () => {
     const schedule = calculatePrayerSchedule({
       now: new Date('2026-06-30T22:00:00+05:00'),
+      location: TEST_PRAYER_LOCATION,
     });
 
     expect(schedule.summary.currentPrayer).toBe('Isha');
@@ -117,11 +133,13 @@ describe('prayer calculator', () => {
       now,
       calculationMethod: DEFAULT_CALCULATION_METHOD,
       asrMethod: 'standard',
+      location: TEST_PRAYER_LOCATION,
     }).prayers.find(prayer => prayer.key === 'asr');
     const hanafi = calculatePrayerSchedule({
       now,
       calculationMethod: DEFAULT_CALCULATION_METHOD,
       asrMethod: 'hanafi',
+      location: TEST_PRAYER_LOCATION,
     }).prayers.find(prayer => prayer.key === 'asr');
 
     if (!standard || !hanafi) {

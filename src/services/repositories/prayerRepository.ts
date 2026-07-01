@@ -6,6 +6,7 @@ import type {
 import type {
   AsrMethodKey,
   CalculationMethodKey,
+  PrayerLocation,
 } from '../../constants/prayerSettings';
 import { calculatePrayerSchedule } from '../prayer/prayerCalculator';
 
@@ -15,6 +16,7 @@ export interface PrayerQueryOptions {
   calculationMethod?: CalculationMethodKey;
   asrMethod?: AsrMethodKey;
   ishaDeadlineMinutes?: number | null;
+  location: PrayerLocation;
 }
 
 const trackerStats: PrayerTrackerStats = {
@@ -24,8 +26,8 @@ const trackerStats: PrayerTrackerStats = {
 };
 
 export interface PrayerRepository {
-  getTodayPrayerTimes: (options?: PrayerQueryOptions) => PrayerTime[];
-  getSummary: (options?: PrayerQueryOptions) => PrayerSummary;
+  getTodayPrayerTimes: (options: PrayerQueryOptions) => PrayerTime[];
+  getSummary: (options: PrayerQueryOptions) => PrayerSummary;
   getTrackerStats: () => PrayerTrackerStats;
 }
 

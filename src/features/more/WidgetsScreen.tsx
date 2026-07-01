@@ -11,10 +11,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
+import { MissingLocationState } from '../../components/MissingLocationState';
 import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
 import { OBLIGATORY_PRAYERS } from '../../constants/prayers';
-import { FIXED_PRAYER_LOCATION } from '../../constants/prayerSettings';
+import type { PrayerLocation } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
 import type { RootStackParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
@@ -48,6 +49,20 @@ interface WidgetPreviewData {
 const inactiveColor = '#969995';
 
 export function WidgetsScreen(): React.JSX.Element {
+  const location = useSettingsStore(state => state.location);
+
+  if (!location) {
+    return <MissingLocationState />;
+  }
+
+  return <WidgetsContent location={location} />;
+}
+
+function WidgetsContent({
+  location,
+}: {
+  location: PrayerLocation;
+}): React.JSX.Element {
   const navigation = useNavigation<WidgetsNavigation>();
   const { width } = useWindowDimensions();
   const [pendingWidgetSize, setPendingWidgetSize] =
@@ -63,6 +78,7 @@ export function WidgetsScreen(): React.JSX.Element {
     calculationMethod,
     asrMethod,
     ishaDeadlineMinutes,
+    location,
   };
   const queryOptions = {
     now,
@@ -70,6 +86,7 @@ export function WidgetsScreen(): React.JSX.Element {
     calculationMethod,
     asrMethod,
     ishaDeadlineMinutes,
+    location,
   };
   const summary = prayerRepository.getSummary(queryOptions);
   const prayers = prayerRepository
@@ -87,6 +104,7 @@ export function WidgetsScreen(): React.JSX.Element {
     hijriDate: summary.hijriDate,
     remainingTime: summary.remainingTime,
     use24HourTime,
+    location,
   });
   const previewWidth = Math.min(width - spacing.container * 2, 330);
   const handleAddWidget = React.useCallback(
@@ -524,6 +542,7 @@ function createPreviewData({
   hijriDate,
   remainingTime,
   use24HourTime,
+  location,
 }: {
   now: Date;
   prayers: WidgetPrayer[];
@@ -536,6 +555,7 @@ function createPreviewData({
   hijriDate: string;
   remainingTime: string;
   use24HourTime: boolean;
+  location: PrayerLocation;
 }): WidgetPreviewData {
   const displayPrayerName = isPrayerActive ? currentPrayerName : nextPrayerName;
   const current =
@@ -566,21 +586,22 @@ function createPreviewData({
     currentTime: formatPrayerTime(
       now,
       use24HourTime,
-      FIXED_PRAYER_LOCATION.timeZone,
+      location.timeZone,
     ),
     displayDate: new Intl.DateTimeFormat('en-US', {
       weekday: 'long',
       day: 'numeric',
       month: 'short',
-      timeZone: FIXED_PRAYER_LOCATION.timeZone,
+      timeZone: location.timeZone,
     }).format(now),
     hijriDate: compactHijriDate(hijriDate),
-    location: 'Lahore, PK',
+    location: location.label,
     countdownText: formatWidgetCountdown(remainingTime, isPrayerActive),
     progressPercent: calculatePreviewProgress(
       now,
       countdownStartTime,
       countdownEndTime,
+      location.timeZone,
     ),
   };
 }
@@ -638,10 +659,11 @@ function calculatePreviewProgress(
   now: Date,
   countdownStartTime: string,
   countdownEndTime: string,
+  timeZone: string,
 ): number {
   const startMinutes = toTimeMinutes(countdownStartTime);
   let endMinutes = toTimeMinutes(countdownEndTime);
-  let nowMinutes = getLahoreMinutes(now);
+  let nowMinutes = getZonedMinutes(now, timeZone);
 
   if (endMinutes <= startMinutes) {
     endMinutes += 24 * 60;
@@ -665,13 +687,13 @@ function calculatePreviewProgress(
   return Math.round((elapsedMinutes / totalMinutes) * 100);
 }
 
-function getLahoreMinutes(date: Date): number {
+function getZonedMinutes(date: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
     hourCycle: 'h23',
-    timeZone: FIXED_PRAYER_LOCATION.timeZone,
+    timeZone,
   }).formatToParts(date);
   const hour = Number(parts.find(part => part.type === 'hour')?.value ?? 0);
   const minute = Number(parts.find(part => part.type === 'minute')?.value ?? 0);

@@ -7,11 +7,24 @@ import android.content.Intent
 
 internal const val WIDGET_SETTINGS_PREFS = "al_salah_widget_settings"
 internal const val PREF_ISHA_DEADLINE_MINUTES = "isha_deadline_minutes"
+internal const val PREF_PRAYER_LATITUDE = "prayer_latitude"
+internal const val PREF_PRAYER_LONGITUDE = "prayer_longitude"
+internal const val PREF_PRAYER_LOCATION_LABEL = "prayer_location_label"
+internal const val PREF_PRAYER_TIME_ZONE = "prayer_time_zone"
 internal const val UNSET_ISHA_DEADLINE_MINUTES = -1
 internal const val MAX_ISHA_DEADLINE_MINUTES = 26 * 60
+internal const val DEFAULT_PRAYER_LOCATION_LABEL = "Prayer location"
+internal const val FALLBACK_PRAYER_TIME_ZONE = "UTC"
 internal const val ACTION_REFRESH_SMALL = "com.alsalah.widgets.REFRESH_SMALL"
 internal const val ACTION_REFRESH_MEDIUM = "com.alsalah.widgets.REFRESH_MEDIUM"
 internal const val ACTION_REFRESH_LARGE = "com.alsalah.widgets.REFRESH_LARGE"
+
+data class ConfiguredPrayerLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val label: String,
+    val timeZone: String,
+)
 
 internal fun getConfiguredIshaDeadlineMinutes(context: Context): Int? {
     val minutes = context
@@ -19,6 +32,63 @@ internal fun getConfiguredIshaDeadlineMinutes(context: Context): Int? {
         .getInt(PREF_ISHA_DEADLINE_MINUTES, UNSET_ISHA_DEADLINE_MINUTES)
 
     return minutes.takeIf { it != UNSET_ISHA_DEADLINE_MINUTES }
+}
+
+internal fun getConfiguredPrayerLocation(context: Context): ConfiguredPrayerLocation? {
+    val prefs = context.getSharedPreferences(WIDGET_SETTINGS_PREFS, Context.MODE_PRIVATE)
+    val latitude = prefs
+        .getString(PREF_PRAYER_LATITUDE, null)
+        ?.toDoubleOrNull()
+        ?.takeIf { it in -90.0..90.0 }
+        ?: return null
+    val longitude = prefs
+        .getString(PREF_PRAYER_LONGITUDE, null)
+        ?.toDoubleOrNull()
+        ?.takeIf { it in -180.0..180.0 }
+        ?: return null
+    val label = prefs
+        .getString(PREF_PRAYER_LOCATION_LABEL, DEFAULT_PRAYER_LOCATION_LABEL)
+        ?.takeIf { it.isNotBlank() }
+        ?: DEFAULT_PRAYER_LOCATION_LABEL
+    val timeZone = prefs
+        .getString(PREF_PRAYER_TIME_ZONE, FALLBACK_PRAYER_TIME_ZONE)
+        ?.takeIf { it.isNotBlank() }
+        ?: FALLBACK_PRAYER_TIME_ZONE
+
+    return ConfiguredPrayerLocation(
+        latitude = latitude,
+        longitude = longitude,
+        label = label,
+        timeZone = timeZone,
+    )
+}
+
+internal fun setConfiguredPrayerLocation(
+    context: Context,
+    latitude: Double,
+    longitude: Double,
+    label: String,
+    timeZone: String,
+) {
+    context
+        .getSharedPreferences(WIDGET_SETTINGS_PREFS, Context.MODE_PRIVATE)
+        .edit()
+        .putString(PREF_PRAYER_LATITUDE, latitude.coerceIn(-90.0, 90.0).toString())
+        .putString(PREF_PRAYER_LONGITUDE, longitude.coerceIn(-180.0, 180.0).toString())
+        .putString(PREF_PRAYER_LOCATION_LABEL, label.ifBlank { DEFAULT_PRAYER_LOCATION_LABEL })
+        .putString(PREF_PRAYER_TIME_ZONE, timeZone.ifBlank { FALLBACK_PRAYER_TIME_ZONE })
+        .apply()
+}
+
+internal fun clearConfiguredPrayerLocation(context: Context) {
+    context
+        .getSharedPreferences(WIDGET_SETTINGS_PREFS, Context.MODE_PRIVATE)
+        .edit()
+        .remove(PREF_PRAYER_LATITUDE)
+        .remove(PREF_PRAYER_LONGITUDE)
+        .remove(PREF_PRAYER_LOCATION_LABEL)
+        .remove(PREF_PRAYER_TIME_ZONE)
+        .apply()
 }
 
 internal fun setConfiguredIshaDeadlineMinutes(context: Context, minutes: Int?) {

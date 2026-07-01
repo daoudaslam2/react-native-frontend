@@ -76,6 +76,40 @@ class WidgetPinningModule(
         }
     }
 
+    @ReactMethod
+    fun setPrayerLocation(
+        latitude: Double,
+        longitude: Double,
+        label: String,
+        timeZone: String,
+        promise: Promise,
+    ) {
+        try {
+            setConfiguredPrayerLocation(
+                reactContext,
+                latitude,
+                longitude,
+                label,
+                timeZone,
+            )
+            refreshPrayerWidgets(reactContext)
+            promise.resolve(true)
+        } catch (error: RuntimeException) {
+            promise.reject("WIDGET_SETTING_FAILED", error)
+        }
+    }
+
+    @ReactMethod
+    fun clearPrayerLocation(promise: Promise) {
+        try {
+            clearConfiguredPrayerLocation(reactContext)
+            refreshPrayerWidgets(reactContext)
+            promise.resolve(true)
+        } catch (error: RuntimeException) {
+            promise.reject("WIDGET_SETTING_FAILED", error)
+        }
+    }
+
     private fun isPinningSupported(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return false

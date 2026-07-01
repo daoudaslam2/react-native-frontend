@@ -25,13 +25,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-private const val LAHORE_LATITUDE = 31.502480
-private const val LAHORE_LONGITUDE = 74.321451
-private const val LOCATION_LABEL = "Lahore, PK"
-private const val TIME_ZONE_ID = "Asia/Karachi"
 private const val ONE_MINUTE_MS = 60_000L
-
-private val WIDGET_TIME_ZONE: TimeZone = TimeZone.getTimeZone(TIME_ZONE_ID)
 
 enum class Namaz(
     val label: String,
@@ -73,12 +67,13 @@ data class PrayerWidgetData(
     val isPrayerActive: Boolean,
     val countdownStart: Date,
     val countdownEnd: Date,
+    val location: ConfiguredPrayerLocation,
 )
 
 abstract class PrayerWidgetProvider(
     private val layoutId: Int,
     private val rootViewId: Int,
-    private val render: (Context, RemoteViews, PrayerWidgetData) -> Unit,
+    private val render: (Context, RemoteViews, PrayerWidgetData?) -> Unit,
     private val providerClass: Class<out PrayerWidgetProvider>,
     private val refreshAction: String,
 ) : AppWidgetProvider() {
@@ -230,8 +225,13 @@ class LargePrayerWidgetProvider : PrayerWidgetProvider(
 private fun renderSmallWidget(
     context: Context,
     views: RemoteViews,
-    data: PrayerWidgetData,
+    data: PrayerWidgetData?,
 ) {
+    if (data == null) {
+        renderSmallSetupWidget(views)
+        return
+    }
+
     val currentLabel = data.current.namaz.label
     views.setTextViewText(R.id.widget_small_current_prayer, currentLabel)
     views.setTextViewTextSize(
@@ -245,6 +245,19 @@ private fun renderSmallWidget(
     views.setProgressBar(R.id.widget_small_progress, 1_000, calculateIntervalProgress(data), false)
 }
 
+private fun renderSmallSetupWidget(views: RemoteViews) {
+    views.setTextViewText(R.id.widget_small_current_prayer, "Set location")
+    views.setTextViewTextSize(
+        R.id.widget_small_current_prayer,
+        TypedValue.COMPLEX_UNIT_SP,
+        16f,
+    )
+    views.setTextViewText(R.id.widget_small_remaining, "Open Al-Salah")
+    views.setTextViewText(R.id.widget_small_next, "Choose coordinates")
+    views.setImageViewResource(R.id.widget_small_icon, R.drawable.ic_namaz_fajr)
+    views.setProgressBar(R.id.widget_small_progress, 1_000, 0, false)
+}
+
 private fun getSmallWidgetTitleSize(label: String): Float = when {
     label.length >= 7 -> 16f
     label.length >= 5 -> 20f
@@ -254,17 +267,22 @@ private fun getSmallWidgetTitleSize(label: String): Float = when {
 private fun renderMediumWidget(
     context: Context,
     views: RemoteViews,
-    data: PrayerWidgetData,
+    data: PrayerWidgetData?,
 ) {
+    if (data == null) {
+        renderMediumSetupWidget(views)
+        return
+    }
+
     val focusIndex = data.currentIndex
     val focusedItems = (-2..2).map { offset ->
         data.timeline[(focusIndex + offset).coerceIn(0, data.timeline.lastIndex)]
     }
 
-    views.setTextViewText(R.id.widget_medium_time, formatTime(data.now))
+    views.setTextViewText(R.id.widget_medium_time, formatTime(data.now, data.location))
     views.setTextViewText(R.id.widget_medium_status, formatMediumStatus(data))
-    views.setTextViewText(R.id.widget_medium_place, LOCATION_LABEL)
-    views.setTextViewText(R.id.widget_medium_hijri, formatHijriDate(data.now))
+    views.setTextViewText(R.id.widget_medium_place, data.location.label)
+    views.setTextViewText(R.id.widget_medium_hijri, formatHijriDate(data.now, data.location))
 
     setMediumInactiveSlot(
         views,
@@ -294,20 +312,41 @@ private fun renderMediumWidget(
     )
 }
 
+private fun renderMediumSetupWidget(views: RemoteViews) {
+    views.setTextViewText(R.id.widget_medium_time, "--:--")
+    views.setTextViewText(R.id.widget_medium_status, "Set location")
+    views.setTextViewText(R.id.widget_medium_place, "Open Al-Salah")
+    views.setTextViewText(R.id.widget_medium_hijri, "")
+    setMediumSetupSlot(views, R.id.widget_medium_slot_0_icon, R.id.widget_medium_slot_0_name)
+    setMediumSetupSlot(views, R.id.widget_medium_slot_1_icon, R.id.widget_medium_slot_1_name)
+    views.setImageViewResource(R.id.widget_medium_focus_icon, R.drawable.ic_namaz_fajr)
+    views.setTextViewText(R.id.widget_medium_focus_name, "Location")
+    setMediumSetupSlot(views, R.id.widget_medium_slot_3_icon, R.id.widget_medium_slot_3_name)
+    setMediumSetupSlot(views, R.id.widget_medium_slot_4_icon, R.id.widget_medium_slot_4_name)
+}
+
 private fun renderLargeWidget(
     context: Context,
     views: RemoteViews,
-    data: PrayerWidgetData,
+    data: PrayerWidgetData?,
 ) {
+    if (data == null) {
+        renderLargeSetupWidget(views)
+        return
+    }
+
     val previous = data.timeline[(data.currentIndex - 1).coerceAtLeast(0)]
     val firstNext = data.next
     val secondNext = data.timeline[(data.currentIndex + 2).coerceAtMost(data.timeline.lastIndex)]
 
-    views.setTextViewText(R.id.widget_large_date, formatDisplayDate(data.now))
-    views.setTextViewText(R.id.widget_large_time, formatTime(data.now))
+    views.setTextViewText(R.id.widget_large_date, formatDisplayDate(data.now, data.location))
+    views.setTextViewText(R.id.widget_large_time, formatTime(data.now, data.location))
     views.setTextViewText(R.id.widget_large_current_name, data.current.namaz.label)
     views.setTextViewText(R.id.widget_large_current_remaining, formatRemaining(data))
-    views.setTextViewText(R.id.widget_large_current_time, formatTime(data.current.time))
+    views.setTextViewText(
+        R.id.widget_large_current_time,
+        formatTime(data.current.time, data.location),
+    )
     views.setImageViewResource(R.id.widget_large_current_icon, data.current.namaz.icon)
 
     setLargePrayerRow(
@@ -316,6 +355,7 @@ private fun renderLargeWidget(
         R.id.widget_large_dhuhr_name,
         R.id.widget_large_dhuhr_time,
         previous,
+        data.location,
     )
     setLargePrayerRow(
         views,
@@ -323,6 +363,7 @@ private fun renderLargeWidget(
         R.id.widget_large_maghrib_name,
         R.id.widget_large_maghrib_time,
         firstNext,
+        data.location,
     )
     setLargePrayerRow(
         views,
@@ -330,6 +371,34 @@ private fun renderLargeWidget(
         R.id.widget_large_isha_name,
         R.id.widget_large_isha_time,
         secondNext,
+        data.location,
+    )
+}
+
+private fun renderLargeSetupWidget(views: RemoteViews) {
+    views.setTextViewText(R.id.widget_large_date, "Set location")
+    views.setTextViewText(R.id.widget_large_time, "--:--")
+    views.setTextViewText(R.id.widget_large_current_name, "Open Al-Salah")
+    views.setTextViewText(R.id.widget_large_current_remaining, "Choose coordinates")
+    views.setTextViewText(R.id.widget_large_current_time, "")
+    views.setImageViewResource(R.id.widget_large_current_icon, R.drawable.ic_namaz_fajr)
+    setLargeSetupRow(
+        views,
+        R.id.widget_large_dhuhr_icon,
+        R.id.widget_large_dhuhr_name,
+        R.id.widget_large_dhuhr_time,
+    )
+    setLargeSetupRow(
+        views,
+        R.id.widget_large_maghrib_icon,
+        R.id.widget_large_maghrib_name,
+        R.id.widget_large_maghrib_time,
+    )
+    setLargeSetupRow(
+        views,
+        R.id.widget_large_isha_icon,
+        R.id.widget_large_isha_name,
+        R.id.widget_large_isha_time,
     )
 }
 
@@ -343,28 +412,50 @@ private fun setMediumInactiveSlot(
     views.setTextViewText(labelViewId, item.namaz.label)
 }
 
+private fun setMediumSetupSlot(
+    views: RemoteViews,
+    iconViewId: Int,
+    labelViewId: Int,
+) {
+    views.setImageViewResource(iconViewId, R.drawable.ic_namaz_fajr)
+    views.setTextViewText(labelViewId, "")
+}
+
 private fun setLargePrayerRow(
     views: RemoteViews,
     iconViewId: Int,
     labelViewId: Int,
     timeViewId: Int,
     item: NamazTime,
+    location: ConfiguredPrayerLocation,
 ) {
     views.setImageViewResource(iconViewId, item.namaz.icon)
     views.setTextViewText(labelViewId, item.namaz.label)
-    views.setTextViewText(timeViewId, formatTime(item.time))
+    views.setTextViewText(timeViewId, formatTime(item.time, location))
 }
 
-private fun calculateWidgetData(context: Context, now: Date = Date()): PrayerWidgetData {
+private fun setLargeSetupRow(
+    views: RemoteViews,
+    iconViewId: Int,
+    labelViewId: Int,
+    timeViewId: Int,
+) {
+    views.setImageViewResource(iconViewId, R.drawable.ic_namaz_fajr)
+    views.setTextViewText(labelViewId, "")
+    views.setTextViewText(timeViewId, "")
+}
+
+private fun calculateWidgetData(context: Context, now: Date = Date()): PrayerWidgetData? {
     val ishaDeadlineMinutes = getConfiguredIshaDeadlineMinutes(context)
-    val trackingDate = getTrackingDate(context, now)
-    val yesterday = addDays(trackingDate, -1)
-    val tomorrow = addDays(trackingDate, 1)
-    val dayAfterTomorrow = addDays(trackingDate, 2)
-    val timeline = prayerTimesForDate(trackingDate)
-    val windows = prayerWindowsForDate(yesterday, trackingDate, ishaDeadlineMinutes) +
-        prayerWindowsForDate(trackingDate, tomorrow, ishaDeadlineMinutes) +
-        prayerWindowsForDate(tomorrow, dayAfterTomorrow, ishaDeadlineMinutes)
+    val location = getConfiguredPrayerLocation(context) ?: return null
+    val trackingDate = getTrackingDate(context, now, location)
+    val yesterday = addDays(trackingDate, -1, location)
+    val tomorrow = addDays(trackingDate, 1, location)
+    val dayAfterTomorrow = addDays(trackingDate, 2, location)
+    val timeline = prayerTimesForDate(trackingDate, location)
+    val windows = prayerWindowsForDate(yesterday, trackingDate, ishaDeadlineMinutes, location) +
+        prayerWindowsForDate(trackingDate, tomorrow, ishaDeadlineMinutes, location) +
+        prayerWindowsForDate(tomorrow, dayAfterTomorrow, ishaDeadlineMinutes, location)
     val activeWindow = windows.firstOrNull { !now.before(it.start) && now.before(it.end) }
     val nextWindow = windows.firstOrNull { it.start.after(now) } ?: windows.last()
     val displayWindow = activeWindow ?: nextWindow
@@ -385,11 +476,15 @@ private fun calculateWidgetData(context: Context, now: Date = Date()): PrayerWid
         isPrayerActive = activeWindow != null,
         countdownStart = activeWindow?.start ?: previousWindow?.end ?: now,
         countdownEnd = activeWindow?.end ?: nextWindow.start,
+        location = location,
     )
 }
 
-private fun prayerTimesForDate(date: Date): List<NamazTime> {
-    val prayerTimes = dayPrayerTimesForDate(date)
+private fun prayerTimesForDate(
+    date: Date,
+    location: ConfiguredPrayerLocation,
+): List<NamazTime> {
+    val prayerTimes = dayPrayerTimesForDate(date, location)
 
     return listOf(
         NamazTime(Namaz.FAJR, prayerTimes.fajr),
@@ -404,9 +499,10 @@ private fun prayerWindowsForDate(
     date: Date,
     nextDate: Date,
     ishaDeadlineMinutes: Int?,
+    location: ConfiguredPrayerLocation,
 ): List<NamazWindow> {
-    val prayerTimes = dayPrayerTimesForDate(date)
-    val nextPrayerTimes = dayPrayerTimesForDate(nextDate)
+    val prayerTimes = dayPrayerTimesForDate(date, location)
+    val nextPrayerTimes = dayPrayerTimesForDate(nextDate, location)
 
     return listOf(
         NamazWindow(Namaz.FAJR, prayerTimes.fajr, prayerTimes.sunrise),
@@ -421,18 +517,22 @@ private fun prayerWindowsForDate(
                 prayerTimes.maghrib,
                 nextPrayerTimes.fajr,
                 ishaDeadlineMinutes,
+                location,
             ),
         ),
     )
 }
 
-private fun dayPrayerTimesForDate(date: Date): DayPrayerTimes {
+private fun dayPrayerTimesForDate(
+    date: Date,
+    location: ConfiguredPrayerLocation,
+): DayPrayerTimes {
     val params = CalculationMethod.KARACHI.getParameters()
     params.madhab = Madhab.HANAFI
 
     val prayerTimes = PrayerTimes(
-        Coordinates(LAHORE_LATITUDE, LAHORE_LONGITUDE),
-        dateComponents(date),
+        Coordinates(location.latitude, location.longitude),
+        dateComponents(date, location),
         params,
     )
 
@@ -455,13 +555,15 @@ private fun resolveIshaDeadline(
     maghrib: Date,
     nextFajr: Date,
     ishaDeadlineMinutes: Int?,
+    location: ConfiguredPrayerLocation,
 ): Date {
     val minimum = calculateIslamicMidnight(maghrib, nextFajr)
-    val maximum = createIshaDeadlineDate(date, MAX_ISHA_DEADLINE_MINUTES)
+    val maximum = createIshaDeadlineDate(date, MAX_ISHA_DEADLINE_MINUTES, location)
     val configuredMinutes = ishaDeadlineMinutes ?: return minimum
     val candidate = createIshaDeadlineDate(
         date,
         configuredMinutes.coerceIn(0, MAX_ISHA_DEADLINE_MINUTES),
+        location,
     )
 
     return when {
@@ -471,23 +573,32 @@ private fun resolveIshaDeadline(
     }
 }
 
-private fun getTrackingDate(context: Context, now: Date): Date {
-    val today = createDateReference(now, 0)
-    val yesterday = createDateReference(now, -1)
-    val yesterdayPrayerTimes = dayPrayerTimesForDate(yesterday)
-    val todayPrayerTimes = dayPrayerTimesForDate(today)
+private fun getTrackingDate(
+    context: Context,
+    now: Date,
+    location: ConfiguredPrayerLocation,
+): Date {
+    val today = createDateReference(now, 0, location)
+    val yesterday = createDateReference(now, -1, location)
+    val yesterdayPrayerTimes = dayPrayerTimesForDate(yesterday, location)
+    val todayPrayerTimes = dayPrayerTimesForDate(today, location)
     val previousIshaDeadline = resolveIshaDeadline(
         yesterday,
         yesterdayPrayerTimes.maghrib,
         todayPrayerTimes.fajr,
         getConfiguredIshaDeadlineMinutes(context),
+        location,
     )
 
     return if (now.before(previousIshaDeadline)) yesterday else today
 }
 
-private fun createDateReference(now: Date, dayOffset: Int): Date {
-    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+private fun createDateReference(
+    now: Date,
+    dayOffset: Int,
+    location: ConfiguredPrayerLocation,
+): Date {
+    val calendar = Calendar.getInstance(location.toTimeZone())
     calendar.time = now
     calendar.add(Calendar.DATE, dayOffset)
     calendar.set(Calendar.HOUR_OF_DAY, 12)
@@ -498,8 +609,12 @@ private fun createDateReference(now: Date, dayOffset: Int): Date {
     return calendar.time
 }
 
-private fun createIshaDeadlineDate(date: Date, minutesFromDayStart: Int): Date {
-    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+private fun createIshaDeadlineDate(
+    date: Date,
+    minutesFromDayStart: Int,
+    location: ConfiguredPrayerLocation,
+): Date {
+    val calendar = Calendar.getInstance(location.toTimeZone())
     calendar.time = date
     calendar.set(Calendar.HOUR_OF_DAY, 0)
     calendar.set(Calendar.MINUTE, 0)
@@ -510,16 +625,23 @@ private fun createIshaDeadlineDate(date: Date, minutesFromDayStart: Int): Date {
     return calendar.time
 }
 
-private fun addDays(date: Date, days: Int): Date {
-    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+private fun addDays(
+    date: Date,
+    days: Int,
+    location: ConfiguredPrayerLocation,
+): Date {
+    val calendar = Calendar.getInstance(location.toTimeZone())
     calendar.time = date
     calendar.add(Calendar.DATE, days)
 
     return calendar.time
 }
 
-private fun dateComponents(date: Date): DateComponents {
-    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+private fun dateComponents(
+    date: Date,
+    location: ConfiguredPrayerLocation,
+): DateComponents {
+    val calendar = Calendar.getInstance(location.toTimeZone())
     calendar.time = date
 
     return DateComponents(
@@ -530,7 +652,7 @@ private fun dateComponents(date: Date): DateComponents {
 }
 
 private fun truncateToMinute(date: Date): Date {
-    val calendar = Calendar.getInstance(WIDGET_TIME_ZONE)
+    val calendar = Calendar.getInstance()
     calendar.time = date
     calendar.set(Calendar.SECOND, 0)
     calendar.set(Calendar.MILLISECOND, 0)
@@ -538,20 +660,20 @@ private fun truncateToMinute(date: Date): Date {
     return calendar.time
 }
 
-private fun formatTime(date: Date): String {
+private fun formatTime(date: Date, location: ConfiguredPrayerLocation): String {
     return SimpleDateFormat("HH:mm", Locale.US).apply {
-        timeZone = WIDGET_TIME_ZONE
+        timeZone = location.toTimeZone()
     }.format(date)
 }
 
-private fun formatDisplayDate(date: Date): String {
+private fun formatDisplayDate(date: Date, location: ConfiguredPrayerLocation): String {
     return SimpleDateFormat("EEEE, d MMM", Locale.US).apply {
-        timeZone = WIDGET_TIME_ZONE
+        timeZone = location.toTimeZone()
     }.format(date)
 }
 
-private fun formatHijriDate(date: Date): String {
-    val calendar = IslamicCalendar(IcuTimeZone.getTimeZone(TIME_ZONE_ID), Locale.US)
+private fun formatHijriDate(date: Date, location: ConfiguredPrayerLocation): String {
+    val calendar = IslamicCalendar(IcuTimeZone.getTimeZone(location.timeZone), Locale.US)
     calendar.timeInMillis = date.time
     val monthNames = listOf(
         "Muharram",
@@ -598,7 +720,7 @@ private fun formatSmallFooter(data: PrayerWidgetData): String {
     return if (data.isPrayerActive) {
         "Next: ${data.next.namaz.label}"
     } else {
-        "Starts: ${formatTime(data.next.time)}"
+        "Starts: ${formatTime(data.next.time, data.location)}"
     }
 }
 
@@ -632,6 +754,10 @@ private fun calculateIntervalProgress(data: PrayerWidgetData): Int {
     val elapsedMillis = (data.now.time - data.countdownStart.time).coerceIn(0, totalMillis)
 
     return ((elapsedMillis * 1_000) / totalMillis).toInt()
+}
+
+private fun ConfiguredPrayerLocation.toTimeZone(): TimeZone {
+    return TimeZone.getTimeZone(timeZone)
 }
 
 private fun scheduleMinuteAlarm(

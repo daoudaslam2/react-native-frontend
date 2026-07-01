@@ -6,6 +6,15 @@ export type CalculationMethodKey =
   | 'northAmerica';
 
 export type AsrMethodKey = 'hanafi' | 'standard';
+export type PrayerLocationSource = 'device' | 'manual';
+
+export interface PrayerLocation {
+  label: string;
+  latitude: number;
+  longitude: number;
+  timeZone: string;
+  source: PrayerLocationSource;
+}
 
 export interface PrayerSettingOption<T extends string> {
   key: T;
@@ -18,14 +27,7 @@ export const DEFAULT_ASR_METHOD: AsrMethodKey = 'hanafi';
 export const DEFAULT_ISHA_DEADLINE_MINUTES: number | null = null;
 export const ISHA_DEADLINE_STEP_MINUTES = 15;
 export const MAX_ISHA_DEADLINE_MINUTES = 26 * 60;
-
-export const FIXED_PRAYER_LOCATION = {
-  label: 'Lahore, Pakistan',
-  coordinatesLabel: '31.502480, 74.321451',
-  latitude: 31.50248,
-  longitude: 74.321451,
-  timeZone: 'Asia/Karachi',
-} as const;
+const FALLBACK_TIME_ZONE = 'UTC';
 
 export const CALCULATION_METHOD_OPTIONS: ReadonlyArray<
   PrayerSettingOption<CalculationMethodKey>
@@ -133,4 +135,109 @@ export function normalizeIshaDeadlineMinutes(value: unknown): number | null {
     Math.max(Math.round(value), 0),
     MAX_ISHA_DEADLINE_MINUTES,
   );
+}
+
+export function getDeviceTimeZone(): string {
+  return (
+    Intl.DateTimeFormat().resolvedOptions().timeZone ||
+    FALLBACK_TIME_ZONE
+  );
+}
+
+export function formatCoordinatesLabel(location: PrayerLocation): string {
+  return `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+}
+
+export function formatPrayerLocationLabel(location: PrayerLocation): string {
+  return `${location.label} (${formatCoordinatesLabel(location)})`;
+}
+
+export function createDevicePrayerLocation({
+  latitude,
+  longitude,
+}: {
+  latitude: number;
+  longitude: number;
+}): PrayerLocation {
+  return {
+    label: 'Current location',
+    latitude,
+    longitude,
+    timeZone: getDeviceTimeZone(),
+    source: 'device',
+  };
+}
+
+export function createManualPrayerLocation({
+  latitude,
+  longitude,
+}: {
+  latitude: number;
+  longitude: number;
+}): PrayerLocation {
+  return {
+    label: 'Manual location',
+    latitude,
+    longitude,
+    timeZone: getDeviceTimeZone(),
+    source: 'manual',
+  };
+}
+
+export function normalizePrayerLocation(
+  value: unknown,
+): PrayerLocation | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const latitude = normalizeLatitude(value.latitude);
+  const longitude = normalizeLongitude(value.longitude);
+  const source = value.source === 'device' ? 'device' : 'manual';
+  const label =
+    typeof value.label === 'string' && value.label.trim()
+      ? value.label.trim()
+      : source === 'device'
+        ? 'Current location'
+        : 'Manual location';
+  const timeZone =
+    typeof value.timeZone === 'string' && value.timeZone.trim()
+      ? value.timeZone.trim()
+      : getDeviceTimeZone();
+
+  if (latitude === null || longitude === null) {
+    return null;
+  }
+
+  return {
+    label,
+    latitude,
+    longitude,
+    timeZone,
+    source,
+  };
+}
+
+export function normalizeLatitude(value: unknown): number | null {
+  const parsed = typeof value === 'string' ? Number(value) : value;
+
+  if (typeof parsed !== 'number' || !Number.isFinite(parsed)) {
+    return null;
+  }
+
+  return parsed >= -90 && parsed <= 90 ? parsed : null;
+}
+
+export function normalizeLongitude(value: unknown): number | null {
+  const parsed = typeof value === 'string' ? Number(value) : value;
+
+  if (typeof parsed !== 'number' || !Number.isFinite(parsed)) {
+    return null;
+  }
+
+  return parsed >= -180 && parsed <= 180 ? parsed : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }

@@ -5,8 +5,10 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 import { AppText } from '../../components/AppText';
 import { Icon, type IconName } from '../../components/Icon';
+import { MissingLocationState } from '../../components/MissingLocationState';
 import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
+import type { PrayerLocation } from '../../constants/prayerSettings';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
 import { useNow } from '../../hooks/useNow';
 import type { MainTabParamList } from '../../navigation/types';
@@ -43,6 +45,20 @@ interface TrackerMetrics {
 }
 
 export function PrayerTrackerScreen(): React.JSX.Element {
+  const location = useSettingsStore(state => state.location);
+
+  if (!location) {
+    return <MissingLocationState />;
+  }
+
+  return <PrayerTrackerContent location={location} />;
+}
+
+function PrayerTrackerContent({
+  location,
+}: {
+  location: PrayerLocation;
+}): React.JSX.Element {
   const navigation = useNavigation<TrackerNavigation>();
   const now = useNow(60_000);
   const logsByDate = useTrackerStore(state => state.logsByDate);
@@ -57,6 +73,7 @@ export function PrayerTrackerScreen(): React.JSX.Element {
     calculationMethod,
     asrMethod,
     ishaDeadlineMinutes,
+    location,
   });
   const metrics = getTrackerMetrics({
     activeDateKey,

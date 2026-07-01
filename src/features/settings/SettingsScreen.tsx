@@ -9,9 +9,9 @@ import { Screen } from '../../components/Screen';
 import {
   ASR_METHOD_OPTIONS,
   CALCULATION_METHOD_OPTIONS,
-  FIXED_PRAYER_LOCATION,
   ISHA_DEADLINE_STEP_MINUTES,
   MAX_ISHA_DEADLINE_MINUTES,
+  formatPrayerLocationLabel,
   getAsrMethodLabel,
   getCalculationMethodLabel,
   type AsrMethodKey,
@@ -37,12 +37,15 @@ export function SettingsScreen(): React.JSX.Element {
   const navigation = useNavigation<SettingsNavigation>();
   const now = useNow(60_000);
   const settings = useSettingsStore();
-  const ishaDeadlineBounds = getIshaDeadlineBounds({
-    now,
-    calculationMethod: settings.calculationMethod,
-    asrMethod: settings.asrMethod,
-    ishaDeadlineMinutes: settings.ishaDeadlineMinutes,
-  });
+  const ishaDeadlineBounds = settings.location
+    ? getIshaDeadlineBounds({
+        now,
+        calculationMethod: settings.calculationMethod,
+        asrMethod: settings.asrMethod,
+        ishaDeadlineMinutes: settings.ishaDeadlineMinutes,
+        location: settings.location,
+      })
+    : null;
 
   return (
     <Screen contentContainerStyle={styles.content}>
@@ -87,17 +90,30 @@ export function SettingsScreen(): React.JSX.Element {
           options={ASR_METHOD_OPTIONS}
           onSelect={settings.setAsrMethod}
         />
-        <IshaDeadlineRow
-          value={settings.ishaDeadlineMinutes}
-          bounds={ishaDeadlineBounds}
-          use24HourTime={settings.use24HourTime}
-          onChange={settings.setIshaDeadlineMinutes}
-        />
+        {settings.location && ishaDeadlineBounds ? (
+          <IshaDeadlineRow
+            value={settings.ishaDeadlineMinutes}
+            bounds={ishaDeadlineBounds}
+            use24HourTime={settings.use24HourTime}
+            timeZone={settings.location.timeZone}
+            onChange={settings.setIshaDeadlineMinutes}
+          />
+        ) : (
+          <SettingsRow
+            icon="moon"
+            label="Isha End Time"
+            value="Set location first"
+          />
+        )}
         <SettingsRow
           icon="location"
           label="Location"
-          value={settings.locationMode}
-          interactive={false}
+          value={
+            settings.location
+              ? formatPrayerLocationLabel(settings.location)
+              : 'Not set'
+          }
+          onPress={() => navigation.navigate('LocationSetup')}
         />
       </SettingsSection>
 
@@ -136,27 +152,29 @@ function IshaDeadlineRow({
   value,
   bounds,
   use24HourTime,
+  timeZone,
   onChange,
 }: {
   value: number | null;
   bounds: IshaDeadlineBounds;
   use24HourTime: boolean;
+  timeZone: string;
   onChange: (minutes: number | null) => void;
 }): React.JSX.Element {
   const currentLabel = formatPrayerTime(
     bounds.resolved,
     use24HourTime,
-    FIXED_PRAYER_LOCATION.timeZone,
+    timeZone,
   );
   const minimumLabel = formatPrayerTime(
     bounds.minimum,
     use24HourTime,
-    FIXED_PRAYER_LOCATION.timeZone,
+    timeZone,
   );
   const maximumLabel = formatPrayerTime(
     bounds.maximum,
     use24HourTime,
-    FIXED_PRAYER_LOCATION.timeZone,
+    timeZone,
   );
   const canDecrease = bounds.resolvedMinutes > bounds.minimumMinutes;
   const canIncrease = bounds.resolvedMinutes < bounds.maximumMinutes;
@@ -313,15 +331,18 @@ function SettingsRow({
   label,
   value,
   interactive = true,
+  onPress,
 }: {
   icon: IconName;
   label: string;
   value?: string;
   interactive?: boolean;
+  onPress?: () => void;
 }): React.JSX.Element {
   return (
     <Pressable
       disabled={!interactive}
+      onPress={onPress}
       style={({ pressed }) => [
         styles.row,
         interactive && pressed && styles.pressed,

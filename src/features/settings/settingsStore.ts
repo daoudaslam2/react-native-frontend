@@ -5,15 +5,19 @@ import {
   DEFAULT_ASR_METHOD,
   DEFAULT_CALCULATION_METHOD,
   DEFAULT_ISHA_DEADLINE_MINUTES,
-  FIXED_PRAYER_LOCATION,
   normalizeAsrMethod,
   normalizeCalculationMethod,
   normalizeIshaDeadlineMinutes,
+  normalizePrayerLocation,
   type AsrMethodKey,
   type CalculationMethodKey,
+  type PrayerLocation,
 } from '../../constants/prayerSettings';
 import { localStorage } from '../../storage/mmkv';
-import { syncWidgetIshaDeadlineMinutes } from './widgetSettingsBridge';
+import {
+  syncWidgetIshaDeadlineMinutes,
+  syncWidgetPrayerLocation,
+} from './widgetSettingsBridge';
 
 type ThemeMode = 'System' | 'Light' | 'Dark';
 type Language = 'English';
@@ -24,7 +28,7 @@ interface SettingsValues {
   calculationMethod: CalculationMethodKey;
   asrMethod: AsrMethodKey;
   ishaDeadlineMinutes: number | null;
-  locationMode: string;
+  location: PrayerLocation | null;
   use24HourTime: boolean;
   adhanNotifications: boolean;
   qazaReminders: boolean;
@@ -34,6 +38,7 @@ interface SettingsState extends SettingsValues {
   setCalculationMethod: (method: CalculationMethodKey) => void;
   setAsrMethod: (method: AsrMethodKey) => void;
   setIshaDeadlineMinutes: (minutes: number | null) => void;
+  setPrayerLocation: (location: PrayerLocation) => void;
   toggleUse24HourTime: () => void;
   toggleAdhanNotifications: () => void;
   toggleQazaReminders: () => void;
@@ -45,7 +50,7 @@ const defaultSettings: SettingsValues = {
   calculationMethod: DEFAULT_CALCULATION_METHOD,
   asrMethod: DEFAULT_ASR_METHOD,
   ishaDeadlineMinutes: DEFAULT_ISHA_DEADLINE_MINUTES,
-  locationMode: `${FIXED_PRAYER_LOCATION.label} (${FIXED_PRAYER_LOCATION.coordinatesLabel})`,
+  location: null,
   use24HourTime: false,
   adhanNotifications: true,
   qazaReminders: true,
@@ -63,6 +68,16 @@ export const useSettingsStore = create<SettingsState>()(
         syncWidgetIshaDeadlineMinutes(ishaDeadlineMinutes);
         set({ ishaDeadlineMinutes });
       },
+      setPrayerLocation: location => {
+        const normalizedLocation = normalizePrayerLocation(location);
+
+        if (!normalizedLocation) {
+          return;
+        }
+
+        syncWidgetPrayerLocation(normalizedLocation);
+        set({ location: normalizedLocation });
+      },
       toggleUse24HourTime: () =>
         set(state => ({ use24HourTime: !state.use24HourTime })),
       toggleAdhanNotifications: () =>
@@ -72,13 +87,14 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'al-salah-settings',
-      version: 3,
+      version: 5,
       storage: createJSONStorage(() => localStorage),
       migrate: persistedState => coercePersistedSettings(persistedState),
       onRehydrateStorage: () => state => {
         syncWidgetIshaDeadlineMinutes(
           state?.ishaDeadlineMinutes ?? defaultSettings.ishaDeadlineMinutes,
         );
+        syncWidgetPrayerLocation(state?.location ?? null);
       },
       partialize: state => ({
         theme: state.theme,
@@ -86,7 +102,7 @@ export const useSettingsStore = create<SettingsState>()(
         calculationMethod: state.calculationMethod,
         asrMethod: state.asrMethod,
         ishaDeadlineMinutes: state.ishaDeadlineMinutes,
-        locationMode: state.locationMode,
+        location: state.location,
         use24HourTime: state.use24HourTime,
         adhanNotifications: state.adhanNotifications,
         qazaReminders: state.qazaReminders,
@@ -110,7 +126,7 @@ function coercePersistedSettings(persistedState: unknown): SettingsValues {
     ishaDeadlineMinutes: normalizeIshaDeadlineMinutes(
       persistedState.ishaDeadlineMinutes,
     ),
-    locationMode: defaultSettings.locationMode,
+    location: normalizePrayerLocation(persistedState.location),
     use24HourTime: coerceBoolean(
       persistedState.use24HourTime,
       defaultSettings.use24HourTime,
