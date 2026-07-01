@@ -167,9 +167,24 @@ export function PrayerTrackerScreen(): React.JSX.Element {
           <AppText variant="title" weight="700">
             Qaza Balance
           </AppText>
-          <AppText variant="body" color="onSurfaceVariant">
-            {metrics.qazaTotal} remaining - Highest: {metrics.highestQazaPrayer}
-          </AppText>
+          <View style={styles.qazaBalanceRows}>
+            <View style={styles.qazaBalanceRow}>
+              <AppText variant="body" color="onSurfaceVariant">
+                Total Remaining:
+              </AppText>
+              <AppText variant="body" color="primary" weight="700">
+                {metrics.qazaTotal}
+              </AppText>
+            </View>
+            <View style={styles.qazaBalanceRow}>
+              <AppText variant="body" color="onSurfaceVariant">
+                Highest:
+              </AppText>
+              <AppText variant="body" color="primary" weight="700">
+                {metrics.highestQazaPrayer}
+              </AppText>
+            </View>
+          </View>
         </View>
         <Pressable
           accessibilityRole="button"
@@ -523,6 +538,14 @@ const styles = StyleSheet.create({
   },
   qazaEntryText: {
     flex: 1,
+    gap: spacing.xs,
+  },
+  qazaBalanceRows: {
+    gap: 2,
+  },
+  qazaBalanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
   },
   qazaButton: {
