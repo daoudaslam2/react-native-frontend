@@ -104,7 +104,11 @@ export function PrayerTrackerScreen(): React.JSX.Element {
               Weekly Completion
             </AppText>
           </View>
-          <AppText variant="label" color="onSurfaceVariant">
+          <AppText
+            variant="label"
+            color="onSurfaceVariant"
+            align="right"
+            style={styles.sectionSubtitle}>
             {metrics.thirtyDayCompletionPercent}% in 30 days
           </AppText>
         </View>
@@ -132,26 +136,30 @@ export function PrayerTrackerScreen(): React.JSX.Element {
       </Surface>
 
       <View style={styles.compactGrid}>
-        <SmallMetricCard
-          icon="checkCircle"
-          label="Completed"
-          value={metrics.completedPrayers.toString()}
-        />
-        <SmallMetricCard
-          icon="task"
-          label="Qaza Logged"
-          value={metrics.qazaPrayers.toString()}
-        />
-        <SmallMetricCard
-          icon="calendar"
-          label="Tracked Days"
-          value={metrics.trackedDays.toString()}
-        />
-        <SmallMetricCard
-          icon="chart"
-          label="Best Streak"
-          value={metrics.bestStreakDays.toString()}
-        />
+        <View style={styles.compactGridRow}>
+          <SmallMetricCard
+            icon="checkCircle"
+            label="Completed"
+            value={metrics.completedPrayers.toString()}
+          />
+          <SmallMetricCard
+            icon="task"
+            label="Qaza Logged"
+            value={metrics.qazaPrayers.toString()}
+          />
+        </View>
+        <View style={styles.compactGridRow}>
+          <SmallMetricCard
+            icon="calendar"
+            label="Tracked Days"
+            value={metrics.trackedDays.toString()}
+          />
+          <SmallMetricCard
+            icon="chart"
+            label="Best Streak"
+            value={metrics.bestStreakDays.toString()}
+          />
+        </View>
       </View>
 
       <Surface style={styles.qazaEntry} radiusSize="lg">
@@ -443,13 +451,14 @@ const styles = StyleSheet.create({
     marginTop: -spacing.xs,
   },
   weekCard: {
-    gap: spacing.lg,
+    gap: spacing.sm,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
+    alignItems: 'stretch',
+    gap: 0,
+  },
+  sectionSubtitle: {
+    alignSelf: 'flex-end',
   },
   chart: {
     height: 118,
@@ -484,12 +493,15 @@ const styles = StyleSheet.create({
     opacity: 0.62,
   },
   compactGrid: {
+    gap: spacing.gutter,
+  },
+  compactGridRow: {
+    width: '100%',
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.gutter,
   },
   smallMetricCard: {
-    width: '47.5%',
+    flex: 1,
     minHeight: 128,
     alignItems: 'center',
     justifyContent: 'center',

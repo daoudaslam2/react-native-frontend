@@ -7,6 +7,8 @@ import Svg, {
   Rect,
 } from 'react-native-svg';
 
+import { colors } from '../theme';
+
 export type IconName =
   | 'add'
   | 'arrowLeft'
@@ -204,7 +206,14 @@ function renderIcon(
       return (
         <>
           <Polyline points="4.5 13 9.5 18 18 8.5" {...strokeProps} />
-          <Path d="M23.5 9.5V2.8l-2.4 1.4" {...strokeProps} />
+          <Path
+            d="M23.5 9.5V2.8l-2.4 1.4"
+            stroke={colors.primary}
+            strokeWidth={1.9}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
         </>
       );
     case 'moon':
