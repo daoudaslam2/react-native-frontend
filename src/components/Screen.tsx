@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, spacing } from '../theme';
 
-interface ScreenProps extends ScrollViewProps {
+export interface ScreenProps extends ScrollViewProps {
   children: React.ReactNode;
   patterned?: boolean;
 }

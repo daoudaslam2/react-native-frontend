@@ -1,7 +1,5 @@
 import React from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -11,7 +9,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
-import { Screen } from '../../components/Screen';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme';
 import { AuthTextField } from './AuthTextField';
@@ -57,23 +55,21 @@ export function SignUpScreen(): React.JSX.Element {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.keyboard}>
-      <Screen contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.topBar}>
-          <Pressable
-            accessibilityLabel="Go back"
-            accessibilityRole="button"
-            onPress={() => navigation.goBack()}
-            style={({ pressed }) => [
-              styles.backButton,
-              pressed && styles.pressed,
-            ]}>
-            <Icon name="arrowLeft" size={28} color={colors.primary} />
-          </Pressable>
-        </View>
+    <KeyboardAvoidingScreen contentContainerStyle={styles.content}>
+      <View style={styles.topBar}>
+        <Pressable
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+          onPress={() => navigation.goBack()}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.pressed,
+          ]}>
+          <Icon name="arrowLeft" size={28} color={colors.primary} />
+        </Pressable>
+      </View>
 
+      <View style={styles.mainContent}>
         <View style={styles.titleBlock}>
           <AppText variant="headline" weight="700">
             Create account
@@ -127,12 +123,12 @@ export function SignUpScreen(): React.JSX.Element {
             styles.primaryButton,
             pressed && styles.pressed,
           ]}>
-          <AppText variant="label" color="onPrimaryContainer">
+          <AppText variant="label" color="onPrimaryContainer" weight="700">
             Sign Up
           </AppText>
         </Pressable>
-      </Screen>
-    </KeyboardAvoidingView>
+      </View>
+    </KeyboardAvoidingScreen>
   );
 }
 
@@ -179,11 +175,12 @@ function validateSignUp({
 }
 
 const styles = StyleSheet.create({
-  keyboard: {
-    flex: 1,
-  },
   content: {
     flexGrow: 1,
+    gap: spacing.md,
+  },
+  mainContent: {
+    flex: 1,
     justifyContent: 'center',
     gap: spacing.xl,
   },

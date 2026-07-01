@@ -1,17 +1,11 @@
 import React from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import { LogoMark } from '../../components/LogoMark';
-import { Screen } from '../../components/Screen';
 import type { RootStackParamList } from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme';
 import { AuthTextField } from './AuthTextField';
@@ -51,10 +45,8 @@ export function LoginScreen(): React.JSX.Element {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.keyboard}>
-      <Screen contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingScreen contentContainerStyle={styles.content}>
+      <View style={styles.mainContent}>
         <View style={styles.header}>
           <LogoMark size={72} />
           <View style={styles.titleBlock}>
@@ -89,31 +81,46 @@ export function LoginScreen(): React.JSX.Element {
 
         <View style={styles.actions}>
           <PrimaryButton label="Log In" onPress={handleLogin} />
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => navigation.navigate('SignUp')}
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              pressed && styles.pressed,
-            ]}>
-            <AppText variant="label" color="primary">
-              Create account
+          <View style={styles.createAccountPrompt}>
+            <AppText variant="body" color="onSurfaceVariant" align="center">
+              Don't have an account?
             </AppText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={handleContinueWithoutLogin}
-            style={({ pressed }) => [
-              styles.guestButton,
-              pressed && styles.pressed,
-            ]}>
-            <AppText variant="label" color="onSurfaceVariant">
-              Continue without login
-            </AppText>
-          </Pressable>
+            <Pressable
+              accessibilityLabel="Create a new account"
+              accessibilityRole="button"
+              hitSlop={20}
+              onPress={() => navigation.navigate('SignUp')}
+              style={({ pressed }) => pressed && styles.pressed}
+            >
+              <AppText
+                variant="label"
+                color="primary"
+                weight="700"
+                align="center"
+                style={styles.createAccountLink}
+              >
+                Create a new one
+              </AppText>
+            </Pressable>
+          </View>
         </View>
-      </Screen>
-    </KeyboardAvoidingView>
+      </View>
+
+      <View style={styles.bottomAction}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={handleContinueWithoutLogin}
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <AppText variant="label" color="primary" weight="700">
+            Continue without login
+          </AppText>
+        </Pressable>
+      </View>
+    </KeyboardAvoidingScreen>
   );
 }
 
@@ -128,11 +135,9 @@ function PrimaryButton({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.primaryButton,
-        pressed && styles.pressed,
-      ]}>
-      <AppText variant="label" color="onPrimaryContainer">
+      style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+    >
+      <AppText variant="label" color="onPrimaryContainer" weight="700">
         {label}
       </AppText>
     </Pressable>
@@ -161,11 +166,12 @@ function isValidEmail(value: string): boolean {
 }
 
 const styles = StyleSheet.create({
-  keyboard: {
-    flex: 1,
-  },
   content: {
     flexGrow: 1,
+    justifyContent: 'space-between',
+  },
+  mainContent: {
+    flex: 1,
     justifyContent: 'center',
     gap: spacing.xl,
   },
@@ -181,6 +187,10 @@ const styles = StyleSheet.create({
   actions: {
     gap: spacing.sm,
   },
+  bottomAction: {
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.lg,
+  },
   primaryButton: {
     minHeight: 56,
     borderRadius: radius.full,
@@ -195,11 +205,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.primarySoft,
   },
-  guestButton: {
-    minHeight: 52,
+  createAccountPrompt: {
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+  createAccountLink: {
+    textDecorationLine: 'underline',
   },
   pressed: {
     opacity: 0.76,

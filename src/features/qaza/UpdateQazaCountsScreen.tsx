@@ -5,8 +5,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import { PrayerIcon } from '../../components/PrayerIcon';
-import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
 import type { RootStackParamList } from '../../navigation/types';
@@ -49,7 +49,7 @@ export function UpdateQazaCountsScreen(): React.JSX.Element {
   };
 
   return (
-    <Screen contentContainerStyle={styles.screenContent}>
+    <KeyboardAvoidingScreen contentContainerStyle={styles.screenContent}>
       <View style={styles.topBar}>
         <Pressable
           accessibilityLabel="Go back"
@@ -95,7 +95,7 @@ export function UpdateQazaCountsScreen(): React.JSX.Element {
           Save Changes
         </AppText>
       </Pressable>
-    </Screen>
+    </KeyboardAvoidingScreen>
   );
 }
 

@@ -1,8 +1,6 @@
 import React from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -12,7 +10,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
-import { Screen } from '../../components/Screen';
+import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
 import {
   createDevicePrayerLocation,
   createManualPrayerLocation,
@@ -32,6 +30,12 @@ type LocationSetupNavigation = NativeStackNavigationProp<
   RootStackParamList,
   'LocationSetup'
 >;
+
+interface LocationSetupFieldErrors {
+  name?: string;
+  latitude?: string;
+  longitude?: string;
+}
 
 export function LocationSetupScreen(): React.JSX.Element {
   const navigation = useNavigation<LocationSetupNavigation>();
@@ -55,8 +59,17 @@ export function LocationSetupScreen(): React.JSX.Element {
   );
   const [selectedLocation, setSelectedLocation] =
     React.useState<PrayerLocation | null>(initialPrayerLocation);
+  const [fieldErrors, setFieldErrors] =
+    React.useState<LocationSetupFieldErrors>({});
   const [error, setError] = React.useState<string | null>(null);
   const [isLocating, setIsLocating] = React.useState(false);
+
+  const clearFieldError = (field: keyof LocationSetupFieldErrors) => {
+    setFieldErrors(current => ({
+      ...current,
+      [field]: undefined,
+    }));
+  };
 
   const handleUseCurrentLocation = async () => {
     setError(null);
@@ -69,6 +82,11 @@ export function LocationSetupScreen(): React.JSX.Element {
       setSelectedLocation(location);
       setLatitude(location.latitude.toFixed(6));
       setLongitude(location.longitude.toFixed(6));
+      setFieldErrors(current => ({
+        ...current,
+        latitude: undefined,
+        longitude: undefined,
+      }));
     } catch {
       setError(
         'Location permission was not granted. Enter coordinates manually to continue.',
@@ -79,11 +97,24 @@ export function LocationSetupScreen(): React.JSX.Element {
   };
 
   const handleUseManualCoordinates = (): PrayerLocation | null => {
+    setError(null);
+
+    const nextFieldErrors = validateManualCoordinates(latitude, longitude);
+
+    setFieldErrors(current => ({
+      ...current,
+      latitude: nextFieldErrors.latitude,
+      longitude: nextFieldErrors.longitude,
+    }));
+
+    if (nextFieldErrors.latitude || nextFieldErrors.longitude) {
+      return null;
+    }
+
     const parsedLatitude = normalizeLatitude(latitude);
     const parsedLongitude = normalizeLongitude(longitude);
 
     if (parsedLatitude === null || parsedLongitude === null) {
-      setError('Enter valid latitude and longitude values.');
       return null;
     }
 
@@ -93,21 +124,44 @@ export function LocationSetupScreen(): React.JSX.Element {
     });
 
     setSelectedLocation(location);
+    setFieldErrors(current => ({
+      ...current,
+      latitude: undefined,
+      longitude: undefined,
+    }));
     setError(null);
     return location;
   };
 
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
+
   const handleContinue = () => {
+    setError(null);
+
     const trimmedName = name.trim();
+    const nextFieldErrors: LocationSetupFieldErrors = {};
 
     if (!trimmedName) {
-      setError('Enter your name to continue.');
-      return;
+      nextFieldErrors.name = 'Enter your name to continue.';
     }
 
     const location = selectedLocation ?? handleUseManualCoordinates();
 
-    if (!location) {
+    if (!location || nextFieldErrors.name) {
+      setFieldErrors(current => ({
+        ...current,
+        ...nextFieldErrors,
+      }));
       return;
     }
 
@@ -129,164 +183,184 @@ export function LocationSetupScreen(): React.JSX.Element {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.keyboard}>
-      <Screen contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {isEditingLocation ? (
-          <View style={styles.topBar}>
-            <Pressable
-              accessibilityLabel="Go back"
-              accessibilityRole="button"
-              onPress={() => navigation.goBack()}
-              style={({ pressed }) => [
-                styles.backButton,
-                pressed && styles.pressed,
-              ]}>
-              <Icon name="arrowLeft" size={28} color={colors.primary} />
-            </Pressable>
-          </View>
-        ) : null}
-
-        <View style={styles.titleBlock}>
-          <AppText variant="headline" weight="700">
-            Set your prayer location
-          </AppText>
-          <AppText variant="body" color="onSurfaceVariant">
-            Al-Salah calculates prayer times locally. Choose device location or
-            enter coordinates manually.
-          </AppText>
-        </View>
-
-        <AuthTextField
-          label="Name"
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          autoCapitalize="words"
-        />
-
-        <View style={styles.locationCard}>
-          <View style={styles.locationHeader}>
-            <View style={styles.locationIcon}>
-              <Icon name="location" color={colors.primary} />
-            </View>
-            <View style={styles.locationCopy}>
-              <AppText variant="bodyLarge" weight="700">
-                Use current location
-              </AppText>
-              <AppText variant="body" color="onSurfaceVariant">
-                Used only to calculate prayer times and Qibla locally.
-              </AppText>
-            </View>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            disabled={isLocating}
-            onPress={handleUseCurrentLocation}
-            style={({ pressed }) => [
-              styles.outlineButton,
-              pressed && styles.pressed,
-              isLocating && styles.disabledButton,
-            ]}>
-            {isLocating ? (
-              <ActivityIndicator color={colors.primary} />
-            ) : (
-              <AppText variant="label" color="primary">
-                Get Location Permission
-              </AppText>
-            )}
-          </Pressable>
-        </View>
-
-        <View style={styles.manualSection}>
-          <AppText variant="bodyLarge" weight="700">
-            Enter coordinates manually
-          </AppText>
-          <View style={styles.coordinateGrid}>
-            <View style={styles.coordinateField}>
-              <AuthTextField
-                label="Latitude"
-                value={latitude}
-                onChangeText={value => {
-                  setLatitude(value);
-                  setSelectedLocation(null);
-                }}
-                placeholder="Latitude"
-                keyboardType="numbers-and-punctuation"
-              />
-            </View>
-            <View style={styles.coordinateField}>
-              <AuthTextField
-                label="Longitude"
-                value={longitude}
-                onChangeText={value => {
-                  setLongitude(value);
-                  setSelectedLocation(null);
-                }}
-                placeholder="Longitude"
-                keyboardType="numbers-and-punctuation"
-              />
-            </View>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={handleUseManualCoordinates}
-            style={({ pressed }) => [
-              styles.manualButton,
-              pressed && styles.pressed,
-            ]}>
-            <AppText variant="label" color="primary">
-              Use Manual Coordinates
-            </AppText>
-          </Pressable>
-          <AppText variant="label" color="onSurfaceVariant">
-            If you enter coordinates manually, prayer times will not update
-            automatically when your location changes. Update them later in
-            Settings.
-          </AppText>
-        </View>
-
-        {selectedLocation ? (
-          <View style={styles.selectedLocation}>
-            <Icon name="checkCircle" color={colors.primary} filled />
-            <View style={styles.selectedText}>
-              <AppText variant="label" color="primary">
-                {selectedLocation.label}
-              </AppText>
-              <AppText variant="labelSmall" color="onSurfaceVariant">
-                {formatCoordinatesLabel(selectedLocation)}
-              </AppText>
-            </View>
-          </View>
-        ) : null}
-
-        {error ? (
-          <AppText variant="label" color="error">
-            {error}
-          </AppText>
-        ) : null}
-
+    <KeyboardAvoidingScreen contentContainerStyle={styles.content}>
+      <View style={styles.topBar}>
         <Pressable
+          accessibilityLabel="Go back"
           accessibilityRole="button"
-          onPress={handleContinue}
+          onPress={handleGoBack}
           style={({ pressed }) => [
-            styles.primaryButton,
+            styles.backButton,
             pressed && styles.pressed,
           ]}>
-          <AppText variant="label" color="onPrimaryContainer">
-            Continue
+          <Icon name="arrowLeft" size={28} color={colors.primary} />
+        </Pressable>
+      </View>
+
+      <View style={styles.titleBlock}>
+        <AppText variant="headline" weight="700">
+          Set your prayer location
+        </AppText>
+        <AppText variant="body" color="onSurfaceVariant">
+          Al-Salah calculates prayer times locally. Choose device location or
+          enter coordinates manually.
+        </AppText>
+      </View>
+
+      <AuthTextField
+        label="Name"
+        value={name}
+        onChangeText={value => {
+          setName(value);
+          clearFieldError('name');
+        }}
+        placeholder="Your name"
+        autoCapitalize="words"
+        error={fieldErrors.name}
+      />
+
+      <View style={styles.locationCard}>
+        <View style={styles.locationHeader}>
+          <View style={styles.locationIcon}>
+            <Icon name="location" color={colors.primary} />
+          </View>
+          <View style={styles.locationCopy}>
+            <AppText variant="bodyLarge" weight="700">
+              Use current location
+            </AppText>
+            <AppText variant="body" color="onSurfaceVariant">
+              Used only to calculate prayer times and Qibla locally.
+            </AppText>
+          </View>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          disabled={isLocating}
+          onPress={handleUseCurrentLocation}
+          style={({ pressed }) => [
+            styles.outlineButton,
+            pressed && styles.pressed,
+            isLocating && styles.disabledButton,
+          ]}>
+          {isLocating ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <AppText variant="label" color="primary">
+              Get Location Permission
+            </AppText>
+          )}
+        </Pressable>
+      </View>
+
+      <View style={styles.manualSection}>
+        <AppText variant="bodyLarge" weight="700">
+          Enter coordinates manually
+        </AppText>
+        <View style={styles.coordinateGrid}>
+          <View style={styles.coordinateField}>
+            <AuthTextField
+              label="Latitude"
+              value={latitude}
+              onChangeText={value => {
+                setLatitude(value);
+                setSelectedLocation(null);
+                clearFieldError('latitude');
+              }}
+              placeholder="Latitude"
+              keyboardType="numbers-and-punctuation"
+              error={fieldErrors.latitude}
+            />
+          </View>
+          <View style={styles.coordinateField}>
+            <AuthTextField
+              label="Longitude"
+              value={longitude}
+              onChangeText={value => {
+                setLongitude(value);
+                setSelectedLocation(null);
+                clearFieldError('longitude');
+              }}
+              placeholder="Longitude"
+              keyboardType="numbers-and-punctuation"
+              error={fieldErrors.longitude}
+            />
+          </View>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={handleUseManualCoordinates}
+          style={({ pressed }) => [
+            styles.manualButton,
+            pressed && styles.pressed,
+          ]}>
+          <AppText variant="label" color="primary">
+            Use Manual Coordinates
           </AppText>
         </Pressable>
-      </Screen>
-    </KeyboardAvoidingView>
+        <AppText variant="label" color="onSurfaceVariant">
+          If you enter coordinates manually, prayer times will not update
+          automatically when your location changes. Update them later in
+          Settings.
+        </AppText>
+      </View>
+
+      {selectedLocation ? (
+        <View style={styles.selectedLocation}>
+          <Icon name="checkCircle" color={colors.primary} filled />
+          <View style={styles.selectedText}>
+            <AppText variant="label" color="primary">
+              {selectedLocation.label}
+            </AppText>
+            <AppText variant="labelSmall" color="onSurfaceVariant">
+              {formatCoordinatesLabel(selectedLocation)}
+            </AppText>
+          </View>
+        </View>
+      ) : null}
+
+      {error ? (
+        <AppText variant="label" color="error">
+          {error}
+        </AppText>
+      ) : null}
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={handleContinue}
+        style={({ pressed }) => [
+          styles.primaryButton,
+          pressed && styles.pressed,
+        ]}>
+        <AppText variant="label" color="onPrimaryContainer" weight="700">
+          Continue
+        </AppText>
+      </Pressable>
+    </KeyboardAvoidingScreen>
   );
 }
 
+function validateManualCoordinates(
+  latitude: string,
+  longitude: string,
+): Pick<LocationSetupFieldErrors, 'latitude' | 'longitude'> {
+  const errors: Pick<LocationSetupFieldErrors, 'latitude' | 'longitude'> = {};
+
+  if (!latitude.trim()) {
+    errors.latitude = 'Enter latitude.';
+  } else if (normalizeLatitude(latitude) === null) {
+    errors.latitude = 'Latitude must be between -90 and 90.';
+  }
+
+  if (!longitude.trim()) {
+    errors.longitude = 'Enter longitude.';
+  } else if (normalizeLongitude(longitude) === null) {
+    errors.longitude = 'Longitude must be between -180 and 180.';
+  }
+
+  return errors;
+}
+
 const styles = StyleSheet.create({
-  keyboard: {
-    flex: 1,
-  },
   content: {
     flexGrow: 1,
     justifyContent: 'center',
