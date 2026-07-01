@@ -29,6 +29,10 @@ interface AuthState extends AuthValues {
   pendingSession: PendingAuthSession | null;
   logInLocal: (email: string) => void;
   signUpLocal: (fullName: string, email: string) => void;
+  completeLocalAuth: (values: {
+    displayName?: string;
+    email: string;
+  }) => void;
   startGuest: () => void;
   completeOnboarding: (values: {
     displayName: string;
@@ -70,6 +74,24 @@ export const useAuthStore = create<AuthState>()(
             displayName: fullName.trim(),
             email: email.trim(),
           },
+        }),
+      completeLocalAuth: ({ displayName, email }) =>
+        set(state => {
+          const trimmedEmail = email.trim();
+          const nextDisplayName =
+            displayName?.trim() ||
+            state.displayName ||
+            getDisplayNameFromEmail(trimmedEmail);
+
+          return {
+            authMode: 'localUser',
+            displayName: nextDisplayName,
+            email: trimmedEmail,
+            isAuthenticated: true,
+            onboardingCompleted: state.onboardingCompleted,
+            prayerLocation: state.prayerLocation,
+            pendingSession: null,
+          };
         }),
       startGuest: () =>
         set({

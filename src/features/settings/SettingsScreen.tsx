@@ -5,27 +5,20 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon, type IconName } from '../../components/Icon';
+import { PrayerIcon, type PrayerIconName } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
 import {
-  ASR_METHOD_OPTIONS,
-  CALCULATION_METHOD_OPTIONS,
-  ISHA_DEADLINE_STEP_MINUTES,
-  MAX_ISHA_DEADLINE_MINUTES,
   getAsrMethodLabel,
   getCalculationMethodLabel,
-  type AsrMethodKey,
-  type CalculationMethodKey,
   type PrayerLocation,
-  type PrayerSettingOption,
 } from '../../constants/prayerSettings';
-import { useNow } from '../../hooks/useNow';
 import type { RootStackParamList } from '../../navigation/types';
-import {
-  getIshaDeadlineBounds,
-  type IshaDeadlineBounds,
-} from '../../services/prayer/prayerCalculator';
 import { colors, radius, spacing } from '../../theme';
-import { formatPrayerTime } from '../../utils/dateTime';
+import { useAuthStore } from '../auth/authStore';
+import {
+  getBackupSyncFrequencyLabel,
+  useBackupSyncStore,
+} from './backupSyncStore';
 import { useSettingsStore } from './settingsStore';
 
 type SettingsNavigation = NativeStackNavigationProp<
@@ -35,17 +28,16 @@ type SettingsNavigation = NativeStackNavigationProp<
 
 export function SettingsScreen(): React.JSX.Element {
   const navigation = useNavigation<SettingsNavigation>();
-  const now = useNow(60_000);
   const settings = useSettingsStore();
-  const ishaDeadlineBounds = settings.location
-    ? getIshaDeadlineBounds({
-        now,
-        calculationMethod: settings.calculationMethod,
-        asrMethod: settings.asrMethod,
-        ishaDeadlineMinutes: settings.ishaDeadlineMinutes,
-        location: settings.location,
-      })
-    : null;
+  const isLoggedIn = useAuthStore(
+    state =>
+      state.isAuthenticated &&
+      state.onboardingCompleted &&
+      state.authMode === 'localUser',
+  );
+  const autoSyncFrequency = useBackupSyncStore(
+    state => state.autoSyncFrequency,
+  );
 
   return (
     <Screen contentContainerStyle={styles.content}>
@@ -74,37 +66,27 @@ export function SettingsScreen(): React.JSX.Element {
       </SettingsSection>
 
       <SettingsSection title="Prayer Settings">
-        <OptionRow
+        <SettingsRow
           icon="timer"
           label="Calculation Method"
-          value={settings.calculationMethod}
-          displayValue={getCalculationMethodLabel(settings.calculationMethod)}
-          options={CALCULATION_METHOD_OPTIONS}
-          onSelect={settings.setCalculationMethod}
+          value={getCalculationMethodLabel(settings.calculationMethod)}
+          onPress={() => navigation.navigate('CalculationMethodSettings')}
         />
-        <OptionRow
-          icon="sun"
+        <SettingsRow
+          prayerIcon="asr"
           label="Asr Method"
-          value={settings.asrMethod}
-          displayValue={getAsrMethodLabel(settings.asrMethod)}
-          options={ASR_METHOD_OPTIONS}
-          onSelect={settings.setAsrMethod}
+          value={getAsrMethodLabel(settings.asrMethod)}
+          onPress={() => navigation.navigate('AsrMethodSettings')}
         />
-        {settings.location && ishaDeadlineBounds ? (
-          <IshaDeadlineRow
-            value={settings.ishaDeadlineMinutes}
-            bounds={ishaDeadlineBounds}
-            use24HourTime={settings.use24HourTime}
-            timeZone={settings.location.timeZone}
-            onChange={settings.setIshaDeadlineMinutes}
-          />
-        ) : (
-          <SettingsRow
-            icon="moon"
-            label="Isha End Time"
-            value="Set location first"
-          />
-        )}
+        <SettingsRow
+          prayerIcon="isha"
+          label="Isha End Time"
+          value={getIshaDeadlineSettingLabel(
+            settings.ishaDeadlineMinutes,
+            settings.use24HourTime,
+          )}
+          onPress={() => navigation.navigate('IshaEndTimeSettings')}
+        />
         <SettingsRow
           icon="location"
           label="Location"
@@ -132,177 +114,30 @@ export function SettingsScreen(): React.JSX.Element {
         <SettingsRow
           icon="cloud"
           label="Backup & Sync"
-          value="Local only"
+          value={
+            isLoggedIn
+              ? getBackupSyncFrequencyLabel(autoSyncFrequency)
+              : 'Login required'
+          }
+          onPress={() => navigation.navigate('BackupSync')}
         />
       </SettingsSection>
 
       <SettingsSection title="App Info">
-        <SettingsRow icon="info" label="About Al-Salah" value="Version 0.1.0" />
-        <SettingsRow icon="shield" label="Privacy Policy" />
+        <SettingsRow
+          icon="shield"
+          label="Privacy Policy"
+          onPress={() => navigation.navigate('PrivacyPolicy')}
+        />
+        <SettingsRow
+          icon="info"
+          label="About Al-Salah"
+          value="Version 0.1.0"
+          onPress={() => navigation.navigate('About')}
+        />
       </SettingsSection>
     </Screen>
   );
-}
-
-function IshaDeadlineRow({
-  value,
-  bounds,
-  use24HourTime,
-  timeZone,
-  onChange,
-}: {
-  value: number | null;
-  bounds: IshaDeadlineBounds;
-  use24HourTime: boolean;
-  timeZone: string;
-  onChange: (minutes: number | null) => void;
-}): React.JSX.Element {
-  const currentLabel = formatPrayerTime(
-    bounds.resolved,
-    use24HourTime,
-    timeZone,
-  );
-  const minimumLabel = formatPrayerTime(
-    bounds.minimum,
-    use24HourTime,
-    timeZone,
-  );
-  const maximumLabel = formatPrayerTime(
-    bounds.maximum,
-    use24HourTime,
-    timeZone,
-  );
-  const canDecrease = bounds.resolvedMinutes > bounds.minimumMinutes;
-  const canIncrease = bounds.resolvedMinutes < bounds.maximumMinutes;
-
-  return (
-    <View style={styles.deadlineRow}>
-      <View style={styles.optionHeader}>
-        <View style={styles.rowIcon}>
-          <Icon name="moon" color={colors.onSurfaceVariant} />
-        </View>
-        <View style={styles.rowText}>
-          <AppText variant="bodyLarge">Isha End Time</AppText>
-          <AppText variant="body" color="onSurfaceVariant" numberOfLines={1}>
-            {value === null ? 'Islamic midnight' : 'Custom'} - {currentLabel}
-          </AppText>
-        </View>
-      </View>
-
-      <View style={styles.deadlineControl}>
-        <DeadlineIconButton
-          icon="minus"
-          disabled={!canDecrease}
-          onPress={() => onChange(getSteppedIshaDeadline(bounds, -1))}
-        />
-        <View style={styles.deadlineValue}>
-          <AppText variant="headlineMobile" weight="700">
-            {currentLabel}
-          </AppText>
-          <AppText
-            variant="labelSmall"
-            color="onSurfaceVariant"
-            align="center">
-            {minimumLabel} - {maximumLabel}
-          </AppText>
-        </View>
-        <DeadlineIconButton
-          icon="add"
-          disabled={!canIncrease}
-          onPress={() => onChange(getSteppedIshaDeadline(bounds, 1))}
-        />
-      </View>
-
-      <View style={styles.deadlinePresets}>
-        <DeadlinePreset
-          label="Islamic midnight"
-          selected={value === null}
-          onPress={() => onChange(null)}
-        />
-        <DeadlinePreset
-          label="2:00 AM"
-          selected={bounds.resolvedMinutes === MAX_ISHA_DEADLINE_MINUTES}
-          onPress={() => onChange(MAX_ISHA_DEADLINE_MINUTES)}
-        />
-      </View>
-    </View>
-  );
-}
-
-function DeadlineIconButton({
-  icon,
-  disabled,
-  onPress,
-}: {
-  icon: 'add' | 'minus';
-  disabled: boolean;
-  onPress: () => void;
-}): React.JSX.Element {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.deadlineButton,
-        disabled && styles.deadlineButtonDisabled,
-        pressed && styles.pressed,
-      ]}>
-      <Icon
-        name={icon}
-        size={20}
-        color={disabled ? colors.outline : colors.primary}
-      />
-    </Pressable>
-  );
-}
-
-function DeadlinePreset({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}): React.JSX.Element {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.deadlinePreset,
-        selected && styles.deadlinePresetSelected,
-        pressed && styles.pressed,
-      ]}>
-      <AppText
-        variant="labelSmall"
-        color={selected ? 'onPrimary' : 'onSurfaceVariant'}
-        weight="700">
-        {label}
-      </AppText>
-    </Pressable>
-  );
-}
-
-function getSteppedIshaDeadline(
-  bounds: IshaDeadlineBounds,
-  direction: -1 | 1,
-): number {
-  if (direction > 0) {
-    const nextStep =
-      Math.ceil((bounds.resolvedMinutes + 1) / ISHA_DEADLINE_STEP_MINUTES) *
-      ISHA_DEADLINE_STEP_MINUTES;
-
-    return Math.min(nextStep, bounds.maximumMinutes);
-  }
-
-  const previousStep =
-    Math.floor((bounds.resolvedMinutes - 1) / ISHA_DEADLINE_STEP_MINUTES) *
-    ISHA_DEADLINE_STEP_MINUTES;
-
-  return Math.max(previousStep, bounds.minimumMinutes);
 }
 
 function getLocationSettingLabel(location: PrayerLocation | null): string {
@@ -311,6 +146,33 @@ function getLocationSettingLabel(location: PrayerLocation | null): string {
   }
 
   return location.source === 'device' ? 'Current location' : 'Manual location';
+}
+
+function getIshaDeadlineSettingLabel(
+  minutes: number | null,
+  use24HourTime: boolean,
+): string {
+  if (minutes === null) {
+    return 'Islamic midnight';
+  }
+
+  return `Custom - ${formatClockMinutes(minutes, use24HourTime)}`;
+}
+
+function formatClockMinutes(minutes: number, use24HourTime: boolean): string {
+  const dayMinutes = ((minutes % 1440) + 1440) % 1440;
+  const hours = Math.floor(dayMinutes / 60);
+  const minute = dayMinutes % 60;
+  const paddedMinute = String(minute).padStart(2, '0');
+
+  if (use24HourTime) {
+    return `${String(hours).padStart(2, '0')}:${paddedMinute}`;
+  }
+
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+
+  return `${hour12}:${paddedMinute} ${period}`;
 }
 
 function SettingsSection({
@@ -332,12 +194,14 @@ function SettingsSection({
 
 function SettingsRow({
   icon,
+  prayerIcon,
   label,
   value,
   interactive = true,
   onPress,
 }: {
-  icon: IconName;
+  icon?: IconName;
+  prayerIcon?: PrayerIconName;
   label: string;
   value?: string;
   interactive?: boolean;
@@ -352,7 +216,16 @@ function SettingsRow({
         interactive && pressed && styles.pressed,
       ]}>
       <View style={styles.rowIcon}>
-        <Icon name={icon} color={colors.onSurfaceVariant} />
+        {prayerIcon ? (
+          <PrayerIcon
+            name={prayerIcon}
+            size={34}
+            color={colors.onSurfaceVariant}
+            backgroundColor={colors.transparent}
+          />
+        ) : icon ? (
+          <Icon name={icon} color={colors.onSurfaceVariant} />
+        ) : null}
       </View>
       <View style={styles.rowText}>
         <AppText variant="bodyLarge">{label}</AppText>
@@ -366,63 +239,6 @@ function SettingsRow({
         <Icon name="chevronRight" color={colors.onSurfaceVariant} />
       ) : null}
     </Pressable>
-  );
-}
-
-function OptionRow<T extends CalculationMethodKey | AsrMethodKey>({
-  icon,
-  label,
-  value,
-  displayValue,
-  options,
-  onSelect,
-}: {
-  icon: IconName;
-  label: string;
-  value: T;
-  displayValue: string;
-  options: ReadonlyArray<PrayerSettingOption<T>>;
-  onSelect: (value: T) => void;
-}): React.JSX.Element {
-  return (
-    <View style={styles.optionRow}>
-      <View style={styles.optionHeader}>
-        <View style={styles.rowIcon}>
-          <Icon name={icon} color={colors.onSurfaceVariant} />
-        </View>
-        <View style={styles.rowText}>
-          <AppText variant="bodyLarge">{label}</AppText>
-          <AppText variant="body" color="onSurfaceVariant" numberOfLines={1}>
-            {displayValue}
-          </AppText>
-        </View>
-      </View>
-      <View style={styles.options}>
-        {options.map(option => {
-          const isSelected = option.key === value;
-
-          return (
-            <Pressable
-              key={option.key}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
-              onPress={() => onSelect(option.key)}
-              style={({ pressed }) => [
-                styles.optionPill,
-                isSelected && styles.optionPillSelected,
-                pressed && styles.pressed,
-              ]}>
-              <AppText
-                variant="labelSmall"
-                color={isSelected ? 'onPrimary' : 'onSurfaceVariant'}
-                weight="700">
-                {option.label}
-              </AppText>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
   );
 }
 
@@ -451,7 +267,10 @@ function ToggleRow({
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: colors.surfaceHighest, true: colors.secondaryContainer }}
+        trackColor={{
+          false: colors.surfaceHighest,
+          true: colors.secondaryContainer,
+        }}
         thumbColor={value ? colors.primary : colors.outline}
       />
     </View>
@@ -502,86 +321,6 @@ const styles = StyleSheet.create({
   rowText: {
     flex: 1,
     gap: 2,
-  },
-  optionRow: {
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    gap: spacing.md,
-  },
-  deadlineRow: {
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    gap: spacing.md,
-  },
-  deadlineControl: {
-    paddingLeft: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  deadlineButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceHigh,
-  },
-  deadlineButtonDisabled: {
-    opacity: 0.45,
-  },
-  deadlineValue: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 2,
-  },
-  deadlinePresets: {
-    paddingLeft: 52,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  deadlinePreset: {
-    minHeight: 34,
-    borderRadius: radius.full,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.outlineVariant,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceLowest,
-  },
-  deadlinePresetSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
-  },
-  optionHeader: {
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  options: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    paddingLeft: 52,
-  },
-  optionPill: {
-    minHeight: 34,
-    borderRadius: radius.full,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.outlineVariant,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceLowest,
-  },
-  optionPillSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
   },
   pressed: {
     backgroundColor: colors.surfaceContainer,

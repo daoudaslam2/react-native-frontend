@@ -20,6 +20,12 @@ import { WidgetsScreen } from '../features/more/WidgetsScreen';
 import { UpdateQazaCountsScreen } from '../features/qaza/UpdateQazaCountsScreen';
 import { QazaScreen } from '../features/qaza/QazaScreen';
 import { QiblaScreen } from '../features/qibla/QiblaScreen';
+import { AboutScreen } from '../features/settings/AboutScreen';
+import { AsrMethodSettingsScreen } from '../features/settings/AsrMethodSettingsScreen';
+import { BackupSyncScreen } from '../features/settings/BackupSyncScreen';
+import { CalculationMethodSettingsScreen } from '../features/settings/CalculationMethodSettingsScreen';
+import { IshaEndTimeSettingsScreen } from '../features/settings/IshaEndTimeSettingsScreen';
+import { PrivacyPolicyScreen } from '../features/settings/PrivacyPolicyScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
 import { PrayerTrackerScreen } from '../features/tracker/PrayerTrackerScreen';
 import { colors, radius, spacing } from '../theme';
@@ -63,6 +69,24 @@ export function AppNavigator(): React.JSX.Element {
         <RootStack.Screen name="Widgets" component={WidgetsScreen} />
         <RootStack.Screen name="Qibla" component={QiblaScreen} />
         <RootStack.Screen name="Settings" component={SettingsScreen} />
+        <RootStack.Screen
+          name="CalculationMethodSettings"
+          component={CalculationMethodSettingsScreen}
+        />
+        <RootStack.Screen
+          name="AsrMethodSettings"
+          component={AsrMethodSettingsScreen}
+        />
+        <RootStack.Screen
+          name="IshaEndTimeSettings"
+          component={IshaEndTimeSettingsScreen}
+        />
+        <RootStack.Screen name="BackupSync" component={BackupSyncScreen} />
+        <RootStack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicyScreen}
+        />
+        <RootStack.Screen name="About" component={AboutScreen} />
       </RootStack.Navigator>
     </NavigationContainer>
   );

@@ -4,13 +4,16 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
 import { KeyboardAvoidingScreen } from '../../components/KeyboardAvoidingScreen';
-import type { RootStackParamList } from '../../navigation/types';
+import type {
+  AuthReturnRouteName,
+  RootStackParamList,
+} from '../../navigation/types';
 import { colors, radius, spacing } from '../../theme';
 import { AuthTextField } from './AuthTextField';
 import { useAuthStore } from './authStore';
@@ -19,10 +22,16 @@ type SignUpNavigation = NativeStackNavigationProp<
   RootStackParamList,
   'SignUp'
 >;
+type SignUpRoute = RouteProp<RootStackParamList, 'SignUp'>;
 
 export function SignUpScreen(): React.JSX.Element {
   const navigation = useNavigation<SignUpNavigation>();
+  const route = useRoute<SignUpRoute>();
   const signUpLocal = useAuthStore(state => state.signUpLocal);
+  const completeLocalAuth = useAuthStore(state => state.completeLocalAuth);
+  const isBackupSyncEntry = route.params?.entry === 'backupSync';
+  const returnTo = route.params?.returnTo ?? getDefaultReturnTo(route);
+  const isInAppSignUp = returnTo !== undefined;
   const [fullName, setFullName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -44,6 +53,12 @@ export function SignUpScreen(): React.JSX.Element {
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    if (isInAppSignUp) {
+      completeLocalAuth({ displayName: fullName, email });
+      resetToReturnRoute(navigation, returnTo);
       return;
     }
 
@@ -75,7 +90,9 @@ export function SignUpScreen(): React.JSX.Element {
             Create account
           </AppText>
           <AppText variant="body" color="onSurfaceVariant">
-            Set up a local profile. Cloud sync can come later.
+            {isBackupSyncEntry
+              ? 'Create an account to prepare backup and sync for your local data.'
+              : 'Set up a local profile. Cloud sync can come later.'}
           </AppText>
         </View>
 
@@ -130,6 +147,26 @@ export function SignUpScreen(): React.JSX.Element {
       </View>
     </KeyboardAvoidingScreen>
   );
+}
+
+function getDefaultReturnTo(
+  route: SignUpRoute,
+): AuthReturnRouteName | undefined {
+  if (route.params?.entry === 'backupSync') {
+    return 'BackupSync';
+  }
+
+  return undefined;
+}
+
+function resetToReturnRoute(
+  navigation: SignUpNavigation,
+  returnTo: AuthReturnRouteName,
+): void {
+  navigation.reset({
+    index: 1,
+    routes: [{ name: 'MainTabs' }, { name: returnTo }],
+  });
 }
 
 function validateSignUp({
