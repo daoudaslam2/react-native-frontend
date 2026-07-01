@@ -1,6 +1,7 @@
 package com.alsalah
 
 import android.app.Application
+import com.alsalah.qibla.CompassHeadingPackage
 import com.alsalah.widgets.WidgetPinningPackage
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -15,6 +16,7 @@ class MainApplication : Application(), ReactApplication {
       context = applicationContext,
       packageList =
         PackageList(this).packages.apply {
+          add(CompassHeadingPackage())
           add(WidgetPinningPackage())
         },
     )

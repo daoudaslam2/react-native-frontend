@@ -13,6 +13,10 @@ export interface DeviceCoordinates {
   longitude: number;
 }
 
+interface GetPermissionAndLocationOptions {
+  showBlockedAlert?: boolean;
+}
+
 const LOCATION_TIMEOUT_MS = 15_000;
 const LOCATION_MAXIMUM_AGE_MS = 10_000;
 
@@ -21,7 +25,9 @@ const wait = (milliseconds: number): Promise<void> =>
     setTimeout(resolve, milliseconds);
   });
 
-export async function getPermissionAndLocation(): Promise<DeviceCoordinates> {
+export async function getPermissionAndLocation({
+  showBlockedAlert = true,
+}: GetPermissionAndLocationOptions = {}): Promise<DeviceCoordinates> {
   const permission = getLocationPermission();
 
   if (!permission) {
@@ -35,7 +41,7 @@ export async function getPermissionAndLocation(): Promise<DeviceCoordinates> {
   }
 
   await wait(800);
-  return requestLocationPermission(permission);
+  return requestLocationPermission(permission, { showBlockedAlert });
 }
 
 function getLocationPermission(): Permission | undefined {
@@ -67,6 +73,7 @@ function getCurrentLocation(): Promise<DeviceCoordinates> {
 
 async function requestLocationPermission(
   permission: Permission,
+  { showBlockedAlert }: Required<GetPermissionAndLocationOptions>,
 ): Promise<DeviceCoordinates> {
   const result = await request(permission);
 
@@ -74,7 +81,10 @@ async function requestLocationPermission(
     return getCurrentLocation();
   }
 
-  if (result === RESULTS.BLOCKED || result === RESULTS.UNAVAILABLE) {
+  if (
+    showBlockedAlert &&
+    (result === RESULTS.BLOCKED || result === RESULTS.UNAVAILABLE)
+  ) {
     Alert.alert(
       'Location Permissions Disabled',
       'Please enable location permissions for Al-Salah, or enter your coordinates manually.',
