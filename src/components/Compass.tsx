@@ -101,7 +101,7 @@ export function Compass({
         </G>
         <G rotation={relativeDirection} origin={`${CENTER},${CENTER}`}>
           <Path
-            d={`M${CENTER} 37 C${CENTER - 2} 38 ${CENTER - 4} 40 ${CENTER - 6} 44 L${CENTER - 14} 59 C${CENTER - 16} 62 ${CENTER - 14} 65 ${CENTER - 10} 64 C${CENTER - 5} 62 ${CENTER - 2} 61 ${CENTER} 61 C${CENTER + 2} 61 ${CENTER + 5} 62 ${CENTER + 10} 64 C${CENTER + 14} 65 ${CENTER + 16} 62 ${CENTER + 14} 59 L${CENTER + 6} 44 C${CENTER + 4} 40 ${CENTER + 2} 38 ${CENTER} 37 Z`}
+            d={`M${CENTER} 36 L${CENTER - 14} 63 L${CENTER - 4.5} 59 L${CENTER + 4.5} 59 L${CENTER + 14} 63 Z`}
             fill={colors.primary}
           />
           <Rect

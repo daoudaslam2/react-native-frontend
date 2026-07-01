@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Svg, { Path } from 'react-native-svg';
 
 import { AppText } from '../../components/AppText';
 import { Compass } from '../../components/Compass';
@@ -19,7 +20,6 @@ import {
   calculateQiblaDirection,
   getQiblaInstruction,
   getRelativeQiblaDirection,
-  getShortestAngleToQibla,
 } from '../../services/qibla/qiblaDirection';
 import { useCompassHeading } from '../../services/qibla/useCompassHeading';
 import { colors, radius, spacing } from '../../theme';
@@ -108,55 +108,45 @@ function QiblaFinder({
     qiblaDirection,
     heading: compass.heading,
   });
-  const shortestAngle = getShortestAngleToQibla(relativeDirection);
-  const isAligned = compass.heading !== null && shortestAngle <= 5;
   const instruction = getQiblaInstruction({
     relativeDirection,
     hasHeading: compass.heading !== null,
   });
 
   return (
-    <>
+    <View style={styles.finderLayout}>
+      <View style={styles.instruction}>
+        <AppText variant="title" weight="700" align="center">
+          {instruction}
+        </AppText>
+      </View>
+
       <View style={styles.compassCenter}>
+        <KaabaIcon size={36} />
         <Compass qiblaDirection={qiblaDirection} heading={compass.heading} />
       </View>
 
-      <Surface style={styles.finderCard} radiusSize="lg">
-        <View style={styles.finderHeader}>
-          <View style={[styles.finderIcon, isAligned && styles.finderIconAligned]}>
-            <Icon
-              name={isAligned ? 'check' : 'compass'}
-              color={isAligned ? colors.onPrimary : colors.primary}
-            />
-          </View>
-          <View style={styles.finderCopy}>
-            <AppText variant="title" weight="700">
-              {instruction}
-            </AppText>
-            <AppText variant="body" color="onSurfaceVariant">
-              Keep the phone flat and rotate until the Qibla arrow points up.
-            </AppText>
-          </View>
-        </View>
+      <AppText variant="label" color="onSurfaceVariant" align="center">
+        Keep the phone flat and rotate until the Qibla arrow points up.
+      </AppText>
 
-        <View style={styles.metrics}>
-          <Metric label="Qibla" value={`${qiblaDirection}°`} />
-          <Metric
-            label="Heading"
-            value={
-              compass.heading === null
-                ? compass.isStarting
-                  ? 'Starting'
-                  : '--'
-                : `${Math.round(compass.heading)}°`
-            }
-          />
-          <Metric
-            label="Distance"
-            value={`${distanceToMakkahKm.toLocaleString()} km`}
-          />
-        </View>
-      </Surface>
+      <View style={styles.metrics}>
+        <Metric label="Qibla" value={`${qiblaDirection}°`} />
+        <Metric
+          label="Heading"
+          value={
+            compass.heading === null
+              ? compass.isStarting
+                ? 'Starting'
+                : '--'
+              : `${Math.round(compass.heading)}°`
+          }
+        />
+        <Metric
+          label="Distance"
+          value={`${distanceToMakkahKm.toLocaleString()} km`}
+        />
+      </View>
 
       {compass.error ? (
         <Surface style={styles.sensorNotice} radiusSize="lg">
@@ -166,7 +156,7 @@ function QiblaFinder({
           </AppText>
         </Surface>
       ) : null}
-    </>
+    </View>
   );
 }
 
@@ -240,10 +230,40 @@ function Metric({
   );
 }
 
+function KaabaIcon({
+  size,
+}: {
+  size: number;
+}): React.JSX.Element {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 36 36">
+      <Path d="M18 0L0 5v29l18 2l18-2V5z" fill="#000000" />
+      <Path d="M18 36l18-2V5L18 0z" fill="#292F33" />
+      <Path
+        d="M22.454 14.507v3.407l4.229.612V15.22zm7 1.181v3.239l3.299.478v-3.161zM18 13.756v3.513l1.683.244V14.04zm18 3.036l-.539-.091v3.096l.539.078z"
+        fill="#FFD983"
+      />
+      <Path
+        d="M0 16.792v3.083l.539-.078v-3.096zm16.317-2.752v3.473L18 17.269v-3.513zm-13.07 2.204v3.161l3.299-.478v-3.239zm6.07-1.024v3.306l4.229-.612v-3.407z"
+        fill="#FFAC33"
+      />
+      <Path
+        d="M21.389 15.131v-.042c0-.421-.143-.763-.32-.763c-.177 0-.32.342-.32.763v.042c-.208.217-.355.621-.355 1.103c0 .513.162.949.393 1.152c.064.195.163.33.282.33s.218-.135.282-.33c.231-.203.393-.639.393-1.152c-.001-.482-.147-.886-.355-1.103zm6.999 1.069v-.042c0-.421-.143-.763-.32-.763c-.177 0-.32.342-.32.763v.042c-.208.217-.355.621-.355 1.103c0 .513.162.949.393 1.152c.064.195.163.33.282.33s.218-.135.282-.33c.231-.203.393-.639.393-1.152c0-.481-.147-.885-.355-1.103zm6.017 1.03v-.039c0-.393-.134-.712-.299-.712c-.165 0-.299.319-.299.712v.039c-.194.203-.331.58-.331 1.03c0 .479.151.886.367 1.076c.059.182.152.308.263.308s.203-.126.263-.308c.215-.189.367-.597.367-1.076c0-.45-.136-.827-.331-1.03z"
+        fill="#FFD983"
+      />
+      <Path
+        d="M14.611 15.131v-.042c0-.421.143-.763.32-.763s.32.342.32.763v.042c.208.217.355.621.355 1.103c0 .513-.162.949-.393 1.152c-.064.195-.163.33-.282.33s-.218-.135-.282-.33c-.231-.203-.393-.639-.393-1.152c.001-.482.147-.886.355-1.103zM7.612 16.2v-.042c0-.421.143-.763.32-.763s.32.342.32.763v.042c.208.217.355.621.355 1.103c0 .513-.162.949-.393 1.152c-.064.195-.163.33-.282.33s-.218-.135-.282-.33c-.231-.203-.393-.639-.393-1.152c0-.481.147-.885.355-1.103zm-6.017 1.03v-.039c0-.393.134-.712.299-.712s.299.319.299.712v.039c.194.203.331.58.331 1.03c0 .479-.151.886-.367 1.076c-.059.182-.152.308-.263.308s-.204-.127-.264-.308c-.215-.189-.367-.597-.367-1.076c.001-.45.137-.827.332-1.03zM0 11.146v3.5l18-3.268V7.614z"
+        fill="#FFAC33"
+      />
+      <Path d="M18 7.614v3.764l18 3.268v-3.5z" fill="#FFD983" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
-    gap: spacing.xl,
+    gap: spacing.lg,
   },
   topBar: {
     minHeight: 44,
@@ -286,35 +306,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     backgroundColor: colors.primary,
   },
+  finderLayout: {
+    flex: 1,
+    gap: spacing.md,
+  },
+  instruction: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
   compassCenter: {
     flex: 1,
-    minHeight: 360,
+    minHeight: 390,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  finderCard: {
-    width: '100%',
-    gap: spacing.md,
-  },
-  finderHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  finderIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
-  },
-  finderIconAligned: {
-    backgroundColor: colors.primary,
-  },
-  finderCopy: {
-    flex: 1,
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   metrics: {
     flexDirection: 'row',
@@ -323,10 +329,12 @@ const styles = StyleSheet.create({
   metric: {
     flex: 1,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceLow,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.surfaceVariant,
+    backgroundColor: colors.surfaceLowest,
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: 10,
   },
   sensorNotice: {
     width: '100%',
