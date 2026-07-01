@@ -31,16 +31,21 @@ export function QazaScreen(): React.JSX.Element {
         <AppText
           variant="body"
           color="onSurfaceVariant"
-          style={styles.headerNote}>
-          Manage your missed prayers. These counts show your remaining Qaza.
-          Tap -1 to complete one Qaza.
+          style={styles.headerNote}
+        >
+          Manage your missed prayers. These counts show your remaining Qaza. Tap
+          check to complete one Qaza.
         </AppText>
         <View style={styles.headerActions}>
           <Pressable
             accessibilityLabel="Edit all Qaza counts"
             accessibilityRole="button"
             onPress={() => navigation.navigate('UpdateQazaCounts')}
-            style={({ pressed }) => [styles.editLink, pressed && styles.pressed]}>
+            style={({ pressed }) => [
+              styles.editLink,
+              pressed && styles.pressed,
+            ]}
+          >
             <Icon name="editList" size={20} color={colors.primary} />
             <AppText variant="label" color="primary">
               Edit All Counts
@@ -63,7 +68,8 @@ export function QazaScreen(): React.JSX.Element {
             variant="labelSmall"
             color="onSurfaceVariant"
             transform="uppercase"
-            align="right">
+            align="right"
+          >
             Remaining Qaza
           </AppText>
         </View>
@@ -117,7 +123,8 @@ function QazaCard({
             styles.completeButton,
             isEmpty && styles.completeButtonDisabled,
             pressed && !isEmpty && styles.pressed,
-          ]}>
+          ]}
+        >
           <Icon
             name="minusOneCheck"
             size={22}
