@@ -132,7 +132,7 @@ export function SettingsScreen(): React.JSX.Element {
         <SettingsRow
           icon="info"
           label="About Al-Salah"
-          value="Version 0.1.0"
+          value="Version 0.2.0"
           onPress={() => navigation.navigate('About')}
         />
       </SettingsSection>

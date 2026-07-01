@@ -35,7 +35,7 @@ export function AboutScreen(): React.JSX.Element {
       </SettingsContentBlock>
 
       <SettingsContentBlock title="Version">
-        <SettingsParagraph>Version 0.1.0</SettingsParagraph>
+        <SettingsParagraph>Version 0.2.0</SettingsParagraph>
       </SettingsContentBlock>
     </SettingsDetailScaffold>
   );
