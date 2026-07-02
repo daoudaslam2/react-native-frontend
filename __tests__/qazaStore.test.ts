@@ -75,6 +75,24 @@ describe('qaza store', () => {
     expect(getTotalQaza(useQazaStore.getState().counts, true)).toBe(9);
   });
 
+  it('completes both Isha parts when split is enabled and no part is selected', () => {
+    useQazaStore.getState().replaceCounts(
+      createCounts({
+        isha_fardh: 5,
+        isha_witr: 5,
+      }),
+      true,
+    );
+
+    useQazaStore.getState().completeOne('isha');
+
+    expect(getIshaPartCounts(useQazaStore.getState().counts)).toEqual({
+      fardh: 4,
+      witr: 4,
+    });
+    expect(getTotalQaza(useQazaStore.getState().counts, true)).toBe(8);
+  });
+
   it('keeps Isha split enabled until both counts match', () => {
     useQazaStore.getState().replaceCounts(
       createCounts({

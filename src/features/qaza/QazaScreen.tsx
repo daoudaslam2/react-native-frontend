@@ -114,6 +114,8 @@ function QazaCard({
   const isIsha = prayer === 'isha';
   const isSplitIsha = isIsha && ishaSplitEnabled;
   const isEmpty = count === 0;
+  const canCompleteBoth =
+    ishaPartCounts.fardh > 0 && ishaPartCounts.witr > 0;
 
   return (
     <Surface padded={false} style={styles.card} radiusSize="lg">
@@ -129,7 +131,12 @@ function QazaCard({
             {isSplitIsha ? 'Fardh and Witr' : qazaPrayerSubtitles[prayer]}
           </AppText>
         </View>
-        {!isSplitIsha ? (
+        {isSplitIsha ? (
+          <QazaCompleteBothButton
+            disabled={!canCompleteBoth}
+            onPress={() => completeOne('isha')}
+          />
+        ) : (
           <View style={styles.cardActions}>
             <View style={styles.countWrap}>
               <AppText variant="title" color="primary" weight="700">
@@ -142,7 +149,7 @@ function QazaCard({
               onPress={() => completeOne(prayer)}
             />
           </View>
-        ) : null}
+        )}
       </View>
 
       {isIsha ? (
@@ -247,6 +254,49 @@ function IshaSplitCounterRow({
         />
       </View>
     </View>
+  );
+}
+
+function QazaCompleteBothButton({
+  disabled,
+  onPress,
+}: {
+  disabled: boolean;
+  onPress: () => void;
+}): React.JSX.Element {
+  const colors = useThemeColors();
+
+  return (
+    <Pressable
+      accessibilityLabel="Remove one Isha Fardh and Witr Qaza"
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      hitSlop={8}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.completeBothButton,
+        {
+          backgroundColor: disabled
+            ? colors.surfaceContainer
+            : colors.primaryContainer,
+        },
+        pressed && !disabled && styles.pressed,
+      ]}
+    >
+      <Icon
+        name="minusOneCheck"
+        size={20}
+        color={disabled ? colors.outline : colors.onPrimaryContainer}
+      />
+      <AppText
+        variant="labelSmall"
+        color={disabled ? 'onSurfaceVariant' : 'onPrimaryContainer'}
+        weight="700"
+      >
+        Both
+      </AppText>
+    </Pressable>
   );
 }
 
@@ -375,6 +425,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  completeBothButton: {
+    minWidth: 76,
+    height: 40,
+    borderRadius: 20,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
   ishaToggleRow: {
     borderTopWidth: StyleSheet.hairlineWidth,
