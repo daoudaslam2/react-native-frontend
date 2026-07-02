@@ -1,0 +1,94 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_prayer_aod_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/transparent">
+
+    <LinearLayout
+        android:id="@+id/widget_aod_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="5dp"
+        android:gravity="end"
+        android:minWidth="110dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/widget_aod_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/widget_aod_current_prayer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:autoSizeMaxTextSize="20sp"
+                android:autoSizeMinTextSize="13sp"
+                android:autoSizeStepGranularity="1sp"
+                android:autoSizeTextType="uniform"
+                android:ellipsize="end"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="Asr"
+                android:textColor="@color/widget_aod_text"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:includeFontPadding="false"
+                android:text="" />
+
+            <ImageView
+                android:id="@+id/widget_aod_icon"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_namaz_asr"
+                android:tint="@color/widget_aod_text" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/widget_aod_remaining"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:layout_marginTop="3dp"
+            android:includeFontPadding="false"
+            android:text="1h 45m left"
+            android:textColor="@color/widget_aod_muted"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_aod_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:layout_marginTop="8dp"
+            android:includeFontPadding="false"
+            android:text="Next: Maghrib"
+            android:textColor="@color/widget_aod_muted"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <ProgressBar
+            android:id="@+id/widget_aod_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginTop="4dp"
+            android:indeterminate="false"
+            android:max="1000"
+            android:progress="680"
+            android:progressDrawable="@drawable/widget_aod_progress_bar" />
+    </LinearLayout>
+</RelativeLayout>

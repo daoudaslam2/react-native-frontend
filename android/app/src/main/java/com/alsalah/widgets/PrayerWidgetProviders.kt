@@ -206,6 +206,14 @@ class SmallPrayerWidgetProvider : PrayerWidgetProvider(
     ACTION_REFRESH_SMALL,
 )
 
+class AodPrayerWidgetProvider : PrayerWidgetProvider(
+    R.layout.widget_prayer_aod,
+    R.id.widget_prayer_aod_root,
+    ::renderAodWidget,
+    AodPrayerWidgetProvider::class.java,
+    ACTION_REFRESH_AOD,
+)
+
 class MediumPrayerWidgetProvider : PrayerWidgetProvider(
     R.layout.widget_prayer_medium,
     R.id.widget_prayer_medium_root,
@@ -258,10 +266,52 @@ private fun renderSmallSetupWidget(views: RemoteViews) {
     views.setProgressBar(R.id.widget_small_progress, 1_000, 0, false)
 }
 
+private fun renderAodWidget(
+    context: Context,
+    views: RemoteViews,
+    data: PrayerWidgetData?,
+) {
+    if (data == null) {
+        renderAodSetupWidget(views)
+        return
+    }
+
+    val currentLabel = data.current.namaz.label
+    views.setTextViewText(R.id.widget_aod_current_prayer, currentLabel)
+    views.setTextViewTextSize(
+        R.id.widget_aod_current_prayer,
+        TypedValue.COMPLEX_UNIT_SP,
+        getAodWidgetTitleSize(currentLabel),
+    )
+    views.setTextViewText(R.id.widget_aod_remaining, formatAodRemaining(data))
+    views.setTextViewText(R.id.widget_aod_next, formatSmallFooter(data))
+    views.setImageViewResource(R.id.widget_aod_icon, data.current.namaz.icon)
+    views.setProgressBar(R.id.widget_aod_progress, 1_000, calculateIntervalProgress(data), false)
+}
+
+private fun renderAodSetupWidget(views: RemoteViews) {
+    views.setTextViewText(R.id.widget_aod_current_prayer, "Set location")
+    views.setTextViewTextSize(
+        R.id.widget_aod_current_prayer,
+        TypedValue.COMPLEX_UNIT_SP,
+        16f,
+    )
+    views.setTextViewText(R.id.widget_aod_remaining, "Open Al-Salah")
+    views.setTextViewText(R.id.widget_aod_next, "Choose coordinates")
+    views.setImageViewResource(R.id.widget_aod_icon, R.drawable.ic_namaz_fajr)
+    views.setProgressBar(R.id.widget_aod_progress, 1_000, 0, false)
+}
+
 private fun getSmallWidgetTitleSize(label: String): Float = when {
     label.length >= 7 -> 16f
     label.length >= 5 -> 20f
     else -> 23f
+}
+
+private fun getAodWidgetTitleSize(label: String): Float = when {
+    label.length >= 7 -> 15f
+    label.length >= 5 -> 18f
+    else -> 20f
 }
 
 private fun renderMediumWidget(
@@ -721,6 +771,16 @@ private fun formatSmallFooter(data: PrayerWidgetData): String {
         "Next: ${data.next.namaz.label}"
     } else {
         "Starts: ${formatTime(data.next.time, data.location)}"
+    }
+}
+
+private fun formatAodRemaining(data: PrayerWidgetData): String {
+    val duration = formatRemainingDuration(data)
+
+    return if (data.isPrayerActive) {
+        "$duration left"
+    } else {
+        "In $duration"
     }
 }
 

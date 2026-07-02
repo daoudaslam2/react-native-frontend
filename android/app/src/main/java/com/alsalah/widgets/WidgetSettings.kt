@@ -16,6 +16,7 @@ internal const val MAX_ISHA_DEADLINE_MINUTES = 26 * 60
 internal const val DEFAULT_PRAYER_LOCATION_LABEL = "Prayer location"
 internal const val FALLBACK_PRAYER_TIME_ZONE = "UTC"
 internal const val ACTION_REFRESH_SMALL = "com.alsalah.widgets.REFRESH_SMALL"
+internal const val ACTION_REFRESH_AOD = "com.alsalah.widgets.REFRESH_AOD"
 internal const val ACTION_REFRESH_MEDIUM = "com.alsalah.widgets.REFRESH_MEDIUM"
 internal const val ACTION_REFRESH_LARGE = "com.alsalah.widgets.REFRESH_LARGE"
 
@@ -111,6 +112,7 @@ internal fun setConfiguredIshaDeadlineMinutes(context: Context, minutes: Int?) {
 internal fun refreshPrayerWidgets(context: Context) {
     val providers = listOf(
         SmallPrayerWidgetProvider::class.java to ACTION_REFRESH_SMALL,
+        AodPrayerWidgetProvider::class.java to ACTION_REFRESH_AOD,
         MediumPrayerWidgetProvider::class.java to ACTION_REFRESH_MEDIUM,
         LargePrayerWidgetProvider::class.java to ACTION_REFRESH_LARGE,
     )

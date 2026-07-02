@@ -11,4 +11,7 @@
     <color name="widget_line">#EEEDE8</color>
     <color name="widget_border">#DDE7DF</color>
     <color name="widget_ring">#EEF3F0</color>
+    <color name="widget_aod_text">#FFFFFFFF</color>
+    <color name="widget_aod_muted">#FFFFFFFF</color>
+    <color name="widget_aod_track">#FF5A625C</color>
 </resources>
