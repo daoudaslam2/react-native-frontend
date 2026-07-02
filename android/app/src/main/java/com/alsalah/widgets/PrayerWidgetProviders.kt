@@ -214,6 +214,14 @@ class AodPrayerWidgetProvider : PrayerWidgetProvider(
     ACTION_REFRESH_AOD,
 )
 
+class AodLeftPrayerWidgetProvider : PrayerWidgetProvider(
+    R.layout.widget_prayer_aod_left,
+    R.id.widget_prayer_aod_root,
+    ::renderAodWidget,
+    AodLeftPrayerWidgetProvider::class.java,
+    ACTION_REFRESH_AOD_LEFT,
+)
+
 class MediumPrayerWidgetProvider : PrayerWidgetProvider(
     R.layout.widget_prayer_medium,
     R.id.widget_prayer_medium_root,

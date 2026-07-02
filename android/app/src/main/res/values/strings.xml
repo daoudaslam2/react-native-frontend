@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">Al-Salah</string>
     <string name="widget_small_name">Al-Salah Compact Prayer</string>
-    <string name="widget_aod_name">Al-Salah Lock Prayer</string>
+    <string name="widget_aod_name">Al-Salah Right Lock</string>
+    <string name="widget_aod_left_name">Al-Salah Left Lock</string>
     <string name="widget_medium_name">Al-Salah Prayer Timeline</string>
     <string name="widget_large_name">Al-Salah Prayer Overview</string>
     <string name="widget_description">Prayer time widget for Al-Salah.</string>
