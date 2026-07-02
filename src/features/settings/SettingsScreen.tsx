@@ -66,7 +66,7 @@ export function SettingsScreen(): React.JSX.Element {
 
       <SettingsSection title="General">
         <SettingsRow
-          icon="palette"
+          icon="appearance"
           label="Theme"
           value={getThemeModeLabel(settings.theme)}
           onPress={() => navigation.navigate('ThemeSettings')}
