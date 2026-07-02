@@ -55,7 +55,8 @@ export function SettingsScreen(): React.JSX.Element {
           style={({ pressed }) => [
             styles.backButton,
             pressed && styles.pressed,
-          ]}>
+          ]}
+        >
           <Icon name="arrowLeft" size={28} color={colors.primary} />
         </Pressable>
         <AppText variant="headlineMobile" weight="700" align="center">
@@ -130,14 +131,6 @@ export function SettingsScreen(): React.JSX.Element {
       </SettingsSection>
 
       <SettingsSection title="Widgets">
-        <ToggleRow
-          icon="moon"
-          label="Dark Widget Theme"
-          value={settings.useDarkWidgetTheme}
-          onValueChange={() =>
-            settings.setUseDarkWidgetTheme(!settings.useDarkWidgetTheme)
-          }
-        />
         <ToggleRow
           icon="widgets"
           label="Adaptive Widget Colors"
@@ -256,12 +249,9 @@ function SettingsRow({
       style={({ pressed }) => [
         styles.row,
         interactive && pressed && { backgroundColor: colors.surfaceContainer },
-      ]}>
-      <View
-        style={[
-          styles.rowIcon,
-          { backgroundColor: colors.surfaceHigh },
-        ]}>
+      ]}
+    >
+      <View style={[styles.rowIcon, { backgroundColor: colors.surfaceHigh }]}>
         {prayerIcon ? (
           <PrayerIcon
             name={prayerIcon}
@@ -303,11 +293,7 @@ function ToggleRow({
 
   return (
     <View style={styles.row}>
-      <View
-        style={[
-          styles.rowIcon,
-          { backgroundColor: colors.surfaceHigh },
-        ]}>
+      <View style={[styles.rowIcon, { backgroundColor: colors.surfaceHigh }]}>
         <Icon name={icon} color={colors.onSurfaceVariant} />
       </View>
       <View style={styles.rowText}>

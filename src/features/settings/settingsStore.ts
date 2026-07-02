@@ -26,6 +26,7 @@ export type Language = 'English';
 
 interface SettingsValues {
   theme: ThemeMode;
+  widgetTheme: ThemeMode;
   language: Language;
   calculationMethod: CalculationMethodKey;
   asrMethod: AsrMethodKey;
@@ -40,6 +41,7 @@ interface SettingsValues {
 
 interface SettingsState extends SettingsValues {
   setTheme: (theme: ThemeMode) => void;
+  setWidgetTheme: (theme: ThemeMode) => void;
   setLanguage: (language: Language) => void;
   setCalculationMethod: (method: CalculationMethodKey) => void;
   setAsrMethod: (method: AsrMethodKey) => void;
@@ -54,13 +56,14 @@ interface SettingsState extends SettingsValues {
 
 const defaultSettings: SettingsValues = {
   theme: 'System',
+  widgetTheme: 'System',
   language: 'English',
   calculationMethod: DEFAULT_CALCULATION_METHOD,
   asrMethod: DEFAULT_ASR_METHOD,
   ishaDeadlineMinutes: DEFAULT_ISHA_DEADLINE_MINUTES,
   location: null,
   use24HourTime: false,
-  useAdaptiveWidgetColors: true,
+  useAdaptiveWidgetColors: false,
   useDarkWidgetTheme: false,
   adhanNotifications: true,
   qazaReminders: true,
@@ -71,6 +74,7 @@ export const useSettingsStore = create<SettingsState>()(
     set => ({
       ...defaultSettings,
       setTheme: theme => set({ theme }),
+      setWidgetTheme: widgetTheme => set({ widgetTheme }),
       setLanguage: language => set({ language }),
       setCalculationMethod: calculationMethod => set({ calculationMethod }),
       setAsrMethod: asrMethod => set({ asrMethod }),
@@ -107,7 +111,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'al-salah-settings',
-      version: 7,
+      version: 8,
       storage: createJSONStorage(() => localStorage),
       migrate: persistedState => coercePersistedSettings(persistedState),
       onRehydrateStorage: () => state => {
@@ -125,6 +129,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
       partialize: state => ({
         theme: state.theme,
+        widgetTheme: state.widgetTheme,
         language: state.language,
         calculationMethod: state.calculationMethod,
         asrMethod: state.asrMethod,
@@ -147,6 +152,7 @@ function coercePersistedSettings(persistedState: unknown): SettingsValues {
 
   return {
     theme: coerceTheme(persistedState.theme),
+    widgetTheme: coerceWidgetTheme(persistedState),
     language: 'English',
     calculationMethod: normalizeCalculationMethod(
       persistedState.calculationMethod,
@@ -177,6 +183,18 @@ function coercePersistedSettings(persistedState: unknown): SettingsValues {
       defaultSettings.qazaReminders,
     ),
   };
+}
+
+function coerceWidgetTheme(persistedState: Record<string, unknown>): ThemeMode {
+  if (
+    persistedState.widgetTheme === 'System' ||
+    persistedState.widgetTheme === 'Light' ||
+    persistedState.widgetTheme === 'Dark'
+  ) {
+    return persistedState.widgetTheme;
+  }
+
+  return defaultSettings.widgetTheme;
 }
 
 function coerceTheme(value: unknown): ThemeMode {

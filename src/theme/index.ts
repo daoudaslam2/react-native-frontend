@@ -3,6 +3,7 @@ export type { ColorToken, ThemeColors } from './colors';
 export {
   AppThemeProvider,
   getThemeModeLabel,
+  resolveThemeMode,
   useAppTheme,
   useThemeColors,
   type ResolvedThemeMode,

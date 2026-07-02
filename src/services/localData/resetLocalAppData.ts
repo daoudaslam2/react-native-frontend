@@ -42,7 +42,7 @@ export async function resetLocalAppData(): Promise<void> {
   resetStoresInMemory();
   syncWidgetIshaDeadlineMinutes(null);
   syncWidgetPrayerLocation(null);
-  syncWidgetAdaptiveColorPreference(true);
+  syncWidgetAdaptiveColorPreference(false);
   syncWidgetDarkThemePreference(false);
 }
 
@@ -66,13 +66,14 @@ function resetStoresInMemory(): void {
 
   useSettingsStore.setState({
     theme: 'System',
+    widgetTheme: 'System',
     language: 'English',
     calculationMethod: DEFAULT_CALCULATION_METHOD,
     asrMethod: DEFAULT_ASR_METHOD,
     ishaDeadlineMinutes: DEFAULT_ISHA_DEADLINE_MINUTES,
     location: null,
     use24HourTime: false,
-    useAdaptiveWidgetColors: true,
+    useAdaptiveWidgetColors: false,
     useDarkWidgetTheme: false,
     adhanNotifications: true,
     qazaReminders: true,

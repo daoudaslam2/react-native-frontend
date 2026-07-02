@@ -7,7 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useBackupAutoSync } from '../features/settings/useBackupAutoSync';
 import { useSettingsStore } from '../features/settings/settingsStore';
 import { useMissedPrayerSync } from '../features/tracker/useMissedPrayerSync';
-import { AppThemeProvider, useAppTheme } from '../theme';
+import { AppThemeProvider, resolveThemeMode, useAppTheme } from '../theme';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -18,10 +18,31 @@ export function AppProviders({
 }: AppProvidersProps): React.JSX.Element {
   const queryClient = useMemo(() => new QueryClient(), []);
   const theme = useSettingsStore(state => state.theme);
+  const widgetTheme = useSettingsStore(state => state.widgetTheme);
+  const useDarkWidgetTheme = useSettingsStore(
+    state => state.useDarkWidgetTheme,
+  );
+  const setUseDarkWidgetTheme = useSettingsStore(
+    state => state.setUseDarkWidgetTheme,
+  );
   const systemScheme = useColorScheme();
 
   useMissedPrayerSync();
   useBackupAutoSync();
+
+  React.useEffect(() => {
+    const nextUseDarkWidgetTheme =
+      resolveThemeMode(widgetTheme, systemScheme) === 'dark';
+
+    if (nextUseDarkWidgetTheme !== useDarkWidgetTheme) {
+      setUseDarkWidgetTheme(nextUseDarkWidgetTheme);
+    }
+  }, [
+    setUseDarkWidgetTheme,
+    systemScheme,
+    useDarkWidgetTheme,
+    widgetTheme,
+  ]);
 
   return (
     <GestureHandlerRootView style={styles.root}>
