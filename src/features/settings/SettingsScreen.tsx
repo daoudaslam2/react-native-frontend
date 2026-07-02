@@ -70,7 +70,12 @@ export function SettingsScreen(): React.JSX.Element {
           value={getThemeModeLabel(settings.theme)}
           onPress={() => navigation.navigate('ThemeSettings')}
         />
-        <SettingsRow icon="language" label="Language" value={settings.language} />
+        <SettingsRow
+          icon="language"
+          label="Language"
+          value={settings.language}
+          onPress={() => navigation.navigate('LanguageSettings')}
+        />
         <ToggleRow
           icon="timer"
           label="24-Hour Time"

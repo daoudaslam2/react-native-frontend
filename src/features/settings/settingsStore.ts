@@ -20,7 +20,7 @@ import {
 } from './widgetSettingsBridge';
 import type { ThemeMode } from '../../theme';
 
-type Language = 'English';
+export type Language = 'English';
 
 interface SettingsValues {
   theme: ThemeMode;
@@ -36,6 +36,7 @@ interface SettingsValues {
 
 interface SettingsState extends SettingsValues {
   setTheme: (theme: ThemeMode) => void;
+  setLanguage: (language: Language) => void;
   setCalculationMethod: (method: CalculationMethodKey) => void;
   setAsrMethod: (method: AsrMethodKey) => void;
   setIshaDeadlineMinutes: (minutes: number | null) => void;
@@ -62,6 +63,7 @@ export const useSettingsStore = create<SettingsState>()(
     set => ({
       ...defaultSettings,
       setTheme: theme => set({ theme }),
+      setLanguage: language => set({ language }),
       setCalculationMethod: calculationMethod => set({ calculationMethod }),
       setAsrMethod: asrMethod => set({ asrMethod }),
       setIshaDeadlineMinutes: minutes => {

@@ -26,6 +26,7 @@ import { AsrMethodSettingsScreen } from '../features/settings/AsrMethodSettingsS
 import { BackupSyncScreen } from '../features/settings/BackupSyncScreen';
 import { CalculationMethodSettingsScreen } from '../features/settings/CalculationMethodSettingsScreen';
 import { IshaEndTimeSettingsScreen } from '../features/settings/IshaEndTimeSettingsScreen';
+import { LanguageSettingsScreen } from '../features/settings/LanguageSettingsScreen';
 import { PrivacyPolicyScreen } from '../features/settings/PrivacyPolicyScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
 import { ThemeSettingsScreen } from '../features/settings/ThemeSettingsScreen';
@@ -96,6 +97,10 @@ export function AppNavigator(): React.JSX.Element {
         <RootStack.Screen
           name="ThemeSettings"
           component={ThemeSettingsScreen}
+        />
+        <RootStack.Screen
+          name="LanguageSettings"
+          component={LanguageSettingsScreen}
         />
         <RootStack.Screen
           name="CalculationMethodSettings"
