@@ -142,7 +142,10 @@ function WidgetsContent({
     location,
   });
   const previewWidth = Math.min(width - spacing.container * 2, 330);
-  const previewPalette = getWidgetPreviewPalette(useDarkWidgetTheme);
+  const previewPalette = getWidgetPreviewPalette({
+    useAdaptiveWidgetColors,
+    useDarkWidgetTheme,
+  });
   const handleAddWidget = React.useCallback(
     async (widgetSize: WidgetPinSize) => {
       setPendingWidgetSize(widgetSize);
@@ -890,7 +893,30 @@ function toTimeMinutes(time: string): number {
   return hour * 60 + minute;
 }
 
-function getWidgetPreviewPalette(useDarkWidgetTheme: boolean): WidgetPreviewPalette {
+function getWidgetPreviewPalette({
+  useAdaptiveWidgetColors,
+  useDarkWidgetTheme,
+}: {
+  useAdaptiveWidgetColors: boolean;
+  useDarkWidgetTheme: boolean;
+}): WidgetPreviewPalette {
+  if (useDarkWidgetTheme && useAdaptiveWidgetColors) {
+    return {
+      surface: '#1e333c',
+      surfaceSoft: '#151d20',
+      text: darkColors.onSurface,
+      muted: darkColors.onSurfaceVariant,
+      inactive: darkColors.outline,
+      track: darkColors.surfaceHighest,
+      ring: darkColors.surfaceContainer,
+      accent: '#6db5d0',
+      accentContainer: '#1e333c',
+      onAccent: '#6db5d0',
+      border: darkColors.outlineVariant,
+      divider: darkColors.outlineVariant,
+    };
+  }
+
   if (useDarkWidgetTheme) {
     return {
       surface: darkColors.surfaceLowest,

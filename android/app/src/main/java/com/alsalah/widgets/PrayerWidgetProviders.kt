@@ -328,8 +328,11 @@ private fun getAodWidgetTitleSize(label: String): Float = when {
 
 private data class WidgetPalette(
     val isDark: Boolean,
+    val card: Int,
+    val cardSoft: Int,
     val accent: Int,
     val accentContainer: Int,
+    val iconForeground: Int,
     val text: Int,
     val muted: Int,
     val inactive: Int,
@@ -345,11 +348,13 @@ private fun applySmallWidgetTheme(context: Context, views: RemoteViews) {
         "setBackgroundResource",
         if (palette.isDark) R.drawable.widget_small_card_bg_dark else R.drawable.widget_small_card_bg,
     )
+    tintBackground(views, R.id.widget_prayer_small_root, palette.card)
     views.setInt(R.id.widget_small_ring, "setColorFilter", palette.ring)
     views.setTextColor(R.id.widget_small_current_prayer, palette.text)
     views.setTextColor(R.id.widget_small_remaining, palette.accent)
     views.setTextColor(R.id.widget_small_next, palette.muted)
     tintBackground(views, R.id.widget_small_icon_bg, palette.accentContainer)
+    setImageTint(views, R.id.widget_small_icon, palette.iconForeground)
     tintProgress(views, R.id.widget_small_progress, palette.accent)
     tintProgressTrack(views, R.id.widget_small_progress, palette.track)
 }
@@ -362,6 +367,7 @@ private fun applyMediumWidgetTheme(context: Context, views: RemoteViews) {
         "setBackgroundResource",
         if (palette.isDark) R.drawable.widget_card_bg_dark else R.drawable.widget_card_bg,
     )
+    tintBackground(views, R.id.widget_prayer_medium_root, palette.card)
     tintBackground(views, R.id.widget_medium_ring, palette.ring)
     views.setTextColor(R.id.widget_medium_time, palette.text)
     views.setTextColor(R.id.widget_medium_status, palette.accent)
@@ -369,6 +375,7 @@ private fun applyMediumWidgetTheme(context: Context, views: RemoteViews) {
     views.setTextColor(R.id.widget_medium_hijri, palette.muted)
     views.setTextColor(R.id.widget_medium_focus_name, palette.accent)
     tintBackground(views, R.id.widget_medium_focus_bg, palette.accentContainer)
+    setImageTint(views, R.id.widget_medium_focus_icon, palette.iconForeground)
     setImageTint(views, R.id.widget_medium_slot_0_icon, palette.inactive)
     setImageTint(views, R.id.widget_medium_slot_1_icon, palette.inactive)
     setImageTint(views, R.id.widget_medium_slot_3_icon, palette.inactive)
@@ -387,21 +394,25 @@ private fun applyLargeWidgetTheme(context: Context, views: RemoteViews) {
         "setBackgroundResource",
         if (palette.isDark) R.drawable.widget_card_bg_dark else R.drawable.widget_card_bg,
     )
+    tintBackground(views, R.id.widget_prayer_large_root, palette.card)
     views.setInt(
         R.id.widget_large_current_row,
         "setBackgroundResource",
         if (palette.isDark) R.drawable.widget_card_current_bg_dark else R.drawable.widget_card_current_bg,
     )
+    tintBackground(views, R.id.widget_large_current_row, palette.cardSoft)
     views.setInt(
         R.id.widget_large_more,
         "setBackgroundResource",
         if (palette.isDark) R.drawable.widget_more_circle_dark else R.drawable.widget_more_circle,
     )
+    tintBackground(views, R.id.widget_large_more, palette.track)
     views.setInt(
         R.id.widget_large_row_divider,
         "setBackgroundResource",
         if (palette.isDark) R.drawable.widget_row_divider_dark else R.drawable.widget_row_divider,
     )
+    tintBackground(views, R.id.widget_large_row_divider, palette.muted)
     tintBackground(views, R.id.widget_large_ring_solid, palette.ring)
     tintBackground(views, R.id.widget_large_ring_dotted, palette.ring)
     views.setTextColor(R.id.widget_large_date, palette.muted)
@@ -411,6 +422,7 @@ private fun applyLargeWidgetTheme(context: Context, views: RemoteViews) {
     views.setTextColor(R.id.widget_large_current_remaining, palette.accent)
     views.setTextColor(R.id.widget_large_current_time, palette.text)
     tintBackground(views, R.id.widget_large_current_icon_bg, palette.accentContainer)
+    setImageTint(views, R.id.widget_large_current_icon, palette.iconForeground)
     tintBackground(views, R.id.widget_large_current_accent, palette.accent)
     setLargeInactiveColors(views, R.id.widget_large_dhuhr_icon, R.id.widget_large_dhuhr_name, R.id.widget_large_dhuhr_time, palette)
     setLargeDefaultColors(views, R.id.widget_large_maghrib_icon, R.id.widget_large_maghrib_name, R.id.widget_large_maghrib_time, palette)
@@ -419,35 +431,69 @@ private fun applyLargeWidgetTheme(context: Context, views: RemoteViews) {
 
 private fun getWidgetPalette(context: Context): WidgetPalette {
     val isDark = getUseDarkWidgetTheme(context)
+    val usesDynamicColors = isUsingDynamicWidgetColors(context)
+    val defaultCard = context.getColor(if (isDark) R.color.widget_dark_card else R.color.widget_card)
+    val defaultCardSoft = context.getColor(if (isDark) R.color.widget_dark_card_soft else R.color.widget_card_soft)
     val defaultAccent = context.getColor(
         if (isDark) R.color.widget_dark_primary else R.color.widget_primary,
     )
     val defaultAccentContainer = context.getColor(
         if (isDark) R.color.widget_dark_primary_container else R.color.widget_primary,
     )
+    val accent = getDynamicWidgetColor(
+        context,
+        if (isDark) android.R.color.system_accent1_300 else android.R.color.system_accent1_600,
+        defaultAccent,
+    )
+    val card = if (isDark) {
+        getDynamicWidgetColor(context, android.R.color.system_accent2_800, defaultCard)
+    } else {
+        defaultCard
+    }
 
     return WidgetPalette(
         isDark = isDark,
-        accent = getDynamicWidgetColor(
-            context,
-            if (isDark) android.R.color.system_accent1_200 else android.R.color.system_accent1_600,
-            defaultAccent,
-        ),
-        accentContainer = getDynamicWidgetColor(
-            context,
-            android.R.color.system_accent1_600,
-            defaultAccentContainer,
-        ),
+        card = card,
+        cardSoft = if (isDark) {
+            getDynamicWidgetColor(context, android.R.color.system_neutral2_900, defaultCardSoft)
+        } else {
+            defaultCardSoft
+        },
+        accent = accent,
+        accentContainer = if (isDark && usesDynamicColors) {
+            card
+        } else {
+            defaultAccentContainer
+        },
+        iconForeground = if (isDark && usesDynamicColors) {
+            accent
+        } else {
+            context.getColor(android.R.color.white)
+        },
         text = context.getColor(if (isDark) R.color.widget_dark_text else R.color.widget_text),
         muted = context.getColor(if (isDark) R.color.widget_dark_muted else R.color.widget_muted),
         inactive = context.getColor(if (isDark) R.color.widget_dark_inactive else R.color.widget_inactive),
-        track = context.getColor(if (isDark) R.color.widget_dark_track else R.color.widget_track),
-        ring = context.getColor(if (isDark) R.color.widget_dark_ring else R.color.widget_ring),
+        track = if (isDark) {
+            getDynamicWidgetColorFromResource(context, android.R.color.system_neutral2_700, R.color.widget_dark_track)
+        } else {
+            context.getColor(R.color.widget_track)
+        },
+        ring = if (isDark) {
+            getDynamicWidgetColorFromResource(context, android.R.color.system_accent2_700, R.color.widget_dark_ring)
+        } else {
+            context.getColor(R.color.widget_ring)
+        },
     )
 }
 
+private fun isUsingDynamicWidgetColors(context: Context): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && getUseAdaptiveWidgetColors(context)
+
+private fun getDynamicWidgetColorFromResource(context: Context, colorResourceId: Int, fallbackColorResourceId: Int): Int =
+    getDynamicWidgetColor(context, colorResourceId, context.getColor(fallbackColorResourceId))
+
 private fun getDynamicWidgetColor(context: Context, colorResourceId: Int, fallback: Int): Int {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !getUseAdaptiveWidgetColors(context)) {
+    if (!isUsingDynamicWidgetColors(context)) {
         return fallback
     }
 
