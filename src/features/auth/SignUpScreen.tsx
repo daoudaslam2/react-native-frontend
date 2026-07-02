@@ -14,7 +14,7 @@ import type {
   AuthReturnRouteName,
   RootStackParamList,
 } from '../../navigation/types';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 import { AuthTextField } from './AuthTextField';
 import { useAuthStore } from './authStore';
 
@@ -27,6 +27,7 @@ type SignUpRoute = RouteProp<RootStackParamList, 'SignUp'>;
 export function SignUpScreen(): React.JSX.Element {
   const navigation = useNavigation<SignUpNavigation>();
   const route = useRoute<SignUpRoute>();
+  const colors = useThemeColors();
   const signUpLocal = useAuthStore(state => state.signUpLocal);
   const completeLocalAuth = useAuthStore(state => state.completeLocalAuth);
   const isBackupSyncEntry = route.params?.entry === 'backupSync';
@@ -138,6 +139,7 @@ export function SignUpScreen(): React.JSX.Element {
           onPress={handleSignUp}
           style={({ pressed }) => [
             styles.primaryButton,
+            { backgroundColor: colors.primaryContainer },
             pressed && styles.pressed,
           ]}>
           <AppText variant="label" color="onPrimaryContainer" weight="700">
@@ -242,7 +244,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryContainer,
   },
   pressed: {
     opacity: 0.76,

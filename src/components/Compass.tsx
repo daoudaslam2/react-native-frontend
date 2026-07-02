@@ -12,7 +12,7 @@ import Svg, {
 } from 'react-native-svg';
 
 import { getRelativeQiblaDirection } from '../services/qibla/qiblaDirection';
-import { colors } from '../theme';
+import { useThemeColors } from '../theme';
 
 interface CompassProps {
   qiblaDirection: number;
@@ -27,6 +27,7 @@ export function Compass({
   qiblaDirection,
   heading,
 }: CompassProps): React.JSX.Element {
+  const colors = useThemeColors();
   const relativeDirection = getRelativeQiblaDirection({
     qiblaDirection,
     heading,
@@ -45,6 +46,7 @@ export function Compass({
             width: glowSize,
             height: glowSize,
             borderRadius: glowSize / 2,
+            backgroundColor: colors.primarySoft,
           },
         ]}
       />
@@ -94,10 +96,10 @@ export function Compass({
           strokeWidth="1.2"
         />
         <G rotation={dialRotation} origin={`${CENTER},${CENTER}`}>
-          <DirectionLabel label="N" x={CENTER} y={29} />
-          <DirectionLabel label="E" x={286} y={162} />
-          <DirectionLabel label="S" x={CENTER} y={295} />
-          <DirectionLabel label="W" x={26} y={162} />
+          <DirectionLabel label="N" x={CENTER} y={29} color={colors.primary} />
+          <DirectionLabel label="E" x={286} y={162} color={colors.primary} />
+          <DirectionLabel label="S" x={CENTER} y={295} color={colors.primary} />
+          <DirectionLabel label="W" x={26} y={162} color={colors.primary} />
         </G>
         <G rotation={relativeDirection} origin={`${CENTER},${CENTER}`}>
           <Path
@@ -130,10 +132,12 @@ function DirectionLabel({
   label,
   x,
   y,
+  color,
 }: {
   label: string;
   x: number;
   y: number;
+  color: string;
 }): React.JSX.Element {
   return (
     <SvgText
@@ -142,7 +146,7 @@ function DirectionLabel({
       textAnchor="middle"
       fontSize={15}
       fontWeight="700"
-      fill={colors.primary}
+      fill={color}
       opacity="0.28">
       {label}
     </SvgText>
@@ -156,6 +160,5 @@ const styles = StyleSheet.create({
   },
   glow: {
     position: 'absolute',
-    backgroundColor: 'rgba(0, 106, 57, 0.05)',
   },
 });

@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '../theme';
+import { spacing, useThemeColors } from '../theme';
 
 export interface ScreenProps extends ScrollViewProps {
   children: React.ReactNode;
@@ -21,11 +21,12 @@ export function Screen({
   ...rest
 }: ScreenProps): React.JSX.Element {
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   const paddingTop = insets.top + spacing.md;
 
   return (
-    <View style={styles.container}>
-      {patterned ? <PatternOverlay /> : null}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {patterned ? <PatternOverlay backgroundColor={colors.background} /> : null}
       <ScrollView
         {...rest}
         showsVerticalScrollIndicator={false}
@@ -41,14 +42,22 @@ export function Screen({
   );
 }
 
-function PatternOverlay(): React.JSX.Element {
-  return <View pointerEvents="none" style={styles.pattern} />;
+function PatternOverlay({
+  backgroundColor,
+}: {
+  backgroundColor: string;
+}): React.JSX.Element {
+  return (
+    <View
+      pointerEvents="none"
+      style={[styles.pattern, { backgroundColor }]}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     paddingHorizontal: spacing.container,
@@ -63,6 +72,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     opacity: 0.22,
-    backgroundColor: colors.background,
   },
 });

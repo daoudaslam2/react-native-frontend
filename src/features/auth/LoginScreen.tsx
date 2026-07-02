@@ -11,7 +11,7 @@ import type {
   AuthReturnRouteName,
   RootStackParamList,
 } from '../../navigation/types';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 import { AuthTextField } from './AuthTextField';
 import { useAuthStore } from './authStore';
 
@@ -21,6 +21,7 @@ type LoginRoute = RouteProp<RootStackParamList, 'Login'>;
 export function LoginScreen(): React.JSX.Element {
   const navigation = useNavigation<LoginNavigation>();
   const route = useRoute<LoginRoute>();
+  const colors = useThemeColors();
   const logInLocal = useAuthStore(state => state.logInLocal);
   const completeLocalAuth = useAuthStore(state => state.completeLocalAuth);
   const startGuest = useAuthStore(state => state.startGuest);
@@ -168,6 +169,7 @@ export function LoginScreen(): React.JSX.Element {
             onPress={handleContinueWithoutLogin}
             style={({ pressed }) => [
               styles.secondaryButton,
+              { backgroundColor: colors.primarySoft },
               pressed && styles.pressed,
             ]}
           >
@@ -208,11 +210,17 @@ function PrimaryButton({
   label: string;
   onPress: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.primaryButton,
+        { backgroundColor: colors.primaryContainer },
+        pressed && styles.pressed,
+      ]}
     >
       <AppText variant="label" color="onPrimaryContainer" weight="700">
         {label}
@@ -283,14 +291,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryContainer,
   },
   secondaryButton: {
     minHeight: 52,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
   },
   createAccountPrompt: {
     borderRadius: radius.full,

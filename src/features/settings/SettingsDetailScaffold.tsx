@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 
 interface SettingsDetailScaffoldProps {
   title: string;
@@ -21,6 +21,7 @@ export function SettingsDetailScaffold({
   footer,
 }: SettingsDetailScaffoldProps): React.JSX.Element {
   const navigation = useNavigation();
+  const colors = useThemeColors();
 
   return (
     <Screen contentContainerStyle={styles.content}>
@@ -63,6 +64,8 @@ export function SettingsPrimaryButton({
   disabled?: boolean;
   onPress: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -70,6 +73,7 @@ export function SettingsPrimaryButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.primaryButton,
+        { backgroundColor: colors.primaryContainer },
         disabled && styles.primaryButtonDisabled,
         pressed && styles.pressed,
       ]}>
@@ -117,7 +121,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryContainer,
   },
   primaryButtonDisabled: {
     opacity: 0.45,

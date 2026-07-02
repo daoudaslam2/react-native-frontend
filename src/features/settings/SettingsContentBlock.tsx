@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 
 interface SettingsContentBlockProps {
   title: string;
@@ -13,8 +13,10 @@ export function SettingsContentBlock({
   title,
   children,
 }: SettingsContentBlockProps): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
-    <View style={styles.block}>
+    <View style={[styles.block, { backgroundColor: colors.surfaceLowest }]}>
       <AppText variant="bodyLarge" weight="700">
         {title}
       </AppText>
@@ -40,9 +42,11 @@ export function SettingsBullet({
 }: {
   children: React.ReactNode;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <View style={styles.bulletRow}>
-      <View style={styles.bulletDot} />
+      <View style={[styles.bulletDot, { backgroundColor: colors.primary }]} />
       <AppText
         variant="body"
         color="onSurfaceVariant"
@@ -56,7 +60,6 @@ export function SettingsBullet({
 const styles = StyleSheet.create({
   block: {
     borderRadius: radius.lg,
-    backgroundColor: colors.surfaceLowest,
     gap: spacing.sm,
     padding: spacing.md,
   },
@@ -75,7 +78,6 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 3,
     marginTop: 9,
-    backgroundColor: colors.primary,
   },
   bulletText: {
     flex: 1,

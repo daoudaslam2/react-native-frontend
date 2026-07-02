@@ -10,7 +10,7 @@ import { Screen } from '../../components/Screen';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
 import type { RootStackParamList } from '../../navigation/types';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
 import { qazaPrayerSubtitles } from './qazaConstants';
 import { getTotalQaza, useQazaStore } from './qazaStore';
@@ -19,6 +19,7 @@ type QazaNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function QazaScreen(): React.JSX.Element {
   const navigation = useNavigation<QazaNavigation>();
+  const colors = useThemeColors();
   const counts = useQazaStore(state => state.counts);
   const total = getTotalQaza(counts);
 
@@ -51,7 +52,11 @@ export function QazaScreen(): React.JSX.Element {
               Edit All Counts
             </AppText>
           </Pressable>
-          <View style={styles.totalPill}>
+          <View
+            style={[
+              styles.totalPill,
+              { backgroundColor: colors.primarySoft },
+            ]}>
             <AppText variant="label" color="primary" weight="700">
               Total:
             </AppText>
@@ -91,6 +96,7 @@ function QazaCard({
 }): React.JSX.Element {
   const count = useQazaStore(state => state.counts[prayer]);
   const completeOne = useQazaStore(state => state.completeOne);
+  const colors = useThemeColors();
   const isEmpty = count === 0;
 
   return (
@@ -121,7 +127,11 @@ function QazaCard({
           onPress={() => completeOne(prayer)}
           style={({ pressed }) => [
             styles.completeButton,
-            isEmpty && styles.completeButtonDisabled,
+            {
+              backgroundColor: isEmpty
+                ? colors.surfaceContainer
+                : colors.primaryContainer,
+            },
             pressed && !isEmpty && styles.pressed,
           ]}
         >
@@ -166,7 +176,6 @@ const styles = StyleSheet.create({
   totalPill: {
     minHeight: 32,
     borderRadius: radius.full,
-    backgroundColor: 'rgba(0, 106, 57, 0.1)',
     paddingHorizontal: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -189,7 +198,6 @@ const styles = StyleSheet.create({
     minHeight: 78,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderColor: 'rgba(228, 226, 221, 0.65)',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
@@ -220,12 +228,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  completeButtonDisabled: {
-    backgroundColor: colors.surfaceContainer,
   },
   pressed: {
     opacity: 0.76,

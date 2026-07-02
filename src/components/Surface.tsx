@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, type ViewProps, type ViewStyle } from 'react-native';
 
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useThemeColors } from '../theme';
 
 interface SurfaceProps extends ViewProps {
   padded?: boolean;
@@ -17,11 +17,17 @@ export function Surface({
   children,
   ...rest
 }: SurfaceProps): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <View
       {...rest}
       style={[
         styles.surface,
+        {
+          backgroundColor: colors.surfaceLowest,
+          borderColor: colors.surfaceVariant,
+        },
         padded && styles.padded,
         elevated && styles.elevated,
         { borderRadius: radius[radiusSize] },
@@ -42,9 +48,7 @@ const shadow: ViewStyle = {
 
 const styles = StyleSheet.create({
   surface: {
-    backgroundColor: colors.surfaceLowest,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.surfaceVariant,
   },
   padded: {
     padding: spacing.lg,

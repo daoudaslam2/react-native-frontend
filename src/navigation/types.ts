@@ -14,6 +14,7 @@ export type RootStackParamList = {
     | undefined;
   LocationSetup: undefined;
   MainTabs: undefined;
+  ThemeSettings: undefined;
   CalculationMethodSettings: undefined;
   AsrMethodSettings: undefined;
   IshaEndTimeSettings: undefined;

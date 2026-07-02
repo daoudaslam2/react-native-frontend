@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import type { RootStackParamList } from '../navigation/types';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useThemeColors } from '../theme';
 import { AppText } from './AppText';
 import { Icon } from './Icon';
 import { Screen } from './Screen';
@@ -13,10 +13,15 @@ type LocationNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function MissingLocationState(): React.JSX.Element {
   const navigation = useNavigation<LocationNavigation>();
+  const colors = useThemeColors();
 
   return (
     <Screen contentContainerStyle={styles.content}>
-      <View style={styles.iconWrap}>
+      <View
+        style={[
+          styles.iconWrap,
+          { backgroundColor: colors.primarySoft },
+        ]}>
         <Icon name="location" size={30} color={colors.primary} filled />
       </View>
       <View style={styles.copy}>
@@ -33,6 +38,7 @@ export function MissingLocationState(): React.JSX.Element {
         onPress={() => navigation.navigate('LocationSetup')}
         style={({ pressed }) => [
           styles.button,
+          { backgroundColor: colors.primary },
           pressed && styles.pressed,
         ]}>
         <AppText variant="label" color="onPrimaryContainer">
@@ -56,7 +62,6 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
   },
   copy: {
     maxWidth: 300,
@@ -67,7 +72,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
     paddingHorizontal: spacing.xl,
   },
   pressed: {

@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme } from '../theme';
 import { AppText } from './AppText';
 
 interface PrayerGradientCardProps {
@@ -22,18 +22,27 @@ export function PrayerGradientCard({
   nextPrayer,
   nextPrayerTime,
 }: PrayerGradientCardProps): React.JSX.Element {
+  const { colors, resolvedTheme } = useAppTheme();
+  const gradientStart = resolvedTheme === 'dark' ? colors.surfaceLow : '#ffffff';
+  const gradientEnd =
+    resolvedTheme === 'dark' ? colors.surfaceLowest : '#edf8f1';
+  const ringFill =
+    resolvedTheme === 'dark'
+      ? colors.surfaceHigh
+      : 'rgba(172, 237, 218, 0.18)';
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surfaceLowest }]}>
       <Svg style={StyleSheet.absoluteFill} viewBox="0 0 360 320" preserveAspectRatio="none">
         <Defs>
           <LinearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor="#ffffff" stopOpacity="1" />
-            <Stop offset="1" stopColor="#edf8f1" stopOpacity="1" />
+            <Stop offset="0" stopColor={gradientStart} stopOpacity="1" />
+            <Stop offset="1" stopColor={gradientEnd} stopOpacity="1" />
           </LinearGradient>
         </Defs>
         <Rect width="360" height="320" rx="32" fill="url(#hero)" />
       </Svg>
-      <View style={styles.currentBadge}>
+      <View style={[styles.currentBadge, { backgroundColor: colors.primarySoft }]}>
         <AppText variant="labelSmall" color="primary" transform="uppercase">
           {isPrayerActive ? 'Current' : 'Next'}
         </AppText>
@@ -42,8 +51,20 @@ export function PrayerGradientCard({
         {currentPrayer}
       </AppText>
       <View style={styles.clock}>
-        <View style={styles.outerRing} />
-        <View style={styles.clockInner}>
+        <View
+          style={[
+            styles.outerRing,
+            {
+              borderColor: colors.primarySoft,
+              backgroundColor: ringFill,
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.clockInner,
+            { backgroundColor: colors.surfaceLowest },
+          ]}>
           <AppText variant="title" color="onSurfaceVariant">
             {countdownLabel}
           </AppText>
@@ -95,7 +116,6 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.surfaceLowest,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.04,
@@ -104,7 +124,6 @@ const styles = StyleSheet.create({
   },
   currentBadge: {
     borderRadius: radius.full,
-    backgroundColor: 'rgba(0, 106, 57, 0.1)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
   },
@@ -121,8 +140,6 @@ const styles = StyleSheet.create({
     height: 196,
     borderRadius: 98,
     borderWidth: 12,
-    borderColor: 'rgba(0, 106, 57, 0.1)',
-    backgroundColor: 'rgba(172, 237, 218, 0.18)',
   },
   clockInner: {
     width: 168,
@@ -130,7 +147,6 @@ const styles = StyleSheet.create({
     borderRadius: 84,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceLowest,
     gap: spacing.xs,
   },
   nextRow: {

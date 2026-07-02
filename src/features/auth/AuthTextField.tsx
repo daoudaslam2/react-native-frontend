@@ -10,7 +10,7 @@ import {
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
-import { colors, fontFamilies, radius, spacing } from '../../theme';
+import { fontFamilies, radius, spacing, useThemeColors } from '../../theme';
 
 interface AuthTextFieldProps extends Pick<TextInputProps, 'autoCapitalize'> {
   label: string;
@@ -35,6 +35,7 @@ export function AuthTextField({
   error,
 }: AuthTextFieldProps): React.JSX.Element {
   const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
+  const colors = useThemeColors();
   const isSecure = secureTextEntry && !isPasswordVisible;
 
   return (
@@ -42,7 +43,14 @@ export function AuthTextField({
       <AppText variant="label" color="onSurfaceVariant">
         {label}
       </AppText>
-      <View style={[styles.inputWrap, error && styles.inputWrapError]}>
+      <View
+        style={[
+          styles.inputWrap,
+          {
+            borderColor: error ? colors.error : colors.outlineVariant,
+            backgroundColor: colors.surfaceLowest,
+          },
+        ]}>
         <TextInput
           value={value}
           onChangeText={onChangeText}
@@ -51,7 +59,7 @@ export function AuthTextField({
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           secureTextEntry={isSecure}
-          style={styles.input}
+          style={[styles.input, { color: colors.onSurface }]}
         />
         {showPasswordToggle ? (
           <Pressable
@@ -86,22 +94,16 @@ const styles = StyleSheet.create({
   inputWrap: {
     minHeight: 54,
     borderWidth: 1,
-    borderColor: colors.outlineVariant,
     borderRadius: radius.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceLowest,
     paddingLeft: spacing.md,
-  },
-  inputWrapError: {
-    borderColor: colors.error,
   },
   input: {
     flex: 1,
     minHeight: 54,
     padding: 0,
     paddingRight: spacing.md,
-    color: colors.onSurface,
     fontFamily: fontFamilies.medium,
     fontSize: 16,
   },

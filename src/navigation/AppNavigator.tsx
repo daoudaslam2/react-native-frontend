@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { NavigationContainer, TabActions } from '@react-navigation/native';
+import type { Theme as NavigationTheme } from '@react-navigation/native';
 import {
   type BottomTabBarProps,
   createBottomTabNavigator,
@@ -27,8 +28,9 @@ import { CalculationMethodSettingsScreen } from '../features/settings/Calculatio
 import { IshaEndTimeSettingsScreen } from '../features/settings/IshaEndTimeSettingsScreen';
 import { PrivacyPolicyScreen } from '../features/settings/PrivacyPolicyScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
+import { ThemeSettingsScreen } from '../features/settings/ThemeSettingsScreen';
 import { PrayerTrackerScreen } from '../features/tracker/PrayerTrackerScreen';
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useAppTheme } from '../theme';
 import type {
   MainTabParamList,
   RootStackParamList,
@@ -51,8 +53,30 @@ const tabConfig: Record<
 };
 
 export function AppNavigator(): React.JSX.Element {
+  const { colors, resolvedTheme } = useAppTheme();
+  const navigationTheme = React.useMemo<NavigationTheme>(
+    () => ({
+      dark: resolvedTheme === 'dark',
+      colors: {
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.surfaceLowest,
+        text: colors.onSurface,
+        border: colors.surfaceVariant,
+        notification: colors.primary,
+      },
+      fonts: {
+        regular: { fontFamily: 'System', fontWeight: '400' },
+        medium: { fontFamily: 'System', fontWeight: '500' },
+        bold: { fontFamily: 'System', fontWeight: '700' },
+        heavy: { fontFamily: 'System', fontWeight: '800' },
+      },
+    }),
+    [colors, resolvedTheme],
+  );
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         <RootStack.Screen name="Splash" component={SplashScreen} />
         <RootStack.Screen name="Login" component={LoginScreen} />
@@ -69,6 +93,10 @@ export function AppNavigator(): React.JSX.Element {
         <RootStack.Screen name="Widgets" component={WidgetsScreen} />
         <RootStack.Screen name="Qibla" component={QiblaScreen} />
         <RootStack.Screen name="Settings" component={SettingsScreen} />
+        <RootStack.Screen
+          name="ThemeSettings"
+          component={ThemeSettingsScreen}
+        />
         <RootStack.Screen
           name="CalculationMethodSettings"
           component={CalculationMethodSettingsScreen}
@@ -116,9 +144,17 @@ function BottomNavigation({
   navigation,
 }: BottomTabBarProps): React.JSX.Element {
   const insets = useSafeAreaInsets();
+  const colors = useAppTheme().colors;
 
   return (
-    <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+    <View
+      style={[
+        styles.tabBar,
+        {
+          paddingBottom: Math.max(insets.bottom, 12),
+          backgroundColor: colors.surfaceContainer,
+        },
+      ]}>
       {state.routes.map((route, index) => {
         const config = tabConfig[route.name as keyof MainTabParamList];
         const isFocused = state.index === index;
@@ -146,7 +182,7 @@ function BottomNavigation({
             onPress={onPress}
             style={({ pressed }) => [
               styles.tabItem,
-              isFocused && styles.tabItemActive,
+              isFocused && { backgroundColor: colors.secondaryContainer },
               pressed && styles.tabPressed,
             ]}>
             <Icon
@@ -181,7 +217,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surfaceContainer,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.04,
@@ -196,9 +231,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 2,
     paddingHorizontal: spacing.xs,
-  },
-  tabItemActive: {
-    backgroundColor: colors.secondaryContainer,
   },
   tabPressed: {
     opacity: 0.76,

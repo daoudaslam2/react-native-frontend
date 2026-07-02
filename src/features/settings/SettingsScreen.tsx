@@ -13,7 +13,12 @@ import {
   type PrayerLocation,
 } from '../../constants/prayerSettings';
 import type { RootStackParamList } from '../../navigation/types';
-import { colors, radius, spacing } from '../../theme';
+import {
+  getThemeModeLabel,
+  radius,
+  spacing,
+  useThemeColors,
+} from '../../theme';
 import { useAuthStore } from '../auth/authStore';
 import {
   getBackupSyncFrequencyLabel,
@@ -29,6 +34,7 @@ type SettingsNavigation = NativeStackNavigationProp<
 export function SettingsScreen(): React.JSX.Element {
   const navigation = useNavigation<SettingsNavigation>();
   const settings = useSettingsStore();
+  const colors = useThemeColors();
   const isLoggedIn = useAuthStore(
     state =>
       state.isAuthenticated &&
@@ -46,7 +52,10 @@ export function SettingsScreen(): React.JSX.Element {
           accessibilityLabel="Go back"
           accessibilityRole="button"
           onPress={() => navigation.goBack()}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.pressed,
+          ]}>
           <Icon name="arrowLeft" size={28} color={colors.primary} />
         </Pressable>
         <AppText variant="headlineMobile" weight="700" align="center">
@@ -55,7 +64,12 @@ export function SettingsScreen(): React.JSX.Element {
       </View>
 
       <SettingsSection title="General">
-        <SettingsRow icon="palette" label="Theme" value={settings.theme} />
+        <SettingsRow
+          icon="palette"
+          label="Theme"
+          value={getThemeModeLabel(settings.theme)}
+          onPress={() => navigation.navigate('ThemeSettings')}
+        />
         <SettingsRow icon="language" label="Language" value={settings.language} />
         <ToggleRow
           icon="timer"
@@ -207,15 +221,21 @@ function SettingsRow({
   interactive?: boolean;
   onPress?: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       disabled={!interactive}
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
-        interactive && pressed && styles.pressed,
+        interactive && pressed && { backgroundColor: colors.surfaceContainer },
       ]}>
-      <View style={styles.rowIcon}>
+      <View
+        style={[
+          styles.rowIcon,
+          { backgroundColor: colors.surfaceHigh },
+        ]}>
         {prayerIcon ? (
           <PrayerIcon
             name={prayerIcon}
@@ -253,9 +273,15 @@ function ToggleRow({
   value: boolean;
   onValueChange: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <View style={styles.row}>
-      <View style={styles.rowIcon}>
+      <View
+        style={[
+          styles.rowIcon,
+          { backgroundColor: colors.surfaceHigh },
+        ]}>
         <Icon name={icon} color={colors.onSurfaceVariant} />
       </View>
       <View style={styles.rowText}>
@@ -316,13 +342,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceHigh,
   },
   rowText: {
     flex: 1,
     gap: 2,
   },
   pressed: {
-    backgroundColor: colors.surfaceContainer,
+    opacity: 0.76,
+    transform: [{ scale: 0.98 }],
   },
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '../theme';
+import { radius, spacing, useThemeColors } from '../theme';
 import { AppText } from './AppText';
 import { Icon, type IconName } from './Icon';
 
@@ -16,7 +16,8 @@ export function MetricChip({
   label,
   tone = 'neutral',
 }: MetricChipProps): React.JSX.Element {
-  const palette = chipPalette[tone];
+  const colors = useThemeColors();
+  const palette = getChipPalette(colors)[tone];
 
   return (
     <View style={[styles.container, { backgroundColor: palette.background }]}>
@@ -28,7 +29,8 @@ export function MetricChip({
   );
 }
 
-const chipPalette = {
+function getChipPalette(colors: ReturnType<typeof useThemeColors>) {
+  return {
   primary: {
     background: 'rgba(0, 106, 57, 0.1)',
     foreground: colors.primary,
@@ -45,7 +47,8 @@ const chipPalette = {
     background: colors.goldSoft,
     foreground: colors.inverseSurface,
   },
-};
+  };
+}
 
 const styles = StyleSheet.create({
   container: {

@@ -37,7 +37,7 @@ import {
   getShortestAngleToQibla,
 } from '../../services/qibla/qiblaDirection';
 import { useCompassHeading } from '../../services/qibla/useCompassHeading';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 
 type QiblaNavigation = NativeStackNavigationProp<RootStackParamList, 'Qibla'>;
 
@@ -53,6 +53,7 @@ interface Point {
 
 export function QiblaScreen(): React.JSX.Element {
   const navigation = useNavigation<QiblaNavigation>();
+  const colors = useThemeColors();
   const [location, setLocation] = React.useState<PrayerLocation | null>(null);
   const [isRequestingLocation, setIsRequestingLocation] = React.useState(true);
   const [locationError, setLocationError] = React.useState<string | null>(null);
@@ -126,6 +127,7 @@ function QiblaFinder({
 }: {
   location: PrayerLocation;
 }): React.JSX.Element {
+  const colors = useThemeColors();
   const qiblaDirection = calculateQiblaDirection(location);
   const distanceToMakkahKm = calculateDistanceToMakkahKm(location);
   const compass = useCompassHeading(location);
@@ -204,7 +206,13 @@ function QiblaFinder({
       </View>
 
       {compass.error ? (
-        <Surface style={[styles.sensorNotice, styles.foreground]} radiusSize="lg">
+        <Surface
+          style={[
+            styles.sensorNotice,
+            styles.foreground,
+            { backgroundColor: colors.surfaceHigh },
+          ]}
+          radiusSize="lg">
           <Icon name="info" color={colors.outline} />
           <AppText variant="body" color="onSurfaceVariant" align="center">
             {compass.error}
@@ -240,6 +248,7 @@ function AlignmentWave({
   origin: Point | null;
   pulseKey: number;
 }): React.JSX.Element | null {
+  const colors = useThemeColors();
   const fillScale = useSharedValue(0);
   const clearScale = useSharedValue(0);
   const [isVisible, setIsVisible] = React.useState(false);
@@ -309,7 +318,7 @@ function AlignmentWave({
       <Animated.View
         style={[
           styles.alignmentWaveCircle,
-          styles.alignmentWaveFill,
+          { backgroundColor: colors.primary },
           circlePosition,
           fillStyle,
         ]}
@@ -317,7 +326,7 @@ function AlignmentWave({
       <Animated.View
         style={[
           styles.alignmentWaveCircle,
-          styles.alignmentWaveClear,
+          { backgroundColor: colors.background },
           circlePosition,
           clearStyle,
         ]}
@@ -341,10 +350,16 @@ function LocationState({
   actionLabel?: string;
   onAction?: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <View style={styles.stateContainer}>
       <Surface style={styles.stateCard} radiusSize="lg">
-        <View style={styles.stateIcon}>
+        <View
+          style={[
+            styles.stateIcon,
+            { backgroundColor: colors.primarySoft },
+          ]}>
           {loading ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
@@ -365,6 +380,7 @@ function LocationState({
             onPress={onAction}
             style={({ pressed }) => [
               styles.retryButton,
+              { backgroundColor: colors.primary },
               pressed && styles.pressed,
             ]}>
             <AppText variant="label" color="onPrimary" weight="700">
@@ -384,8 +400,17 @@ function Metric({
   label: string;
   value: string;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
-    <View style={styles.metric}>
+    <View
+      style={[
+        styles.metric,
+        {
+          borderColor: colors.surfaceVariant,
+          backgroundColor: colors.surfaceLowest,
+        },
+      ]}>
       <AppText variant="labelSmall" color="onSurfaceVariant" align="center">
         {label}
       </AppText>
@@ -462,7 +487,6 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
   },
   stateCopy: {
     gap: spacing.xs,
@@ -473,7 +497,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
-    backgroundColor: colors.primary,
   },
   finderLayout: {
     flex: 1,
@@ -497,12 +520,6 @@ const styles = StyleSheet.create({
   alignmentWaveCircle: {
     position: 'absolute',
   },
-  alignmentWaveFill: {
-    backgroundColor: colors.primary,
-  },
-  alignmentWaveClear: {
-    backgroundColor: colors.background,
-  },
   instruction: {
     alignItems: 'center',
     gap: spacing.xs,
@@ -523,8 +540,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.surfaceVariant,
-    backgroundColor: colors.surfaceLowest,
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
     paddingVertical: 10,
@@ -533,7 +548,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surfaceHigh,
   },
   pressed: {
     opacity: 0.7,

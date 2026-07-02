@@ -2,11 +2,11 @@ import React from 'react';
 import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 
 import {
-  colors,
   fontFamilyForWeight,
   typography,
   type ColorToken,
   type TextVariant,
+  useThemeColors,
 } from '../theme';
 
 interface AppTextProps extends TextProps {
@@ -28,6 +28,7 @@ export function AppText({
   ...rest
 }: AppTextProps): React.JSX.Element {
   const weightedFontFamily = weight ? fontFamilyForWeight(weight) : undefined;
+  const colors = useThemeColors();
 
   return (
     <Text

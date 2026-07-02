@@ -10,7 +10,7 @@ import { PrayerIcon } from '../../components/PrayerIcon';
 import { Surface } from '../../components/Surface';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
 import type { RootStackParamList } from '../../navigation/types';
-import { colors, fontFamilies, radius, spacing } from '../../theme';
+import { fontFamilies, radius, spacing, useThemeColors } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
 import { qazaPrayerSubtitles } from './qazaConstants';
 import { type QazaCounts, useQazaStore } from './qazaStore';
@@ -24,6 +24,7 @@ type DraftCounts = Record<ObligatoryPrayerKey, string>;
 
 export function UpdateQazaCountsScreen(): React.JSX.Element {
   const navigation = useNavigation<UpdateQazaNavigation>();
+  const colors = useThemeColors();
   const counts = useQazaStore(state => state.counts);
   const replaceCounts = useQazaStore(state => state.replaceCounts);
   const initialDraft = useMemo(() => countsToDraft(counts), [counts]);
@@ -89,7 +90,14 @@ export function UpdateQazaCountsScreen(): React.JSX.Element {
       <Pressable
         accessibilityRole="button"
         onPress={saveCounts}
-        style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]}>
+        style={({ pressed }) => [
+          styles.saveButton,
+          {
+            backgroundColor: colors.primaryContainer,
+            shadowColor: colors.primary,
+          },
+          pressed && styles.pressed,
+        ]}>
         <Icon name="checkCircle" size={24} color={colors.onPrimaryContainer} />
         <AppText variant="body" color="onPrimaryContainer" weight="700">
           Save Changes
@@ -112,6 +120,8 @@ function QazaEditRow({
   onIncrease: () => void;
   onDecrease: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Surface padded={false} style={styles.row} radiusSize="lg">
       <View style={styles.prayerDetails}>
@@ -134,7 +144,11 @@ function QazaEditRow({
           label={`Decrease ${PRAYER_LABELS[prayer]}`}
           onPress={onDecrease}
         />
-        <View style={styles.inputWrap}>
+        <View
+          style={[
+            styles.inputWrap,
+            { borderBottomColor: colors.surfaceDim },
+          ]}>
           <TextInput
             value={value}
             onChangeText={onChange}
@@ -143,7 +157,7 @@ function QazaEditRow({
             placeholder="0"
             placeholderTextColor={colors.outline}
             selectTextOnFocus
-            style={styles.input}
+            style={[styles.input, { color: colors.onSurface }]}
           />
         </View>
         <CounterButton
@@ -165,13 +179,19 @@ function CounterButton({
   label: string;
   onPress: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       accessibilityLabel={label}
       accessibilityRole="button"
       hitSlop={6}
       onPress={onPress}
-      style={({ pressed }) => [styles.counterButton, pressed && styles.pressed]}>
+      style={({ pressed }) => [
+        styles.counterButton,
+        { backgroundColor: colors.surfaceContainer },
+        pressed && styles.pressed,
+      ]}>
       <Icon name={icon} size={22} color={colors.onSurfaceVariant} />
     </Pressable>
   );
@@ -246,7 +266,6 @@ const styles = StyleSheet.create({
     minHeight: 78,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderColor: 'rgba(228, 226, 221, 0.65)',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -287,18 +306,15 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceContainer,
   },
   inputWrap: {
     width: 52,
     alignItems: 'center',
     borderBottomWidth: 2,
-    borderBottomColor: colors.surfaceDim,
   },
   input: {
     width: 52,
     minHeight: 42,
-    color: colors.onSurface,
     fontFamily: fontFamilies.bold,
     fontSize: 24,
     lineHeight: 30,
@@ -310,12 +326,10 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     marginBottom: spacing.md,
     borderRadius: radius.full,
-    backgroundColor: colors.primaryContainer,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    shadowColor: colors.primary,
     shadowOpacity: 0.2,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },

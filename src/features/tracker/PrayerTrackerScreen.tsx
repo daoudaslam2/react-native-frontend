@@ -12,7 +12,7 @@ import type { PrayerLocation } from '../../constants/prayerSettings';
 import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
 import { useNow } from '../../hooks/useNow';
 import type { MainTabParamList } from '../../navigation/types';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 import type { ObligatoryPrayerKey } from '../../types/prayer';
 import { getTotalQaza, type QazaCounts, useQazaStore } from '../qaza/qazaStore';
 import { useSettingsStore } from '../settings/settingsStore';
@@ -60,6 +60,7 @@ function PrayerTrackerContent({
   location: PrayerLocation;
 }): React.JSX.Element {
   const navigation = useNavigation<TrackerNavigation>();
+  const colors = useThemeColors();
   const now = useNow(60_000);
   const logsByDate = useTrackerStore(state => state.logsByDate);
   const ensurePrayerDate = useTrackerStore(state => state.ensurePrayerDate);
@@ -129,15 +130,27 @@ function PrayerTrackerContent({
             {metrics.thirtyDayCompletionPercent}% in 30 days
           </AppText>
         </View>
-        <View style={styles.chart}>
+        <View
+          style={[
+            styles.chart,
+            { borderTopColor: colors.surfaceVariant },
+          ]}>
           {metrics.week.map(day => (
             <View key={day.key} style={styles.barWrap}>
-              <View style={styles.barTrack}>
+              <View
+                style={[
+                  styles.barTrack,
+                  { backgroundColor: colors.surfaceVariant },
+                ]}>
                 <View
                   style={[
                     styles.barFill,
-                    { height: `${day.percent}%` },
-                    day.percent < 50 && styles.barLow,
+                    {
+                      height: `${day.percent}%`,
+                      backgroundColor:
+                        day.percent < 50 ? colors.error : colors.primary,
+                    },
+                    day.percent < 50 ? styles.barFillLow : styles.barFillNormal,
                   ]}
                 />
               </View>
@@ -208,6 +221,7 @@ function PrayerTrackerContent({
           onPress={() => navigation.navigate('Qaza')}
           style={({ pressed }) => [
             styles.qazaButton,
+            { backgroundColor: colors.primaryContainer },
             pressed && styles.pressed,
           ]}>
           <AppText variant="label" color="onPrimaryContainer">
@@ -232,6 +246,7 @@ function MetricCard({
   value: string;
   suffix: string;
 }): React.JSX.Element {
+  const colors = useThemeColors();
   const toneColor = tone === 'gold' ? colors.gold : colors.primary;
 
   return (
@@ -261,9 +276,15 @@ function SmallMetricCard({
   label: string;
   value: string;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Surface style={styles.smallMetricCard} radiusSize="md">
-      <View style={styles.smallMetricIcon}>
+      <View
+        style={[
+          styles.smallMetricIcon,
+          { backgroundColor: colors.primarySoft },
+        ]}>
         <Icon name={icon} color={colors.primary} />
       </View>
       <AppText variant="headlineMobile" weight="700">
@@ -495,7 +516,6 @@ const styles = StyleSheet.create({
   chart: {
     height: 118,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.surfaceVariant,
     paddingTop: spacing.md,
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -513,15 +533,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.sm,
     borderTopRightRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: colors.surfaceVariant,
   },
   barFill: {
     width: '100%',
-    backgroundColor: colors.primary,
+  },
+  barFillNormal: {
     opacity: 0.85,
   },
-  barLow: {
-    backgroundColor: colors.error,
+  barFillLow: {
     opacity: 0.62,
   },
   compactGrid: {
@@ -545,7 +564,6 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
   },
   qazaEntry: {
     flexDirection: 'row',
@@ -567,7 +585,6 @@ const styles = StyleSheet.create({
   },
   qazaButton: {
     borderRadius: radius.full,
-    backgroundColor: colors.primaryContainer,
     paddingHorizontal: spacing.lg,
     paddingVertical: 12,
   },

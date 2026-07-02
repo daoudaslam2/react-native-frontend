@@ -11,7 +11,7 @@ import { Screen } from '../../components/Screen';
 import type { PrayerLocation } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
 import { formatPrayerTime } from '../../utils/dateTime';
 import { useAuthStore } from '../auth/authStore';
@@ -150,6 +150,7 @@ function TimelineRow({
   use24HourTime: boolean;
   onMarkComplete: () => void;
 }): React.JSX.Element {
+  const themeColors = useThemeColors();
   const isCurrent = prayer.status === 'current';
   const isNext = prayer.status === 'next';
   const isCompleted = logStatus === 'completed';
@@ -162,11 +163,18 @@ function TimelineRow({
     <View
       style={[
         styles.timelineRow,
-        isCurrent && styles.timelineRowActive,
-        isNext && styles.timelineRowNext,
+        { backgroundColor: themeColors.surfaceContainer },
+        isCurrent && {
+          backgroundColor: themeColors.primary,
+          transform: [{ scale: 1.01 }],
+        },
+        isNext && { backgroundColor: themeColors.primarySoft },
+        prayer.status === 'past' && {
+          backgroundColor: themeColors.surfaceLow,
+        },
         prayer.status === 'past' && styles.timelineRowPast,
         isCompleted && styles.timelineRowCompleted,
-        isQaza && styles.timelineRowMissed,
+        isQaza && { backgroundColor: themeColors.errorContainer },
       ]}>
       <View style={styles.timelineLabel}>
         <View
@@ -176,8 +184,15 @@ function TimelineRow({
           ]}>
           <PrayerIcon name={prayer.key} size={42} />
           {isCompleted ? (
-            <View style={styles.completedBadge}>
-              <Icon name="check" size={11} color={colors.onPrimary} />
+            <View
+              style={[
+                styles.completedBadge,
+                {
+                  backgroundColor: themeColors.primary,
+                  borderColor: themeColors.surfaceContainer,
+                },
+              ]}>
+              <Icon name="check" size={11} color={themeColors.onPrimary} />
             </View>
           ) : null}
         </View>
@@ -227,9 +242,10 @@ function TimelineRow({
             onPress={onMarkComplete}
             style={({ pressed }) => [
               styles.markCompleteButton,
+              { backgroundColor: themeColors.onPrimary },
               pressed && styles.pressed,
             ]}>
-            <Icon name="check" size={18} color={colors.primary} />
+            <Icon name="check" size={18} color={themeColors.primary} />
           </Pressable>
         ) : null}
       </View>
@@ -267,27 +283,15 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
-    backgroundColor: colors.surfaceContainer,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  timelineRowActive: {
-    backgroundColor: colors.primary,
-    transform: [{ scale: 1.01 }],
-  },
-  timelineRowNext: {
-    backgroundColor: colors.primarySoft,
-  },
-  timelineRowPast: {
-    opacity: 0.72,
-    backgroundColor: colors.surfaceLow,
-  },
   timelineRowCompleted: {
     opacity: 1,
   },
-  timelineRowMissed: {
-    backgroundColor: colors.errorContainer,
+  timelineRowPast: {
+    opacity: 0.72,
   },
   timelineLabel: {
     flex: 1,
@@ -314,9 +318,7 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
     borderWidth: 2,
-    borderColor: colors.surfaceContainer,
   },
   timelineRight: {
     flexDirection: 'row',
@@ -329,7 +331,6 @@ const styles = StyleSheet.create({
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.onPrimary,
   },
   pressed: {
     opacity: 0.78,

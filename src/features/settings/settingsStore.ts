@@ -18,8 +18,8 @@ import {
   syncWidgetIshaDeadlineMinutes,
   syncWidgetPrayerLocation,
 } from './widgetSettingsBridge';
+import type { ThemeMode } from '../../theme';
 
-type ThemeMode = 'System' | 'Light' | 'Dark';
 type Language = 'English';
 
 interface SettingsValues {
@@ -35,6 +35,7 @@ interface SettingsValues {
 }
 
 interface SettingsState extends SettingsValues {
+  setTheme: (theme: ThemeMode) => void;
   setCalculationMethod: (method: CalculationMethodKey) => void;
   setAsrMethod: (method: AsrMethodKey) => void;
   setIshaDeadlineMinutes: (minutes: number | null) => void;
@@ -60,6 +61,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     set => ({
       ...defaultSettings,
+      setTheme: theme => set({ theme }),
       setCalculationMethod: calculationMethod => set({ calculationMethod }),
       setAsrMethod: asrMethod => set({ asrMethod }),
       setIshaDeadlineMinutes: minutes => {

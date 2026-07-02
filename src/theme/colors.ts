@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
   background: '#fbf9f4',
   surface: '#fbf9f4',
   surfaceLowest: '#ffffff',
@@ -30,6 +30,43 @@ export const colors = {
   outlineVariant: '#bdcabc',
   inverseSurface: '#30312e',
   transparent: 'transparent',
-} as const;
+};
 
-export type ColorToken = keyof typeof colors;
+export const darkColors: ThemeColors = {
+  background: '#111511',
+  surface: '#111511',
+  surfaceLowest: '#1a211b',
+  surfaceLow: '#202820',
+  surfaceContainer: '#273027',
+  surfaceHigh: '#303a31',
+  surfaceHighest: '#39443a',
+  surfaceVariant: '#465247',
+  surfaceDim: '#0c100d',
+  primary: '#8ee6aa',
+  primaryContainer: '#006a39',
+  primaryFixed: '#82faab',
+  primaryFixedDim: '#64dd91',
+  primarySoft: '#173b27',
+  secondary: '#9dd8c7',
+  secondaryContainer: '#254f45',
+  secondaryFixed: '#afefdd',
+  gold: '#e0c76b',
+  goldSoft: '#51471f',
+  error: '#ffb4ab',
+  errorContainer: '#690005',
+  onBackground: '#e2e9df',
+  onSurface: '#e2e9df',
+  onSurfaceVariant: '#bfccbf',
+  onPrimary: '#00391d',
+  onPrimaryContainer: '#f6fff4',
+  onSecondaryContainer: '#c6f0e3',
+  outline: '#899688',
+  outlineVariant: '#465247',
+  inverseSurface: '#e2e9df',
+  transparent: 'transparent',
+};
+
+export const colors = lightColors;
+
+export type ThemeColors = typeof lightColors;
+export type ColorToken = keyof ThemeColors;

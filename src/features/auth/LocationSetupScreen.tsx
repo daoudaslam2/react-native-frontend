@@ -21,7 +21,7 @@ import {
 } from '../../constants/prayerSettings';
 import type { RootStackParamList } from '../../navigation/types';
 import { getPermissionAndLocation } from '../../services/location/locationService';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 import { AuthTextField } from './AuthTextField';
 import { useAuthStore } from './authStore';
 import { useSettingsStore } from '../settings/settingsStore';
@@ -42,6 +42,7 @@ interface LocationSetupFieldErrors {
 
 export function LocationSetupScreen(): React.JSX.Element {
   const navigation = useNavigation<LocationSetupNavigation>();
+  const colors = useThemeColors();
   const persistedDisplayName = useAuthStore(state => state.displayName);
   const pendingDisplayName = useAuthStore(
     state => state.pendingSession?.displayName ?? '',
@@ -266,7 +267,11 @@ export function LocationSetupScreen(): React.JSX.Element {
         />
       ) : null}
 
-      <View style={styles.modeTabs}>
+      <View
+        style={[
+          styles.modeTabs,
+          { backgroundColor: colors.surfaceContainer },
+        ]}>
         <LocationModeTab
           icon="location"
           label="Current"
@@ -286,10 +291,16 @@ export function LocationSetupScreen(): React.JSX.Element {
           <View
             style={[
               styles.locationCard,
+              { backgroundColor: colors.surfaceLowest },
               fieldErrors.deviceLocation && styles.cardError,
+              fieldErrors.deviceLocation && { borderColor: colors.error },
             ]}>
             <View style={styles.locationHeader}>
-              <View style={styles.locationIcon}>
+              <View
+                style={[
+                  styles.locationIcon,
+                  { backgroundColor: colors.primarySoft },
+                ]}>
                 <Icon name="location" color={colors.primary} />
               </View>
               <View style={styles.locationCopy}>
@@ -297,7 +308,11 @@ export function LocationSetupScreen(): React.JSX.Element {
                   <AppText variant="bodyLarge" weight="700">
                     Use current location
                   </AppText>
-                  <View style={styles.recommendedBadge}>
+                  <View
+                    style={[
+                      styles.recommendedBadge,
+                      { backgroundColor: colors.primarySoft },
+                    ]}>
                     <Icon
                       name="checkCircle"
                       size={14}
@@ -315,7 +330,11 @@ export function LocationSetupScreen(): React.JSX.Element {
             </View>
 
             {selectedLocation ? (
-              <View style={styles.detectedLocation}>
+              <View
+                style={[
+                  styles.detectedLocation,
+                  { backgroundColor: colors.primarySoft },
+                ]}>
                 <Icon name="checkCircle" size={20} color={colors.primary} />
                 <View style={styles.detectedText}>
                   <AppText variant="label" color="primary" weight="700">
@@ -334,6 +353,7 @@ export function LocationSetupScreen(): React.JSX.Element {
               onPress={handleUseCurrentLocation}
               style={({ pressed }) => [
                 styles.outlineButton,
+                { borderColor: colors.primary },
                 pressed && styles.pressed,
                 isLocating && styles.disabledButton,
               ]}>
@@ -387,7 +407,11 @@ export function LocationSetupScreen(): React.JSX.Element {
               />
             </View>
           </View>
-          <View style={styles.warningBox}>
+          <View
+            style={[
+              styles.warningBox,
+              { backgroundColor: colors.surfaceLow },
+            ]}>
             <Icon name="info" size={20} color={colors.onSurfaceVariant} />
             <AppText
               variant="label"
@@ -413,6 +437,7 @@ export function LocationSetupScreen(): React.JSX.Element {
         onPress={handleContinue}
         style={({ pressed }) => [
           styles.primaryButton,
+          { backgroundColor: colors.primaryContainer },
           pressed && styles.pressed,
         ]}>
         <AppText variant="label" color="onPrimaryContainer" weight="700">
@@ -434,6 +459,8 @@ function LocationModeTab({
   active: boolean;
   onPress: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       accessibilityRole="tab"
@@ -441,7 +468,7 @@ function LocationModeTab({
       onPress={onPress}
       style={({ pressed }) => [
         styles.modeTab,
-        active && styles.modeTabActive,
+        active && { backgroundColor: colors.primaryContainer },
         pressed && styles.pressed,
       ]}>
       <Icon
@@ -503,7 +530,6 @@ const styles = StyleSheet.create({
   modeTabs: {
     minHeight: 56,
     borderRadius: radius.xl,
-    backgroundColor: colors.surfaceContainer,
     flexDirection: 'row',
     gap: spacing.sm,
     padding: spacing.xs,
@@ -518,9 +544,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
   },
-  modeTabActive: {
-    backgroundColor: colors.primaryContainer,
-  },
   modeTabText: {
     alignItems: 'flex-start',
     gap: 2,
@@ -531,12 +554,10 @@ const styles = StyleSheet.create({
   locationCard: {
     gap: spacing.md,
     borderRadius: radius.xl,
-    backgroundColor: colors.surfaceLowest,
     padding: spacing.md,
   },
   cardError: {
     borderWidth: 1,
-    borderColor: colors.error,
   },
   locationHeader: {
     flexDirection: 'row',
@@ -549,7 +570,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
   },
   locationCopy: {
     flex: 1,
@@ -561,7 +581,6 @@ const styles = StyleSheet.create({
   recommendedBadge: {
     alignSelf: 'flex-start',
     borderRadius: radius.full,
-    backgroundColor: colors.primarySoft,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -570,7 +589,6 @@ const styles = StyleSheet.create({
   },
   detectedLocation: {
     borderRadius: radius.lg,
-    backgroundColor: colors.primarySoft,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
@@ -586,7 +604,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.primary,
   },
   disabledButton: {
     opacity: 0.7,
@@ -603,7 +620,6 @@ const styles = StyleSheet.create({
   },
   warningBox: {
     borderRadius: radius.lg,
-    backgroundColor: colors.surfaceLow,
     flexDirection: 'row',
     gap: spacing.sm,
     padding: spacing.md,
@@ -618,7 +634,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primaryContainer,
   },
   pressed: {
     opacity: 0.76,

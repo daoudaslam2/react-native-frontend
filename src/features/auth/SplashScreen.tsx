@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../../components/AppText';
 import { LogoMark } from '../../components/LogoMark';
 import type { RootStackParamList } from '../../navigation/types';
-import { colors, spacing } from '../../theme';
+import { spacing, useThemeColors } from '../../theme';
 import { useSettingsStore } from '../settings/settingsStore';
 import { useAuthStore } from './authStore';
 
@@ -21,6 +21,7 @@ const SPLASH_DURATION_MS = 1_150;
 export function SplashScreen(): React.JSX.Element {
   const navigation = useNavigation<SplashNavigation>();
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   const hasHydrated = useAuthStore(state => state.hasHydrated);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const onboardingCompleted = useAuthStore(
@@ -65,7 +66,14 @@ export function SplashScreen(): React.JSX.Element {
   ]);
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom + spacing.xl }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          paddingBottom: insets.bottom + spacing.xl,
+        },
+      ]}>
       <View style={styles.center}>
         <LogoMark size={132} />
         <AppText variant="headlineMobile" color="primary" weight="700">
@@ -88,7 +96,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
     paddingHorizontal: spacing.container,
   },
   center: {

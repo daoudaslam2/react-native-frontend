@@ -8,7 +8,7 @@ import { Icon, type IconName } from '../../components/Icon';
 import { Screen } from '../../components/Screen';
 import type { RootStackParamList } from '../../navigation/types';
 import { resetLocalAppData } from '../../services/localData/resetLocalAppData';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 import { useAuthStore } from '../auth/authStore';
 import {
   type BackupSyncFrequency,
@@ -49,6 +49,7 @@ const moreModules: MoreModule[] = [
 
 export function MoreScreen(): React.JSX.Element {
   const navigation = useNavigation<MoreNavigation>();
+  const colors = useThemeColors();
   const displayName = useAuthStore(state => state.displayName);
   const email = useAuthStore(state => state.email);
   const authMode = useAuthStore(state => state.authMode);
@@ -75,7 +76,11 @@ export function MoreScreen(): React.JSX.Element {
   return (
     <Screen contentContainerStyle={styles.content}>
       <View style={styles.profileHeader}>
-        <View style={styles.avatar}>
+        <View
+          style={[
+            styles.avatar,
+            { backgroundColor: colors.secondaryContainer },
+          ]}>
           <AppText variant="title" color="primary" weight="700">
             {getProfileInitial(profileName)}
           </AppText>
@@ -99,6 +104,10 @@ export function MoreScreen(): React.JSX.Element {
               onPress={handleLogout}
               style={({ pressed }) => [
                 styles.logoutButton,
+                {
+                  borderColor: colors.error,
+                  backgroundColor: colors.transparent,
+                },
                 pressed && styles.pressed,
             ]}>
             <Icon name="logout" size={30} color={colors.error} />
@@ -138,10 +147,23 @@ function ProfileStatusCard({
   autoSyncFrequency: BackupSyncFrequency;
   onPress: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
-    <View style={styles.statusCard}>
+    <View
+      style={[
+        styles.statusCard,
+        {
+          backgroundColor: colors.surfaceLowest,
+          borderColor: colors.surfaceVariant,
+        },
+      ]}>
       <View style={styles.statusTopRow}>
-        <View style={styles.statusIcon}>
+        <View
+          style={[
+            styles.statusIcon,
+            { backgroundColor: colors.primarySoft },
+          ]}>
           <Icon
             name={isSyncedProfile ? 'cloud' : 'shield'}
             color={colors.primary}
@@ -157,7 +179,11 @@ function ProfileStatusCard({
               : 'Your data stays on this device until you enable backup.'}
           </AppText>
         </View>
-        <View style={styles.profileChip}>
+        <View
+          style={[
+            styles.profileChip,
+            { backgroundColor: colors.primarySoft },
+          ]}>
           <Icon name="shield" size={15} color={colors.primary} />
           <AppText variant="labelSmall" color="primary" weight="700">
             {isSyncedProfile ? 'Synced' : 'Offline'}
@@ -170,6 +196,7 @@ function ProfileStatusCard({
         onPress={onPress}
         style={({ pressed }) => [
           styles.statusAction,
+          { backgroundColor: colors.primarySoft },
           pressed && styles.pressed,
         ]}>
         <AppText variant="label" color="primary" weight="700">
@@ -188,15 +215,25 @@ function ModuleRow({
   module: MoreModule;
   onPress: () => void;
 }): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
         styles.moduleRow,
+        {
+          borderColor: colors.surfaceVariant,
+          backgroundColor: colors.surfaceLowest,
+        },
         pressed && styles.pressed,
       ]}>
-      <View style={styles.moduleIcon}>
+      <View
+        style={[
+          styles.moduleIcon,
+          { backgroundColor: colors.primarySoft },
+        ]}>
         <Icon name={module.icon} color={colors.primary} />
       </View>
       <View style={styles.moduleText}>
@@ -239,13 +276,10 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.secondaryContainer,
   },
   statusCard: {
     borderRadius: radius.xl,
-    backgroundColor: colors.surfaceLowest,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.surfaceVariant,
     gap: spacing.md,
     padding: spacing.md,
   },
@@ -260,7 +294,6 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
   },
   statusCopy: {
     flex: 1,
@@ -268,7 +301,6 @@ const styles = StyleSheet.create({
   },
   profileChip: {
     borderRadius: radius.full,
-    backgroundColor: colors.primarySoft,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -278,7 +310,6 @@ const styles = StyleSheet.create({
   statusAction: {
     minHeight: 44,
     borderRadius: radius.full,
-    backgroundColor: colors.primarySoft,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -289,8 +320,6 @@ const styles = StyleSheet.create({
     minHeight: 40,
     borderRadius: radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.error,
-    backgroundColor: colors.transparent,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -304,8 +333,6 @@ const styles = StyleSheet.create({
     minHeight: 72,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.surfaceVariant,
-    backgroundColor: colors.surfaceLowest,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
@@ -317,7 +344,6 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
   },
   moduleText: {
     flex: 1,

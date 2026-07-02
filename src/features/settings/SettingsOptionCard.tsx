@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '../../components/AppText';
 import { Icon } from '../../components/Icon';
-import { colors, radius, spacing } from '../../theme';
+import { radius, spacing, useThemeColors } from '../../theme';
 
 interface SettingsOptionCardProps {
   label: string;
@@ -18,6 +18,8 @@ export function SettingsOptionCard({
   selected,
   onPress,
 }: SettingsOptionCardProps): React.JSX.Element {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       accessibilityRole="radio"
@@ -25,7 +27,10 @@ export function SettingsOptionCard({
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        selected && styles.cardSelected,
+        {
+          borderColor: selected ? colors.primary : colors.outlineVariant,
+          backgroundColor: selected ? colors.primarySoft : colors.surfaceLowest,
+        },
         pressed && styles.pressed,
       ]}>
       <View style={styles.text}>
@@ -36,7 +41,14 @@ export function SettingsOptionCard({
           {description}
         </AppText>
       </View>
-      <View style={[styles.check, selected && styles.checkSelected]}>
+      <View
+        style={[
+          styles.check,
+          {
+            borderColor: selected ? colors.primary : colors.outlineVariant,
+            backgroundColor: selected ? colors.primary : colors.surfaceLowest,
+          },
+        ]}>
         {selected ? (
           <Icon name="check" size={18} color={colors.onPrimary} />
         ) : null}
@@ -50,17 +62,11 @@ const styles = StyleSheet.create({
     minHeight: 76,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.outlineVariant,
-    backgroundColor: colors.surfaceLowest,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  cardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySoft,
   },
   text: {
     flex: 1,
@@ -71,14 +77,8 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.outlineVariant,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceLowest,
-  },
-  checkSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
   },
   pressed: {
     opacity: 0.76,
