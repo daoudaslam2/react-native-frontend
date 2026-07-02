@@ -3,6 +3,7 @@ import {
   Alert,
   Pressable,
   StyleSheet,
+  Switch,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -19,7 +20,7 @@ import type { PrayerLocation } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
 import type { RootStackParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
-import { colors, radius, spacing } from '../../theme';
+import { colors, radius, spacing, useThemeColors } from '../../theme';
 import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
 import { formatPrayerTime } from '../../utils/dateTime';
 import { useSettingsStore } from '../settings/settingsStore';
@@ -73,6 +74,12 @@ function WidgetsContent({
   const asrMethod = useSettingsStore(state => state.asrMethod);
   const ishaDeadlineMinutes = useSettingsStore(
     state => state.ishaDeadlineMinutes,
+  );
+  const useAdaptiveWidgetColors = useSettingsStore(
+    state => state.useAdaptiveWidgetColors,
+  );
+  const setUseAdaptiveWidgetColors = useSettingsStore(
+    state => state.setUseAdaptiveWidgetColors,
   );
   const trackingOptions = {
     calculationMethod,
@@ -158,6 +165,11 @@ function WidgetsContent({
         </AppText>
       </View>
 
+      <AdaptiveWidgetColorToggle
+        value={useAdaptiveWidgetColors}
+        onValueChange={setUseAdaptiveWidgetColors}
+      />
+
       <WidgetSection
         title="Compact (2x1)"
         isAdding={pendingWidgetSize === 'small'}
@@ -189,6 +201,55 @@ function WidgetsContent({
         />
       </WidgetSection>
     </Screen>
+  );
+}
+
+function AdaptiveWidgetColorToggle({
+  value,
+  onValueChange,
+}: {
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+}): React.JSX.Element {
+  const themeColors = useThemeColors();
+
+  return (
+    <View
+      style={[
+        styles.adaptiveToggle,
+        {
+          backgroundColor: themeColors.surfaceLowest,
+          borderColor: themeColors.outlineVariant,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.adaptiveToggleIcon,
+          { backgroundColor: themeColors.surfaceHigh },
+        ]}
+      >
+        <Icon name="palette" color={themeColors.onSurfaceVariant} />
+      </View>
+      <View style={styles.adaptiveToggleText}>
+        <AppText variant="bodyLarge" weight="700">
+          Adaptive widget colors
+        </AppText>
+        <AppText variant="body" color="onSurfaceVariant">
+          Use Android wallpaper color for home widgets. Lock widgets stay white.
+        </AppText>
+      </View>
+      <Switch
+        accessibilityLabel="Adaptive widget colors"
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{
+          false: themeColors.surfaceHighest,
+          true: themeColors.secondaryContainer,
+        }}
+        thumbColor={value ? themeColors.primary : themeColors.outline}
+      />
+    </View>
   );
 }
 
@@ -730,6 +791,27 @@ const styles = StyleSheet.create({
   intro: {
     alignItems: 'center',
     gap: spacing.md,
+  },
+  adaptiveToggle: {
+    minHeight: 70,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  adaptiveToggleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adaptiveToggleText: {
+    flex: 1,
+    gap: 2,
   },
   section: {
     alignItems: 'center',

@@ -110,6 +110,17 @@ class WidgetPinningModule(
         }
     }
 
+    @ReactMethod
+    fun setUseAdaptiveWidgetColors(enabled: Boolean, promise: Promise) {
+        try {
+            setUseAdaptiveWidgetColors(reactContext, enabled)
+            refreshPrayerWidgets(reactContext)
+            promise.resolve(true)
+        } catch (error: RuntimeException) {
+            promise.reject("WIDGET_SETTING_FAILED", error)
+        }
+    }
+
     private fun isPinningSupported(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return false

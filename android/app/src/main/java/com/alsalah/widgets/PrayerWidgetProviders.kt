@@ -327,7 +327,7 @@ private fun getAodWidgetTitleSize(label: String): Float = when {
 }
 
 private fun applySmallDynamicAccent(context: Context, views: RemoteViews) {
-    val accentColor = getDynamicAccentColor(context) ?: return
+    val accentColor = getWidgetAccentColor(context)
 
     views.setTextColor(R.id.widget_small_remaining, accentColor)
     tintBackground(views, R.id.widget_small_icon_bg, accentColor)
@@ -335,7 +335,7 @@ private fun applySmallDynamicAccent(context: Context, views: RemoteViews) {
 }
 
 private fun applyMediumDynamicAccent(context: Context, views: RemoteViews) {
-    val accentColor = getDynamicAccentColor(context) ?: return
+    val accentColor = getWidgetAccentColor(context)
 
     views.setTextColor(R.id.widget_medium_status, accentColor)
     views.setTextColor(R.id.widget_medium_focus_name, accentColor)
@@ -343,22 +343,28 @@ private fun applyMediumDynamicAccent(context: Context, views: RemoteViews) {
 }
 
 private fun applyLargeDynamicAccent(context: Context, views: RemoteViews) {
-    val accentColor = getDynamicAccentColor(context) ?: return
+    val accentColor = getWidgetAccentColor(context)
 
     views.setTextColor(R.id.widget_large_current_remaining, accentColor)
     tintBackground(views, R.id.widget_large_current_icon_bg, accentColor)
     tintBackground(views, R.id.widget_large_current_accent, accentColor)
 }
 
-private fun getDynamicAccentColor(context: Context): Int? {
+private fun getWidgetAccentColor(context: Context): Int {
+    val defaultColor = context.getColor(R.color.widget_primary)
+
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-        return null
+        return defaultColor
+    }
+
+    if (!getUseAdaptiveWidgetColors(context)) {
+        return defaultColor
     }
 
     return try {
         context.getColor(android.R.color.system_accent1_600)
     } catch (_: Resources.NotFoundException) {
-        null
+        defaultColor
     }
 }
 

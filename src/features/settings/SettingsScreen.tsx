@@ -129,6 +129,19 @@ export function SettingsScreen(): React.JSX.Element {
         />
       </SettingsSection>
 
+      <SettingsSection title="Widgets">
+        <ToggleRow
+          icon="widgets"
+          label="Adaptive Widget Colors"
+          value={settings.useAdaptiveWidgetColors}
+          onValueChange={() =>
+            settings.setUseAdaptiveWidgetColors(
+              !settings.useAdaptiveWidgetColors,
+            )
+          }
+        />
+      </SettingsSection>
+
       <SettingsSection title="Data">
         <SettingsRow
           icon="cloud"

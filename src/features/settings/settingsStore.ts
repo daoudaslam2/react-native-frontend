@@ -15,6 +15,7 @@ import {
 } from '../../constants/prayerSettings';
 import { localStorage } from '../../storage/mmkv';
 import {
+  syncWidgetAdaptiveColorPreference,
   syncWidgetIshaDeadlineMinutes,
   syncWidgetPrayerLocation,
 } from './widgetSettingsBridge';
@@ -30,6 +31,7 @@ interface SettingsValues {
   ishaDeadlineMinutes: number | null;
   location: PrayerLocation | null;
   use24HourTime: boolean;
+  useAdaptiveWidgetColors: boolean;
   adhanNotifications: boolean;
   qazaReminders: boolean;
 }
@@ -41,6 +43,7 @@ interface SettingsState extends SettingsValues {
   setAsrMethod: (method: AsrMethodKey) => void;
   setIshaDeadlineMinutes: (minutes: number | null) => void;
   setPrayerLocation: (location: PrayerLocation) => void;
+  setUseAdaptiveWidgetColors: (enabled: boolean) => void;
   toggleUse24HourTime: () => void;
   toggleAdhanNotifications: () => void;
   toggleQazaReminders: () => void;
@@ -54,6 +57,7 @@ const defaultSettings: SettingsValues = {
   ishaDeadlineMinutes: DEFAULT_ISHA_DEADLINE_MINUTES,
   location: null,
   use24HourTime: false,
+  useAdaptiveWidgetColors: true,
   adhanNotifications: true,
   qazaReminders: true,
 };
@@ -82,6 +86,10 @@ export const useSettingsStore = create<SettingsState>()(
         syncWidgetPrayerLocation(normalizedLocation);
         set({ location: normalizedLocation });
       },
+      setUseAdaptiveWidgetColors: useAdaptiveWidgetColors => {
+        syncWidgetAdaptiveColorPreference(useAdaptiveWidgetColors);
+        set({ useAdaptiveWidgetColors });
+      },
       toggleUse24HourTime: () =>
         set(state => ({ use24HourTime: !state.use24HourTime })),
       toggleAdhanNotifications: () =>
@@ -91,7 +99,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'al-salah-settings',
-      version: 5,
+      version: 6,
       storage: createJSONStorage(() => localStorage),
       migrate: persistedState => coercePersistedSettings(persistedState),
       onRehydrateStorage: () => state => {
@@ -99,6 +107,10 @@ export const useSettingsStore = create<SettingsState>()(
           state?.ishaDeadlineMinutes ?? defaultSettings.ishaDeadlineMinutes,
         );
         syncWidgetPrayerLocation(state?.location ?? null);
+        syncWidgetAdaptiveColorPreference(
+          state?.useAdaptiveWidgetColors ??
+            defaultSettings.useAdaptiveWidgetColors,
+        );
       },
       partialize: state => ({
         theme: state.theme,
@@ -108,6 +120,7 @@ export const useSettingsStore = create<SettingsState>()(
         ishaDeadlineMinutes: state.ishaDeadlineMinutes,
         location: state.location,
         use24HourTime: state.use24HourTime,
+        useAdaptiveWidgetColors: state.useAdaptiveWidgetColors,
         adhanNotifications: state.adhanNotifications,
         qazaReminders: state.qazaReminders,
       }),
@@ -134,6 +147,10 @@ function coercePersistedSettings(persistedState: unknown): SettingsValues {
     use24HourTime: coerceBoolean(
       persistedState.use24HourTime,
       defaultSettings.use24HourTime,
+    ),
+    useAdaptiveWidgetColors: coerceBoolean(
+      persistedState.useAdaptiveWidgetColors,
+      defaultSettings.useAdaptiveWidgetColors,
     ),
     adhanNotifications: coerceBoolean(
       persistedState.adhanNotifications,
