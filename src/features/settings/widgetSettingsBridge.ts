@@ -6,6 +6,7 @@ interface WidgetSettingsNativeModule {
   setIshaDeadlineMinutes?: (minutes: number) => Promise<boolean>;
   clearIshaDeadlineMinutes?: () => Promise<boolean>;
   setUseAdaptiveWidgetColors?: (enabled: boolean) => Promise<boolean>;
+  setUseDarkWidgetTheme?: (enabled: boolean) => Promise<boolean>;
   setPrayerLocation?: (
     latitude: number,
     longitude: number,
@@ -43,6 +44,19 @@ export function syncWidgetAdaptiveColorPreference(enabled: boolean): void {
 
   const syncPromise =
     nativeWidgetSettings.setUseAdaptiveWidgetColors?.(enabled);
+
+  if (syncPromise) {
+    syncPromise.catch(() => undefined);
+  }
+}
+
+export function syncWidgetDarkThemePreference(enabled: boolean): void {
+  if (Platform.OS !== 'android' || !nativeWidgetSettings) {
+    return;
+  }
+
+  const syncPromise =
+    nativeWidgetSettings.setUseDarkWidgetTheme?.(enabled);
 
   if (syncPromise) {
     syncPromise.catch(() => undefined);

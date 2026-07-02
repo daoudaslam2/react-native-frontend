@@ -121,6 +121,17 @@ class WidgetPinningModule(
         }
     }
 
+    @ReactMethod
+    fun setUseDarkWidgetTheme(enabled: Boolean, promise: Promise) {
+        try {
+            setUseDarkWidgetTheme(reactContext, enabled)
+            refreshPrayerWidgets(reactContext)
+            promise.resolve(true)
+        } catch (error: RuntimeException) {
+            promise.reject("WIDGET_SETTING_FAILED", error)
+        }
+    }
+
     private fun isPinningSupported(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return false

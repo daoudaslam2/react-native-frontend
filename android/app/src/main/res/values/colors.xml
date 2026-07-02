@@ -11,6 +11,17 @@
     <color name="widget_line">#EEEDE8</color>
     <color name="widget_border">#DDE7DF</color>
     <color name="widget_ring">#EEF3F0</color>
+    <color name="widget_dark_card">#1A211B</color>
+    <color name="widget_dark_card_soft">#202820</color>
+    <color name="widget_dark_primary">#8EE6AA</color>
+    <color name="widget_dark_primary_container">#006A39</color>
+    <color name="widget_dark_text">#E2E9DF</color>
+    <color name="widget_dark_muted">#BFCCBF</color>
+    <color name="widget_dark_inactive">#899688</color>
+    <color name="widget_dark_track">#39443A</color>
+    <color name="widget_dark_line">#465247</color>
+    <color name="widget_dark_border">#465247</color>
+    <color name="widget_dark_ring">#273027</color>
     <color name="widget_aod_text">#FFFFFFFF</color>
     <color name="widget_aod_muted">#FFFFFFFF</color>
     <color name="widget_aod_track">#FF5A625C</color>

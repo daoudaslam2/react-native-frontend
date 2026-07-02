@@ -232,6 +232,7 @@
                 android:textSize="18sp" />
 
             <TextView
+                android:id="@+id/widget_large_row_divider"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_alignParentBottom="true"

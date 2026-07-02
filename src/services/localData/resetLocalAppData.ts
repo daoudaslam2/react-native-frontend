@@ -13,6 +13,7 @@ import { useBackupSyncStore } from '../../features/settings/backupSyncStore';
 import { useSettingsStore } from '../../features/settings/settingsStore';
 import {
   syncWidgetAdaptiveColorPreference,
+  syncWidgetDarkThemePreference,
   syncWidgetIshaDeadlineMinutes,
   syncWidgetPrayerLocation,
 } from '../../features/settings/widgetSettingsBridge';
@@ -42,6 +43,7 @@ export async function resetLocalAppData(): Promise<void> {
   syncWidgetIshaDeadlineMinutes(null);
   syncWidgetPrayerLocation(null);
   syncWidgetAdaptiveColorPreference(true);
+  syncWidgetDarkThemePreference(false);
 }
 
 async function clearPersistedStorage(): Promise<void> {
@@ -71,6 +73,7 @@ function resetStoresInMemory(): void {
     location: null,
     use24HourTime: false,
     useAdaptiveWidgetColors: true,
+    useDarkWidgetTheme: false,
     adhanNotifications: true,
     qazaReminders: true,
   });

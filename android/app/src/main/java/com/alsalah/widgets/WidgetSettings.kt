@@ -12,11 +12,13 @@ internal const val PREF_PRAYER_LONGITUDE = "prayer_longitude"
 internal const val PREF_PRAYER_LOCATION_LABEL = "prayer_location_label"
 internal const val PREF_PRAYER_TIME_ZONE = "prayer_time_zone"
 internal const val PREF_USE_ADAPTIVE_WIDGET_COLORS = "use_adaptive_widget_colors"
+internal const val PREF_USE_DARK_WIDGET_THEME = "use_dark_widget_theme"
 internal const val UNSET_ISHA_DEADLINE_MINUTES = -1
 internal const val MAX_ISHA_DEADLINE_MINUTES = 26 * 60
 internal const val DEFAULT_PRAYER_LOCATION_LABEL = "Prayer location"
 internal const val FALLBACK_PRAYER_TIME_ZONE = "UTC"
 internal const val DEFAULT_USE_ADAPTIVE_WIDGET_COLORS = true
+internal const val DEFAULT_USE_DARK_WIDGET_THEME = false
 internal const val ACTION_REFRESH_SMALL = "com.alsalah.widgets.REFRESH_SMALL"
 internal const val ACTION_REFRESH_AOD = "com.alsalah.widgets.REFRESH_AOD"
 internal const val ACTION_REFRESH_AOD_LEFT = "com.alsalah.widgets.REFRESH_AOD_LEFT"
@@ -75,6 +77,14 @@ internal fun getUseAdaptiveWidgetColors(context: Context): Boolean =
             DEFAULT_USE_ADAPTIVE_WIDGET_COLORS,
         )
 
+internal fun getUseDarkWidgetTheme(context: Context): Boolean =
+    context
+        .getSharedPreferences(WIDGET_SETTINGS_PREFS, Context.MODE_PRIVATE)
+        .getBoolean(
+            PREF_USE_DARK_WIDGET_THEME,
+            DEFAULT_USE_DARK_WIDGET_THEME,
+        )
+
 internal fun setConfiguredPrayerLocation(
     context: Context,
     latitude: Double,
@@ -125,6 +135,14 @@ internal fun setUseAdaptiveWidgetColors(context: Context, enabled: Boolean) {
         .getSharedPreferences(WIDGET_SETTINGS_PREFS, Context.MODE_PRIVATE)
         .edit()
         .putBoolean(PREF_USE_ADAPTIVE_WIDGET_COLORS, enabled)
+        .apply()
+}
+
+internal fun setUseDarkWidgetTheme(context: Context, enabled: Boolean) {
+    context
+        .getSharedPreferences(WIDGET_SETTINGS_PREFS, Context.MODE_PRIVATE)
+        .edit()
+        .putBoolean(PREF_USE_DARK_WIDGET_THEME, enabled)
         .apply()
 }
 

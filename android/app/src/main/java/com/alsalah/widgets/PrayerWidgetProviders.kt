@@ -251,7 +251,7 @@ private fun renderSmallWidget(
     }
 
     val currentLabel = data.current.namaz.label
-    applySmallDynamicAccent(context, views)
+    applySmallWidgetTheme(context, views)
     views.setTextViewText(R.id.widget_small_current_prayer, currentLabel)
     views.setTextViewTextSize(
         R.id.widget_small_current_prayer,
@@ -265,7 +265,7 @@ private fun renderSmallWidget(
 }
 
 private fun renderSmallSetupWidget(context: Context, views: RemoteViews) {
-    applySmallDynamicAccent(context, views)
+    applySmallWidgetTheme(context, views)
     views.setTextViewText(R.id.widget_small_current_prayer, "Set location")
     views.setTextViewTextSize(
         R.id.widget_small_current_prayer,
@@ -326,45 +326,135 @@ private fun getAodWidgetTitleSize(label: String): Float = when {
     else -> 20f
 }
 
-private fun applySmallDynamicAccent(context: Context, views: RemoteViews) {
-    val accentColor = getWidgetAccentColor(context)
+private data class WidgetPalette(
+    val isDark: Boolean,
+    val accent: Int,
+    val accentContainer: Int,
+    val text: Int,
+    val muted: Int,
+    val inactive: Int,
+    val track: Int,
+    val ring: Int,
+)
 
-    views.setTextColor(R.id.widget_small_remaining, accentColor)
-    tintBackground(views, R.id.widget_small_icon_bg, accentColor)
-    tintProgress(views, R.id.widget_small_progress, accentColor)
+private fun applySmallWidgetTheme(context: Context, views: RemoteViews) {
+    val palette = getWidgetPalette(context)
+
+    views.setInt(
+        R.id.widget_prayer_small_root,
+        "setBackgroundResource",
+        if (palette.isDark) R.drawable.widget_small_card_bg_dark else R.drawable.widget_small_card_bg,
+    )
+    views.setInt(R.id.widget_small_ring, "setColorFilter", palette.ring)
+    views.setTextColor(R.id.widget_small_current_prayer, palette.text)
+    views.setTextColor(R.id.widget_small_remaining, palette.accent)
+    views.setTextColor(R.id.widget_small_next, palette.muted)
+    tintBackground(views, R.id.widget_small_icon_bg, palette.accentContainer)
+    tintProgress(views, R.id.widget_small_progress, palette.accent)
+    tintProgressTrack(views, R.id.widget_small_progress, palette.track)
 }
 
-private fun applyMediumDynamicAccent(context: Context, views: RemoteViews) {
-    val accentColor = getWidgetAccentColor(context)
+private fun applyMediumWidgetTheme(context: Context, views: RemoteViews) {
+    val palette = getWidgetPalette(context)
 
-    views.setTextColor(R.id.widget_medium_status, accentColor)
-    views.setTextColor(R.id.widget_medium_focus_name, accentColor)
-    tintBackground(views, R.id.widget_medium_focus_bg, accentColor)
+    views.setInt(
+        R.id.widget_prayer_medium_root,
+        "setBackgroundResource",
+        if (palette.isDark) R.drawable.widget_card_bg_dark else R.drawable.widget_card_bg,
+    )
+    tintBackground(views, R.id.widget_medium_ring, palette.ring)
+    views.setTextColor(R.id.widget_medium_time, palette.text)
+    views.setTextColor(R.id.widget_medium_status, palette.accent)
+    views.setTextColor(R.id.widget_medium_place, palette.muted)
+    views.setTextColor(R.id.widget_medium_hijri, palette.muted)
+    views.setTextColor(R.id.widget_medium_focus_name, palette.accent)
+    tintBackground(views, R.id.widget_medium_focus_bg, palette.accentContainer)
+    setImageTint(views, R.id.widget_medium_slot_0_icon, palette.inactive)
+    setImageTint(views, R.id.widget_medium_slot_1_icon, palette.inactive)
+    setImageTint(views, R.id.widget_medium_slot_3_icon, palette.inactive)
+    setImageTint(views, R.id.widget_medium_slot_4_icon, palette.inactive)
+    views.setTextColor(R.id.widget_medium_slot_0_name, palette.inactive)
+    views.setTextColor(R.id.widget_medium_slot_1_name, palette.inactive)
+    views.setTextColor(R.id.widget_medium_slot_3_name, palette.inactive)
+    views.setTextColor(R.id.widget_medium_slot_4_name, palette.inactive)
 }
 
-private fun applyLargeDynamicAccent(context: Context, views: RemoteViews) {
-    val accentColor = getWidgetAccentColor(context)
+private fun applyLargeWidgetTheme(context: Context, views: RemoteViews) {
+    val palette = getWidgetPalette(context)
 
-    views.setTextColor(R.id.widget_large_current_remaining, accentColor)
-    tintBackground(views, R.id.widget_large_current_icon_bg, accentColor)
-    tintBackground(views, R.id.widget_large_current_accent, accentColor)
+    views.setInt(
+        R.id.widget_prayer_large_root,
+        "setBackgroundResource",
+        if (palette.isDark) R.drawable.widget_card_bg_dark else R.drawable.widget_card_bg,
+    )
+    views.setInt(
+        R.id.widget_large_current_row,
+        "setBackgroundResource",
+        if (palette.isDark) R.drawable.widget_card_current_bg_dark else R.drawable.widget_card_current_bg,
+    )
+    views.setInt(
+        R.id.widget_large_more,
+        "setBackgroundResource",
+        if (palette.isDark) R.drawable.widget_more_circle_dark else R.drawable.widget_more_circle,
+    )
+    views.setInt(
+        R.id.widget_large_row_divider,
+        "setBackgroundResource",
+        if (palette.isDark) R.drawable.widget_row_divider_dark else R.drawable.widget_row_divider,
+    )
+    tintBackground(views, R.id.widget_large_ring_solid, palette.ring)
+    tintBackground(views, R.id.widget_large_ring_dotted, palette.ring)
+    views.setTextColor(R.id.widget_large_date, palette.muted)
+    views.setTextColor(R.id.widget_large_time, palette.text)
+    views.setTextColor(R.id.widget_large_more, palette.muted)
+    views.setTextColor(R.id.widget_large_current_name, palette.text)
+    views.setTextColor(R.id.widget_large_current_remaining, palette.accent)
+    views.setTextColor(R.id.widget_large_current_time, palette.text)
+    tintBackground(views, R.id.widget_large_current_icon_bg, palette.accentContainer)
+    tintBackground(views, R.id.widget_large_current_accent, palette.accent)
+    setLargeInactiveColors(views, R.id.widget_large_dhuhr_icon, R.id.widget_large_dhuhr_name, R.id.widget_large_dhuhr_time, palette)
+    setLargeDefaultColors(views, R.id.widget_large_maghrib_icon, R.id.widget_large_maghrib_name, R.id.widget_large_maghrib_time, palette)
+    setLargeDefaultColors(views, R.id.widget_large_isha_icon, R.id.widget_large_isha_name, R.id.widget_large_isha_time, palette)
 }
 
-private fun getWidgetAccentColor(context: Context): Int {
-    val defaultColor = context.getColor(R.color.widget_primary)
+private fun getWidgetPalette(context: Context): WidgetPalette {
+    val isDark = getUseDarkWidgetTheme(context)
+    val defaultAccent = context.getColor(
+        if (isDark) R.color.widget_dark_primary else R.color.widget_primary,
+    )
+    val defaultAccentContainer = context.getColor(
+        if (isDark) R.color.widget_dark_primary_container else R.color.widget_primary,
+    )
 
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-        return defaultColor
-    }
+    return WidgetPalette(
+        isDark = isDark,
+        accent = getDynamicWidgetColor(
+            context,
+            if (isDark) android.R.color.system_accent1_200 else android.R.color.system_accent1_600,
+            defaultAccent,
+        ),
+        accentContainer = getDynamicWidgetColor(
+            context,
+            android.R.color.system_accent1_600,
+            defaultAccentContainer,
+        ),
+        text = context.getColor(if (isDark) R.color.widget_dark_text else R.color.widget_text),
+        muted = context.getColor(if (isDark) R.color.widget_dark_muted else R.color.widget_muted),
+        inactive = context.getColor(if (isDark) R.color.widget_dark_inactive else R.color.widget_inactive),
+        track = context.getColor(if (isDark) R.color.widget_dark_track else R.color.widget_track),
+        ring = context.getColor(if (isDark) R.color.widget_dark_ring else R.color.widget_ring),
+    )
+}
 
-    if (!getUseAdaptiveWidgetColors(context)) {
-        return defaultColor
+private fun getDynamicWidgetColor(context: Context, colorResourceId: Int, fallback: Int): Int {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !getUseAdaptiveWidgetColors(context)) {
+        return fallback
     }
 
     return try {
-        context.getColor(android.R.color.system_accent1_600)
+        context.getColor(colorResourceId)
     } catch (_: Resources.NotFoundException) {
-        defaultColor
+        fallback
     }
 }
 
@@ -380,6 +470,10 @@ private fun tintBackground(views: RemoteViews, viewId: Int, color: Int) {
     )
 }
 
+private fun setImageTint(views: RemoteViews, viewId: Int, color: Int) {
+    views.setInt(viewId, "setColorFilter", color)
+}
+
 private fun tintProgress(views: RemoteViews, viewId: Int, color: Int) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
         return
@@ -388,6 +482,18 @@ private fun tintProgress(views: RemoteViews, viewId: Int, color: Int) {
     views.setColorStateList(
         viewId,
         "setProgressTintList",
+        ColorStateList.valueOf(color),
+    )
+}
+
+private fun tintProgressTrack(views: RemoteViews, viewId: Int, color: Int) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        return
+    }
+
+    views.setColorStateList(
+        viewId,
+        "setProgressBackgroundTintList",
         ColorStateList.valueOf(color),
     )
 }
@@ -407,7 +513,7 @@ private fun renderMediumWidget(
         data.timeline[(focusIndex + offset).coerceIn(0, data.timeline.lastIndex)]
     }
 
-    applyMediumDynamicAccent(context, views)
+    applyMediumWidgetTheme(context, views)
     views.setTextViewText(R.id.widget_medium_time, formatTime(data.now, data.location))
     views.setTextViewText(R.id.widget_medium_status, formatMediumStatus(data))
     views.setTextViewText(R.id.widget_medium_place, data.location.label)
@@ -442,7 +548,7 @@ private fun renderMediumWidget(
 }
 
 private fun renderMediumSetupWidget(context: Context, views: RemoteViews) {
-    applyMediumDynamicAccent(context, views)
+    applyMediumWidgetTheme(context, views)
     views.setTextViewText(R.id.widget_medium_time, "--:--")
     views.setTextViewText(R.id.widget_medium_status, "Set location")
     views.setTextViewText(R.id.widget_medium_place, "Open Al-Salah")
@@ -469,7 +575,7 @@ private fun renderLargeWidget(
     val firstNext = data.next
     val secondNext = data.timeline[(data.currentIndex + 2).coerceAtMost(data.timeline.lastIndex)]
 
-    applyLargeDynamicAccent(context, views)
+    applyLargeWidgetTheme(context, views)
     views.setTextViewText(R.id.widget_large_date, formatDisplayDate(data.now, data.location))
     views.setTextViewText(R.id.widget_large_time, formatTime(data.now, data.location))
     views.setTextViewText(R.id.widget_large_current_name, data.current.namaz.label)
@@ -507,7 +613,7 @@ private fun renderLargeWidget(
 }
 
 private fun renderLargeSetupWidget(context: Context, views: RemoteViews) {
-    applyLargeDynamicAccent(context, views)
+    applyLargeWidgetTheme(context, views)
     views.setTextViewText(R.id.widget_large_date, "Set location")
     views.setTextViewText(R.id.widget_large_time, "--:--")
     views.setTextViewText(R.id.widget_large_current_name, "Open Al-Salah")
@@ -575,6 +681,30 @@ private fun setLargeSetupRow(
     views.setImageViewResource(iconViewId, R.drawable.ic_namaz_fajr)
     views.setTextViewText(labelViewId, "")
     views.setTextViewText(timeViewId, "")
+}
+
+private fun setLargeInactiveColors(
+    views: RemoteViews,
+    iconViewId: Int,
+    labelViewId: Int,
+    timeViewId: Int,
+    palette: WidgetPalette,
+) {
+    setImageTint(views, iconViewId, palette.inactive)
+    views.setTextColor(labelViewId, palette.inactive)
+    views.setTextColor(timeViewId, palette.inactive)
+}
+
+private fun setLargeDefaultColors(
+    views: RemoteViews,
+    iconViewId: Int,
+    labelViewId: Int,
+    timeViewId: Int,
+    palette: WidgetPalette,
+) {
+    setImageTint(views, iconViewId, palette.muted)
+    views.setTextColor(labelViewId, palette.text)
+    views.setTextColor(timeViewId, palette.muted)
 }
 
 private fun calculateWidgetData(context: Context, now: Date = Date()): PrayerWidgetData? {

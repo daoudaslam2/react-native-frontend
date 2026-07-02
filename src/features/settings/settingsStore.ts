@@ -16,6 +16,7 @@ import {
 import { localStorage } from '../../storage/mmkv';
 import {
   syncWidgetAdaptiveColorPreference,
+  syncWidgetDarkThemePreference,
   syncWidgetIshaDeadlineMinutes,
   syncWidgetPrayerLocation,
 } from './widgetSettingsBridge';
@@ -32,6 +33,7 @@ interface SettingsValues {
   location: PrayerLocation | null;
   use24HourTime: boolean;
   useAdaptiveWidgetColors: boolean;
+  useDarkWidgetTheme: boolean;
   adhanNotifications: boolean;
   qazaReminders: boolean;
 }
@@ -44,6 +46,7 @@ interface SettingsState extends SettingsValues {
   setIshaDeadlineMinutes: (minutes: number | null) => void;
   setPrayerLocation: (location: PrayerLocation) => void;
   setUseAdaptiveWidgetColors: (enabled: boolean) => void;
+  setUseDarkWidgetTheme: (enabled: boolean) => void;
   toggleUse24HourTime: () => void;
   toggleAdhanNotifications: () => void;
   toggleQazaReminders: () => void;
@@ -58,6 +61,7 @@ const defaultSettings: SettingsValues = {
   location: null,
   use24HourTime: false,
   useAdaptiveWidgetColors: true,
+  useDarkWidgetTheme: false,
   adhanNotifications: true,
   qazaReminders: true,
 };
@@ -90,6 +94,10 @@ export const useSettingsStore = create<SettingsState>()(
         syncWidgetAdaptiveColorPreference(useAdaptiveWidgetColors);
         set({ useAdaptiveWidgetColors });
       },
+      setUseDarkWidgetTheme: useDarkWidgetTheme => {
+        syncWidgetDarkThemePreference(useDarkWidgetTheme);
+        set({ useDarkWidgetTheme });
+      },
       toggleUse24HourTime: () =>
         set(state => ({ use24HourTime: !state.use24HourTime })),
       toggleAdhanNotifications: () =>
@@ -99,7 +107,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'al-salah-settings',
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => localStorage),
       migrate: persistedState => coercePersistedSettings(persistedState),
       onRehydrateStorage: () => state => {
@@ -111,6 +119,9 @@ export const useSettingsStore = create<SettingsState>()(
           state?.useAdaptiveWidgetColors ??
             defaultSettings.useAdaptiveWidgetColors,
         );
+        syncWidgetDarkThemePreference(
+          state?.useDarkWidgetTheme ?? defaultSettings.useDarkWidgetTheme,
+        );
       },
       partialize: state => ({
         theme: state.theme,
@@ -121,6 +132,7 @@ export const useSettingsStore = create<SettingsState>()(
         location: state.location,
         use24HourTime: state.use24HourTime,
         useAdaptiveWidgetColors: state.useAdaptiveWidgetColors,
+        useDarkWidgetTheme: state.useDarkWidgetTheme,
         adhanNotifications: state.adhanNotifications,
         qazaReminders: state.qazaReminders,
       }),
@@ -151,6 +163,10 @@ function coercePersistedSettings(persistedState: unknown): SettingsValues {
     useAdaptiveWidgetColors: coerceBoolean(
       persistedState.useAdaptiveWidgetColors,
       defaultSettings.useAdaptiveWidgetColors,
+    ),
+    useDarkWidgetTheme: coerceBoolean(
+      persistedState.useDarkWidgetTheme,
+      defaultSettings.useDarkWidgetTheme,
     ),
     adhanNotifications: coerceBoolean(
       persistedState.adhanNotifications,

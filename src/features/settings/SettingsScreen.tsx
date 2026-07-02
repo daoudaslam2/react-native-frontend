@@ -131,6 +131,14 @@ export function SettingsScreen(): React.JSX.Element {
 
       <SettingsSection title="Widgets">
         <ToggleRow
+          icon="moon"
+          label="Dark Widget Theme"
+          value={settings.useDarkWidgetTheme}
+          onValueChange={() =>
+            settings.setUseDarkWidgetTheme(!settings.useDarkWidgetTheme)
+          }
+        />
+        <ToggleRow
           icon="widgets"
           label="Adaptive Widget Colors"
           value={settings.useAdaptiveWidgetColors}

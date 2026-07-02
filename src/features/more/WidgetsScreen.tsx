@@ -11,7 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
-import { Icon } from '../../components/Icon';
+import { Icon, type IconName } from '../../components/Icon';
 import { MissingLocationState } from '../../components/MissingLocationState';
 import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
@@ -20,7 +20,14 @@ import type { PrayerLocation } from '../../constants/prayerSettings';
 import { useNow } from '../../hooks/useNow';
 import type { RootStackParamList } from '../../navigation/types';
 import { prayerRepository } from '../../services/repositories/prayerRepository';
-import { colors, radius, spacing, useThemeColors } from '../../theme';
+import {
+  colors,
+  darkColors,
+  lightColors,
+  radius,
+  spacing,
+  useThemeColors,
+} from '../../theme';
 import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
 import { formatPrayerTime } from '../../utils/dateTime';
 import { useSettingsStore } from '../settings/settingsStore';
@@ -45,6 +52,21 @@ interface WidgetPreviewData {
   location: string;
   countdownText: string;
   progressPercent: number;
+}
+
+interface WidgetPreviewPalette {
+  surface: string;
+  surfaceSoft: string;
+  text: string;
+  muted: string;
+  inactive: string;
+  track: string;
+  ring: string;
+  accent: string;
+  accentContainer: string;
+  onAccent: string;
+  border: string;
+  divider: string;
 }
 
 const inactiveColor = '#969995';
@@ -81,6 +103,12 @@ function WidgetsContent({
   const setUseAdaptiveWidgetColors = useSettingsStore(
     state => state.setUseAdaptiveWidgetColors,
   );
+  const useDarkWidgetTheme = useSettingsStore(
+    state => state.useDarkWidgetTheme,
+  );
+  const setUseDarkWidgetTheme = useSettingsStore(
+    state => state.setUseDarkWidgetTheme,
+  );
   const trackingOptions = {
     calculationMethod,
     asrMethod,
@@ -114,6 +142,7 @@ function WidgetsContent({
     location,
   });
   const previewWidth = Math.min(width - spacing.container * 2, 330);
+  const previewPalette = getWidgetPreviewPalette(useDarkWidgetTheme);
   const handleAddWidget = React.useCallback(
     async (widgetSize: WidgetPinSize) => {
       setPendingWidgetSize(widgetSize);
@@ -165,7 +194,18 @@ function WidgetsContent({
         </AppText>
       </View>
 
-      <AdaptiveWidgetColorToggle
+      <WidgetPreferenceToggle
+        icon="moon"
+        title="Dark widget theme"
+        description="Use dark surfaces and text for home screen widgets."
+        value={useDarkWidgetTheme}
+        onValueChange={setUseDarkWidgetTheme}
+      />
+
+      <WidgetPreferenceToggle
+        icon="widgets"
+        title="Adaptive widget colors"
+        description="Use Android wallpaper color for home widgets. Lock widgets stay white."
         value={useAdaptiveWidgetColors}
         onValueChange={setUseAdaptiveWidgetColors}
       />
@@ -177,6 +217,7 @@ function WidgetsContent({
       >
         <SmallWidgetPreview
           data={previewData}
+          palette={previewPalette}
           width={Math.min(previewWidth, 200)}
         />
       </WidgetSection>
@@ -186,7 +227,11 @@ function WidgetsContent({
         isAdding={pendingWidgetSize === 'medium'}
         onLongPress={() => handleAddWidget('medium')}
       >
-        <MediumWidgetPreview data={previewData} width={previewWidth} />
+        <MediumWidgetPreview
+          data={previewData}
+          palette={previewPalette}
+          width={previewWidth}
+        />
       </WidgetSection>
 
       <WidgetSection
@@ -196,6 +241,7 @@ function WidgetsContent({
       >
         <LargeWidgetPreview
           data={previewData}
+          palette={previewPalette}
           width={previewWidth}
           use24HourTime={use24HourTime}
         />
@@ -204,10 +250,16 @@ function WidgetsContent({
   );
 }
 
-function AdaptiveWidgetColorToggle({
+function WidgetPreferenceToggle({
+  icon,
+  title,
+  description,
   value,
   onValueChange,
 }: {
+  icon: IconName;
+  title: string;
+  description: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
 }): React.JSX.Element {
@@ -229,18 +281,18 @@ function AdaptiveWidgetColorToggle({
           { backgroundColor: themeColors.surfaceHigh },
         ]}
       >
-        <Icon name="palette" color={themeColors.onSurfaceVariant} />
+        <Icon name={icon} color={themeColors.onSurfaceVariant} />
       </View>
       <View style={styles.adaptiveToggleText}>
         <AppText variant="bodyLarge" weight="700">
-          Adaptive widget colors
+          {title}
         </AppText>
         <AppText variant="body" color="onSurfaceVariant">
-          Use Android wallpaper color for home widgets. Lock widgets stay white.
+          {description}
         </AppText>
       </View>
       <Switch
-        accessibilityLabel="Adaptive widget colors"
+        accessibilityLabel={title}
         value={value}
         onValueChange={onValueChange}
         trackColor={{
@@ -297,35 +349,43 @@ function WidgetSection({
 
 function SmallWidgetPreview({
   data,
+  palette,
   width,
 }: {
   data: WidgetPreviewData;
+  palette: WidgetPreviewPalette;
   width: number;
 }): React.JSX.Element {
   return (
-    <View style={[styles.smallWidget, { width, height: width * 0.5 }]}>
-      <View style={styles.softRingSmall} />
+    <View
+      style={[
+        styles.smallWidget,
+        { backgroundColor: palette.surface, width, height: width * 0.5 },
+      ]}
+    >
+      <View
+        style={[styles.softRingSmall, { borderColor: palette.ring }]}
+      />
       <View style={styles.smallIconWrap}>
         <PrayerIcon
           name={data.current.key}
           size={36}
-          color={colors.onPrimary}
-          backgroundColor={colors.primaryContainer}
+          color={palette.onAccent}
+          backgroundColor={palette.accentContainer}
         />
       </View>
       <View style={styles.smallTopCopy}>
         <AppText
           variant="headline"
           weight="700"
-          style={styles.smallCurrentName}
+          style={[styles.smallCurrentName, { color: palette.text }]}
         >
           {data.current.name}
         </AppText>
         <AppText
           variant="bodyLarge"
-          color="primary"
           weight="700"
-          style={styles.smallRemaining}
+          style={[styles.smallRemaining, { color: palette.accent }]}
         >
           {data.countdownText}
         </AppText>
@@ -333,17 +393,22 @@ function SmallWidgetPreview({
       <View style={styles.smallFooter}>
         <AppText
           variant="body"
-          color="onSurfaceVariant"
           weight="700"
-          style={styles.smallNext}
+          style={[styles.smallNext, { color: palette.muted }]}
         >
           {data.isPrayerActive
             ? `Next: ${data.next.name}`
             : `Starts: ${formatPrayerTime(data.next.time, true)}`}
         </AppText>
-        <View style={styles.progressTrack}>
+        <View style={[styles.progressTrack, { backgroundColor: palette.track }]}>
           <View
-            style={[styles.progressFill, { width: `${data.progressPercent}%` }]}
+            style={[
+              styles.progressFill,
+              {
+                backgroundColor: palette.accent,
+                width: `${data.progressPercent}%`,
+              },
+            ]}
           />
         </View>
       </View>
@@ -353,24 +418,34 @@ function SmallWidgetPreview({
 
 function MediumWidgetPreview({
   data,
+  palette,
   width,
 }: {
   data: WidgetPreviewData;
+  palette: WidgetPreviewPalette;
   width: number;
 }): React.JSX.Element {
   return (
-    <View style={[styles.mediumWidget, { width }]}>
-      <View style={styles.softRingMedium} />
+    <View
+      style={[
+        styles.mediumWidget,
+        { backgroundColor: palette.surface, width },
+      ]}
+    >
+      <View style={[styles.softRingMedium, { backgroundColor: palette.ring }]} />
       <View style={styles.mediumTop}>
         <View>
-          <AppText variant="display" weight="700" style={styles.mediumTime}>
+          <AppText
+            variant="display"
+            weight="700"
+            style={[styles.mediumTime, { color: palette.text }]}
+          >
             {data.currentTime}
           </AppText>
           <AppText
             variant="bodyLarge"
-            color="primary"
             weight="700"
-            style={styles.mediumStatus}
+            style={[styles.mediumStatus, { color: palette.accent }]}
           >
             {data.isPrayerActive
               ? `Next: ${data.next.name}`
@@ -380,17 +455,17 @@ function MediumWidgetPreview({
         <View style={styles.mediumLocation}>
           <AppText
             variant="label"
-            color="onSurfaceVariant"
             weight="700"
             align="right"
+            style={{ color: palette.muted }}
           >
             {data.location}
           </AppText>
           <AppText
             variant="label"
-            color="onSurfaceVariant"
             weight="700"
             align="right"
+            style={{ color: palette.muted }}
           >
             {data.hijriDate}
           </AppText>
@@ -400,19 +475,23 @@ function MediumWidgetPreview({
         {data.prayers.map(prayer =>
           prayer.key === data.current.key ? (
             <View key={prayer.key} style={styles.mediumActivePrayer}>
-              <View style={styles.mediumActiveIcon}>
+              <View
+                style={[
+                  styles.mediumActiveIcon,
+                  { backgroundColor: palette.accentContainer },
+                ]}
+              >
                 <PrayerIcon
                   name={prayer.key}
                   size={40}
-                  color={colors.onPrimary}
+                  color={palette.onAccent}
                   backgroundColor="transparent"
                 />
               </View>
               <AppText
                 variant="label"
-                color="primary"
                 weight="700"
-                style={styles.mediumPrayerName}
+                style={[styles.mediumPrayerName, { color: palette.accent }]}
               >
                 {prayer.name}
               </AppText>
@@ -422,14 +501,13 @@ function MediumWidgetPreview({
               <PrayerIcon
                 name={prayer.key}
                 size={28}
-                color={inactiveColor}
+                color={palette.inactive}
                 backgroundColor="transparent"
               />
               <AppText
                 variant="labelSmall"
-                color="outline"
                 weight="700"
-                style={styles.mediumPrayerName}
+                style={[styles.mediumPrayerName, { color: palette.inactive }]}
               >
                 {prayer.name}
               </AppText>
@@ -443,40 +521,50 @@ function MediumWidgetPreview({
 
 function LargeWidgetPreview({
   data,
+  palette,
   width,
   use24HourTime,
 }: {
   data: WidgetPreviewData;
+  palette: WidgetPreviewPalette;
   width: number;
   use24HourTime: boolean;
 }): React.JSX.Element {
   const rows = getLargeRows(data);
 
   return (
-    <View style={[styles.largeWidget, { width }]}>
-      <View style={styles.softRingLarge} />
-      <View style={styles.dottedRingLarge} />
+    <View
+      style={[
+        styles.largeWidget,
+        { backgroundColor: palette.surface, width },
+      ]}
+    >
+      <View style={[styles.softRingLarge, { borderColor: palette.ring }]} />
+      <View style={[styles.dottedRingLarge, { borderColor: palette.ring }]} />
       <View style={styles.largeHeader}>
         <View>
           <AppText
             variant="title"
-            color="onSurfaceVariant"
             weight="700"
-            style={styles.largeDate}
+            style={[styles.largeDate, { color: palette.muted }]}
           >
             {data.displayDate}
           </AppText>
           <View style={styles.largeClockRow}>
-            <AppText variant="display" weight="700" style={styles.largeTime}>
+            <AppText
+              variant="display"
+              weight="700"
+              style={[styles.largeTime, { color: palette.text }]}
+            >
               {data.currentTime}
             </AppText>
           </View>
         </View>
-        <View style={styles.moreButton}>
+        <View style={[styles.moreButton, { backgroundColor: palette.track }]}>
           <AppText
             variant="headlineMobile"
-            color="onSurfaceVariant"
             weight="700"
+            style={{ color: palette.muted }}
           >
             ...
           </AppText>
@@ -485,43 +573,62 @@ function LargeWidgetPreview({
 
       <View style={styles.largeRows}>
         <LargeInactiveRow
+          palette={palette}
           prayer={rows.previous}
           use24HourTime={use24HourTime}
         />
-        <View style={styles.largeCurrentRow}>
-          <View style={styles.currentAccent} />
+        <View
+          style={[
+            styles.largeCurrentRow,
+            {
+              backgroundColor: palette.surfaceSoft,
+              borderColor: palette.border,
+            },
+          ]}
+        >
+          <View
+            style={[styles.currentAccent, { backgroundColor: palette.accent }]}
+          />
           <View style={styles.largeCurrentIcon}>
             <PrayerIcon
               name={data.current.key}
               size={48}
-              color={colors.onPrimary}
-              backgroundColor={colors.primaryContainer}
+              color={palette.onAccent}
+              backgroundColor={palette.accentContainer}
             />
           </View>
           <View style={styles.largeCurrentText}>
             <AppText
               variant="headline"
               weight="700"
-              style={styles.largeCurrentName}
+              style={[styles.largeCurrentName, { color: palette.text }]}
             >
               {data.current.name}
             </AppText>
             <AppText
               variant="bodyLarge"
-              color="primary"
               weight="700"
-              style={styles.largeCurrentRemaining}
+              style={[styles.largeCurrentRemaining, { color: palette.accent }]}
             >
               {data.countdownText}
             </AppText>
           </View>
-          <AppText variant="title" weight="700" style={styles.largeCurrentTime}>
+          <AppText
+            variant="title"
+            weight="700"
+            style={[styles.largeCurrentTime, { color: palette.text }]}
+          >
             {formatPrayerTime(data.current.time, use24HourTime)}
           </AppText>
         </View>
-        <LargeDefaultRow prayer={rows.next} use24HourTime={use24HourTime} />
-        <View style={styles.rowDivider} />
         <LargeDefaultRow
+          palette={palette}
+          prayer={rows.next}
+          use24HourTime={use24HourTime}
+        />
+        <View style={[styles.rowDivider, { backgroundColor: palette.divider }]} />
+        <LargeDefaultRow
+          palette={palette}
           prayer={rows.afterNext}
           use24HourTime={use24HourTime}
         />
@@ -531,9 +638,11 @@ function LargeWidgetPreview({
 }
 
 function LargeInactiveRow({
+  palette,
   prayer,
   use24HourTime,
 }: {
+  palette: WidgetPreviewPalette;
   prayer: WidgetPrayer;
   use24HourTime: boolean;
 }): React.JSX.Element {
@@ -542,17 +651,23 @@ function LargeInactiveRow({
       <PrayerIcon
         name={prayer.key}
         size={42}
-        color={inactiveColor}
+        color={palette.inactive}
         backgroundColor="transparent"
       />
       <AppText
         variant="headlineMobile"
-        color="outline"
-        style={[styles.largeRowName, styles.largeInactiveName]}
+        style={[
+          styles.largeRowName,
+          styles.largeInactiveName,
+          { color: palette.inactive },
+        ]}
       >
         {prayer.name}
       </AppText>
-      <AppText variant="bodyLarge" color="outline" style={styles.largeRowTime}>
+      <AppText
+        variant="bodyLarge"
+        style={[styles.largeRowTime, { color: palette.inactive }]}
+      >
         {formatPrayerTime(prayer.time, use24HourTime)}
       </AppText>
     </View>
@@ -560,9 +675,11 @@ function LargeInactiveRow({
 }
 
 function LargeDefaultRow({
+  palette,
   prayer,
   use24HourTime,
 }: {
+  palette: WidgetPreviewPalette;
   prayer: WidgetPrayer;
   use24HourTime: boolean;
 }): React.JSX.Element {
@@ -571,19 +688,22 @@ function LargeDefaultRow({
       <PrayerIcon
         name={prayer.key}
         size={42}
-        color={colors.onSurfaceVariant}
+        color={palette.muted}
         backgroundColor="transparent"
       />
       <AppText
         variant="headlineMobile"
-        style={[styles.largeRowName, styles.largeDefaultName]}
+        style={[
+          styles.largeRowName,
+          styles.largeDefaultName,
+          { color: palette.text },
+        ]}
       >
         {prayer.name}
       </AppText>
       <AppText
         variant="bodyLarge"
-        color="onSurfaceVariant"
-        style={styles.largeRowTime}
+        style={[styles.largeRowTime, { color: palette.muted }]}
       >
         {formatPrayerTime(prayer.time, use24HourTime)}
       </AppText>
@@ -768,6 +888,40 @@ function toTimeMinutes(time: string): number {
     .map(value => Number.parseInt(value, 10));
 
   return hour * 60 + minute;
+}
+
+function getWidgetPreviewPalette(useDarkWidgetTheme: boolean): WidgetPreviewPalette {
+  if (useDarkWidgetTheme) {
+    return {
+      surface: darkColors.surfaceLowest,
+      surfaceSoft: darkColors.surfaceLow,
+      text: darkColors.onSurface,
+      muted: darkColors.onSurfaceVariant,
+      inactive: darkColors.outline,
+      track: darkColors.surfaceHighest,
+      ring: darkColors.surfaceContainer,
+      accent: darkColors.primary,
+      accentContainer: darkColors.primaryContainer,
+      onAccent: darkColors.onPrimaryContainer,
+      border: darkColors.outlineVariant,
+      divider: darkColors.outlineVariant,
+    };
+  }
+
+  return {
+    surface: lightColors.surfaceLowest,
+    surfaceSoft: lightColors.surfaceLow,
+    text: lightColors.onSurface,
+    muted: lightColors.onSurfaceVariant,
+    inactive: inactiveColor,
+    track: '#eceae5',
+    ring: '#eef3f0',
+    accent: lightColors.primary,
+    accentContainer: lightColors.primaryContainer,
+    onAccent: lightColors.onPrimary,
+    border: lightColors.outlineVariant,
+    divider: '#eeede8',
+  };
 }
 
 const styles = StyleSheet.create({
