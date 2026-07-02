@@ -8,6 +8,8 @@ import android.os.Build
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.content.res.Resources
 import android.icu.util.IslamicCalendar
 import android.icu.util.TimeZone as IcuTimeZone
 import android.util.TypedValue
@@ -244,11 +246,12 @@ private fun renderSmallWidget(
     data: PrayerWidgetData?,
 ) {
     if (data == null) {
-        renderSmallSetupWidget(views)
+        renderSmallSetupWidget(context, views)
         return
     }
 
     val currentLabel = data.current.namaz.label
+    applySmallDynamicAccent(context, views)
     views.setTextViewText(R.id.widget_small_current_prayer, currentLabel)
     views.setTextViewTextSize(
         R.id.widget_small_current_prayer,
@@ -261,7 +264,8 @@ private fun renderSmallWidget(
     views.setProgressBar(R.id.widget_small_progress, 1_000, calculateIntervalProgress(data), false)
 }
 
-private fun renderSmallSetupWidget(views: RemoteViews) {
+private fun renderSmallSetupWidget(context: Context, views: RemoteViews) {
+    applySmallDynamicAccent(context, views)
     views.setTextViewText(R.id.widget_small_current_prayer, "Set location")
     views.setTextViewTextSize(
         R.id.widget_small_current_prayer,
@@ -322,13 +326,73 @@ private fun getAodWidgetTitleSize(label: String): Float = when {
     else -> 20f
 }
 
+private fun applySmallDynamicAccent(context: Context, views: RemoteViews) {
+    val accentColor = getDynamicAccentColor(context) ?: return
+
+    views.setTextColor(R.id.widget_small_remaining, accentColor)
+    tintBackground(views, R.id.widget_small_icon_bg, accentColor)
+    tintProgress(views, R.id.widget_small_progress, accentColor)
+}
+
+private fun applyMediumDynamicAccent(context: Context, views: RemoteViews) {
+    val accentColor = getDynamicAccentColor(context) ?: return
+
+    views.setTextColor(R.id.widget_medium_status, accentColor)
+    views.setTextColor(R.id.widget_medium_focus_name, accentColor)
+    tintBackground(views, R.id.widget_medium_focus_bg, accentColor)
+}
+
+private fun applyLargeDynamicAccent(context: Context, views: RemoteViews) {
+    val accentColor = getDynamicAccentColor(context) ?: return
+
+    views.setTextColor(R.id.widget_large_current_remaining, accentColor)
+    tintBackground(views, R.id.widget_large_current_icon_bg, accentColor)
+    tintBackground(views, R.id.widget_large_current_accent, accentColor)
+}
+
+private fun getDynamicAccentColor(context: Context): Int? {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        return null
+    }
+
+    return try {
+        context.getColor(android.R.color.system_accent1_600)
+    } catch (_: Resources.NotFoundException) {
+        null
+    }
+}
+
+private fun tintBackground(views: RemoteViews, viewId: Int, color: Int) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        return
+    }
+
+    views.setColorStateList(
+        viewId,
+        "setBackgroundTintList",
+        ColorStateList.valueOf(color),
+    )
+}
+
+private fun tintProgress(views: RemoteViews, viewId: Int, color: Int) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        return
+    }
+
+    views.setColorStateList(
+        viewId,
+        "setProgressTintList",
+        ColorStateList.valueOf(color),
+    )
+}
+
 private fun renderMediumWidget(
     context: Context,
     views: RemoteViews,
     data: PrayerWidgetData?,
 ) {
     if (data == null) {
-        renderMediumSetupWidget(views)
+        renderMediumSetupWidget(context, views)
         return
     }
 
@@ -337,6 +401,7 @@ private fun renderMediumWidget(
         data.timeline[(focusIndex + offset).coerceIn(0, data.timeline.lastIndex)]
     }
 
+    applyMediumDynamicAccent(context, views)
     views.setTextViewText(R.id.widget_medium_time, formatTime(data.now, data.location))
     views.setTextViewText(R.id.widget_medium_status, formatMediumStatus(data))
     views.setTextViewText(R.id.widget_medium_place, data.location.label)
@@ -370,7 +435,8 @@ private fun renderMediumWidget(
     )
 }
 
-private fun renderMediumSetupWidget(views: RemoteViews) {
+private fun renderMediumSetupWidget(context: Context, views: RemoteViews) {
+    applyMediumDynamicAccent(context, views)
     views.setTextViewText(R.id.widget_medium_time, "--:--")
     views.setTextViewText(R.id.widget_medium_status, "Set location")
     views.setTextViewText(R.id.widget_medium_place, "Open Al-Salah")
@@ -389,7 +455,7 @@ private fun renderLargeWidget(
     data: PrayerWidgetData?,
 ) {
     if (data == null) {
-        renderLargeSetupWidget(views)
+        renderLargeSetupWidget(context, views)
         return
     }
 
@@ -397,6 +463,7 @@ private fun renderLargeWidget(
     val firstNext = data.next
     val secondNext = data.timeline[(data.currentIndex + 2).coerceAtMost(data.timeline.lastIndex)]
 
+    applyLargeDynamicAccent(context, views)
     views.setTextViewText(R.id.widget_large_date, formatDisplayDate(data.now, data.location))
     views.setTextViewText(R.id.widget_large_time, formatTime(data.now, data.location))
     views.setTextViewText(R.id.widget_large_current_name, data.current.namaz.label)
@@ -433,7 +500,8 @@ private fun renderLargeWidget(
     )
 }
 
-private fun renderLargeSetupWidget(views: RemoteViews) {
+private fun renderLargeSetupWidget(context: Context, views: RemoteViews) {
+    applyLargeDynamicAccent(context, views)
     views.setTextViewText(R.id.widget_large_date, "Set location")
     views.setTextViewText(R.id.widget_large_time, "--:--")
     views.setTextViewText(R.id.widget_large_current_name, "Open Al-Salah")

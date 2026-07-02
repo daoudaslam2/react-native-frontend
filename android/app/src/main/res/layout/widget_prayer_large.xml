@@ -127,6 +127,7 @@
             android:background="@drawable/widget_card_current_bg">
 
             <TextView
+                android:id="@+id/widget_large_current_accent"
                 android:layout_width="6dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="start"

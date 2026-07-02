@@ -148,6 +148,7 @@
                 android:layout_height="52dp">
 
                 <FrameLayout
+                    android:id="@+id/widget_medium_focus_bg"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_gravity="bottom|center_horizontal"
