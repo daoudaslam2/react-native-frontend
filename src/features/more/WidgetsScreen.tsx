@@ -749,6 +749,10 @@ function formatWidgetRemainingDuration(remainingTime: string): string {
     return `${hours}h ${minutes}m`;
   }
 
+  if (minutes === 0) {
+    return 'Less than a minute';
+  }
+
   return `${minutes}m`;
 }
 
