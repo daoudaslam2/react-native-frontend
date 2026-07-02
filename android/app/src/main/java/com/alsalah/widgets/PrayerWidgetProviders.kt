@@ -1062,7 +1062,7 @@ private fun formatRemainingDuration(data: PrayerWidgetData): String {
     val minutes = totalMinutes % 60
 
     return when {
-        remainingMillis < 60_000 -> "Less than a minute"
+        remainingMillis < 60_000 -> "1m"
         hours > 0 -> "${hours}h ${minutes}m"
         else -> "${minutes}m"
     }

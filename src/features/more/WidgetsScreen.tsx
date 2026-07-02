@@ -750,7 +750,7 @@ function formatWidgetRemainingDuration(remainingTime: string): string {
   }
 
   if (minutes === 0) {
-    return 'Less than a minute';
+    return '1m';
   }
 
   return `${minutes}m`;
