@@ -3,10 +3,12 @@ import {
   DEFAULT_CALCULATION_METHOD,
   DEFAULT_ISHA_DEADLINE_MINUTES,
 } from '../../constants/prayerSettings';
-import { OBLIGATORY_PRAYERS } from '../../constants/prayers';
 import { clearLocalDatabase } from '../../database/database';
 import { useAuthStore } from '../../features/auth/authStore';
-import { useQazaStore, type QazaCounts } from '../../features/qaza/qazaStore';
+import {
+  createEmptyQazaCounts,
+  useQazaStore,
+} from '../../features/qaza/qazaStore';
 import { useBackupSyncStore } from '../../features/settings/backupSyncStore';
 import { useSettingsStore } from '../../features/settings/settingsStore';
 import {
@@ -72,6 +74,7 @@ function resetStoresInMemory(): void {
 
   useQazaStore.setState({
     counts: createEmptyQazaCounts(),
+    ishaSplitEnabled: false,
   });
 
   useTrackerStore.setState({
@@ -83,20 +86,4 @@ function resetStoresInMemory(): void {
     autoSyncFrequency: 'appOpen',
     lastSyncAt: null,
   });
-}
-
-function createEmptyQazaCounts(): QazaCounts {
-  return OBLIGATORY_PRAYERS.reduce<QazaCounts>(
-    (counts, prayer) => ({
-      ...counts,
-      [prayer]: 0,
-    }),
-    {
-      fajr: 0,
-      dhuhr: 0,
-      asr: 0,
-      maghrib: 0,
-      isha: 0,
-    },
-  );
 }

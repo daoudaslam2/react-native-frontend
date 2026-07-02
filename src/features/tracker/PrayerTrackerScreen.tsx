@@ -13,8 +13,13 @@ import { OBLIGATORY_PRAYERS, PRAYER_LABELS } from '../../constants/prayers';
 import { useNow } from '../../hooks/useNow';
 import type { MainTabParamList } from '../../navigation/types';
 import { radius, spacing, useThemeColors } from '../../theme';
-import type { ObligatoryPrayerKey } from '../../types/prayer';
-import { getTotalQaza, type QazaCounts, useQazaStore } from '../qaza/qazaStore';
+import {
+  getIshaPartCounts,
+  getPrayerQazaCount,
+  getTotalQaza,
+  type QazaCounts,
+  useQazaStore,
+} from '../qaza/qazaStore';
 import { useSettingsStore } from '../settings/settingsStore';
 import {
   createInitialPrayerLogs,
@@ -65,6 +70,7 @@ function PrayerTrackerContent({
   const logsByDate = useTrackerStore(state => state.logsByDate);
   const ensurePrayerDate = useTrackerStore(state => state.ensurePrayerDate);
   const qazaCounts = useQazaStore(state => state.counts);
+  const ishaSplitEnabled = useQazaStore(state => state.ishaSplitEnabled);
   const calculationMethod = useSettingsStore(state => state.calculationMethod);
   const asrMethod = useSettingsStore(state => state.asrMethod);
   const ishaDeadlineMinutes = useSettingsStore(
@@ -80,6 +86,7 @@ function PrayerTrackerContent({
     activeDateKey,
     logsByDate,
     qazaCounts,
+    ishaSplitEnabled,
   });
 
   useEffect(() => {
@@ -301,10 +308,12 @@ function getTrackerMetrics({
   activeDateKey,
   logsByDate,
   qazaCounts,
+  ishaSplitEnabled,
 }: {
   activeDateKey: string;
   logsByDate: Record<string, PrayerLogs>;
   qazaCounts: QazaCounts;
+  ishaSplitEnabled: boolean;
 }): TrackerMetrics {
   const effectiveLogsByDate = {
     ...logsByDate,
@@ -329,8 +338,11 @@ function getTrackerMetrics({
     completedPrayers,
     qazaPrayers,
     trackedDays: countTrackedDays(effectiveLogsByDate),
-    qazaTotal: getTotalQaza(qazaCounts),
-    highestQazaPrayer: getHighestQazaPrayer(qazaCounts),
+    qazaTotal: getTotalQaza(qazaCounts, ishaSplitEnabled),
+    highestQazaPrayer: getHighestQazaPrayer(
+      qazaCounts,
+      ishaSplitEnabled,
+    ),
     week: weekKeys.map(key => ({
       key,
       label: formatWeekdayLabel(key),
@@ -441,17 +453,28 @@ function isLoggedStatus(status: PrayerLogStatus): boolean {
   return status === 'completed' || status === 'qaza';
 }
 
-function getHighestQazaPrayer(counts: QazaCounts): string {
-  const [highestPrayer, highestCount] = OBLIGATORY_PRAYERS.reduce<
-    [ObligatoryPrayerKey, number]
-  >(
-    (highest, prayer) =>
-      counts[prayer] > highest[1] ? [prayer, counts[prayer]] : highest,
-    ['fajr', counts.fajr],
+function getHighestQazaPrayer(
+  counts: QazaCounts,
+  ishaSplitEnabled: boolean,
+): string {
+  const ishaPartCounts = getIshaPartCounts(counts);
+  const entries: Array<[string, number]> = OBLIGATORY_PRAYERS.flatMap(prayer => {
+    if (prayer !== 'isha' || !ishaSplitEnabled) {
+      return [[PRAYER_LABELS[prayer], getPrayerQazaCount(counts, prayer)]];
+    }
+
+    return [
+      ['Isha Fardh', ishaPartCounts.fardh],
+      ['Isha Witr', ishaPartCounts.witr],
+    ];
+  });
+  const [highestPrayer, highestCount] = entries.reduce<[string, number]>(
+    (highest, [label, count]) => (count > highest[1] ? [label, count] : highest),
+    ['Fajr', counts.fajr_fardh],
   );
 
   return highestCount > 0
-    ? `${PRAYER_LABELS[highestPrayer]} (${highestCount})`
+    ? `${highestPrayer} (${highestCount})`
     : 'None';
 }
 
