@@ -3,7 +3,6 @@ import {
   Alert,
   Pressable,
   StyleSheet,
-  Switch,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -11,7 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppText } from '../../components/AppText';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon } from '../../components/Icon';
 import { MissingLocationState } from '../../components/MissingLocationState';
 import { PrayerIcon } from '../../components/PrayerIcon';
 import { Screen } from '../../components/Screen';
@@ -26,7 +25,6 @@ import {
   lightColors,
   radius,
   spacing,
-  useThemeColors,
 } from '../../theme';
 import type { ObligatoryPrayerKey, PrayerTime } from '../../types/prayer';
 import { formatPrayerTime } from '../../utils/dateTime';
@@ -69,8 +67,6 @@ interface WidgetPreviewPalette {
   divider: string;
 }
 
-const inactiveColor = '#969995';
-
 export function WidgetsScreen(): React.JSX.Element {
   const location = useSettingsStore(state => state.location);
 
@@ -97,17 +93,8 @@ function WidgetsContent({
   const ishaDeadlineMinutes = useSettingsStore(
     state => state.ishaDeadlineMinutes,
   );
-  const useAdaptiveWidgetColors = useSettingsStore(
-    state => state.useAdaptiveWidgetColors,
-  );
-  const setUseAdaptiveWidgetColors = useSettingsStore(
-    state => state.setUseAdaptiveWidgetColors,
-  );
   const useDarkWidgetTheme = useSettingsStore(
     state => state.useDarkWidgetTheme,
-  );
-  const setUseDarkWidgetTheme = useSettingsStore(
-    state => state.setUseDarkWidgetTheme,
   );
   const trackingOptions = {
     calculationMethod,
@@ -142,10 +129,7 @@ function WidgetsContent({
     location,
   });
   const previewWidth = Math.min(width - spacing.container * 2, 330);
-  const previewPalette = getWidgetPreviewPalette({
-    useAdaptiveWidgetColors,
-    useDarkWidgetTheme,
-  });
+  const previewPalette = getWidgetPreviewPalette({ useDarkWidgetTheme });
   const handleAddWidget = React.useCallback(
     async (widgetSize: WidgetPinSize) => {
       setPendingWidgetSize(widgetSize);
@@ -197,22 +181,6 @@ function WidgetsContent({
         </AppText>
       </View>
 
-      <WidgetPreferenceToggle
-        icon="moon"
-        title="Dark widget theme"
-        description="Use dark surfaces and text for home screen widgets."
-        value={useDarkWidgetTheme}
-        onValueChange={setUseDarkWidgetTheme}
-      />
-
-      <WidgetPreferenceToggle
-        icon="widgets"
-        title="Adaptive widget colors"
-        description="Use Android wallpaper color for home widgets. Lock widgets stay white."
-        value={useAdaptiveWidgetColors}
-        onValueChange={setUseAdaptiveWidgetColors}
-      />
-
       <WidgetSection
         title="Compact (2x1)"
         isAdding={pendingWidgetSize === 'small'}
@@ -250,61 +218,6 @@ function WidgetsContent({
         />
       </WidgetSection>
     </Screen>
-  );
-}
-
-function WidgetPreferenceToggle({
-  icon,
-  title,
-  description,
-  value,
-  onValueChange,
-}: {
-  icon: IconName;
-  title: string;
-  description: string;
-  value: boolean;
-  onValueChange: (value: boolean) => void;
-}): React.JSX.Element {
-  const themeColors = useThemeColors();
-
-  return (
-    <View
-      style={[
-        styles.adaptiveToggle,
-        {
-          backgroundColor: themeColors.surfaceLowest,
-          borderColor: themeColors.outlineVariant,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.adaptiveToggleIcon,
-          { backgroundColor: themeColors.surfaceHigh },
-        ]}
-      >
-        <Icon name={icon} color={themeColors.onSurfaceVariant} />
-      </View>
-      <View style={styles.adaptiveToggleText}>
-        <AppText variant="bodyLarge" weight="700">
-          {title}
-        </AppText>
-        <AppText variant="body" color="onSurfaceVariant">
-          {description}
-        </AppText>
-      </View>
-      <Switch
-        accessibilityLabel={title}
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{
-          false: themeColors.surfaceHighest,
-          true: themeColors.secondaryContainer,
-        }}
-        thumbColor={value ? themeColors.primary : themeColors.outline}
-      />
-    </View>
   );
 }
 
@@ -894,29 +807,10 @@ function toTimeMinutes(time: string): number {
 }
 
 function getWidgetPreviewPalette({
-  useAdaptiveWidgetColors,
   useDarkWidgetTheme,
 }: {
-  useAdaptiveWidgetColors: boolean;
   useDarkWidgetTheme: boolean;
 }): WidgetPreviewPalette {
-  if (useDarkWidgetTheme && useAdaptiveWidgetColors) {
-    return {
-      surface: '#1e333c',
-      surfaceSoft: '#151d20',
-      text: darkColors.onSurface,
-      muted: darkColors.onSurfaceVariant,
-      inactive: darkColors.outline,
-      track: darkColors.surfaceHighest,
-      ring: darkColors.surfaceContainer,
-      accent: '#6db5d0',
-      accentContainer: '#1e333c',
-      onAccent: '#6db5d0',
-      border: darkColors.outlineVariant,
-      divider: darkColors.outlineVariant,
-    };
-  }
-
   if (useDarkWidgetTheme) {
     return {
       surface: darkColors.surfaceLowest,
@@ -939,14 +833,14 @@ function getWidgetPreviewPalette({
     surfaceSoft: lightColors.surfaceLow,
     text: lightColors.onSurface,
     muted: lightColors.onSurfaceVariant,
-    inactive: inactiveColor,
-    track: '#eceae5',
-    ring: '#eef3f0',
+    inactive: lightColors.outline,
+    track: lightColors.surfaceHigh,
+    ring: lightColors.surfaceContainer,
     accent: lightColors.primary,
     accentContainer: lightColors.primaryContainer,
     onAccent: lightColors.onPrimary,
     border: lightColors.outlineVariant,
-    divider: '#eeede8',
+    divider: lightColors.surfaceHigh,
   };
 }
 
@@ -972,27 +866,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  adaptiveToggle: {
-    minHeight: 70,
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  adaptiveToggleIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  adaptiveToggleText: {
-    flex: 1,
-    gap: 2,
-  },
   section: {
     alignItems: 'center',
     gap: spacing.sm,
@@ -1005,7 +878,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: colors.surfaceLowest,
     padding: 0,
-    shadowColor: '#000000',
+    shadowColor: colors.onSurface,
     shadowOpacity: 0.06,
     shadowRadius: 28,
     shadowOffset: { width: 0, height: 12 },
@@ -1019,7 +892,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     borderWidth: 8,
-    borderColor: '#eef3f0',
+    borderColor: colors.surfaceContainer,
   },
   smallIconWrap: {
     position: 'absolute',
@@ -1054,7 +927,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#eceae5',
+    backgroundColor: colors.surfaceHigh,
     overflow: 'hidden',
   },
   progressFill: {
@@ -1080,7 +953,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     gap: spacing.md,
-    shadowColor: '#000000',
+    shadowColor: colors.onSurface,
     shadowOpacity: 0.06,
     shadowRadius: 28,
     shadowOffset: { width: 0, height: 12 },
@@ -1093,7 +966,7 @@ const styles = StyleSheet.create({
     right: -34,
     bottom: -38,
     borderRadius: 68,
-    backgroundColor: '#f0f4f2',
+    backgroundColor: colors.surfaceContainer,
   },
   mediumTop: {
     flexDirection: 'row',
@@ -1146,7 +1019,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: colors.surfaceLowest,
     padding: spacing.md,
-    shadowColor: '#000000',
+    shadowColor: colors.onSurface,
     shadowOpacity: 0.06,
     shadowRadius: 28,
     shadowOffset: { width: 0, height: 12 },
@@ -1160,7 +1033,7 @@ const styles = StyleSheet.create({
     height: 196,
     borderRadius: 98,
     borderWidth: 5,
-    borderColor: '#e8eeeb',
+    borderColor: colors.surfaceContainer,
   },
   dottedRingLarge: {
     position: 'absolute',
@@ -1170,7 +1043,7 @@ const styles = StyleSheet.create({
     height: 176,
     borderRadius: 88,
     borderWidth: 8,
-    borderColor: '#e1ece5',
+    borderColor: colors.surfaceHigh,
     opacity: 0.8,
   },
   largeHeader: {
@@ -1229,7 +1102,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.outlineVariant,
-    backgroundColor: '#f8faf8',
+    backgroundColor: colors.surfaceLow,
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: spacing.md,

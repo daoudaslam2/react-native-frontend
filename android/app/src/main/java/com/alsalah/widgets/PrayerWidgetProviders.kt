@@ -445,6 +445,11 @@ private fun getWidgetPalette(context: Context): WidgetPalette {
         if (isDark) android.R.color.system_accent1_300 else android.R.color.system_accent1_600,
         defaultAccent,
     )
+    val adaptiveAccentContainer = getDynamicWidgetColor(
+        context,
+        android.R.color.system_accent1_600,
+        defaultAccentContainer,
+    )
     val card = if (isDark) {
         getDynamicWidgetColor(context, android.R.color.system_accent2_800, defaultCard)
     } else {
@@ -463,7 +468,7 @@ private fun getWidgetPalette(context: Context): WidgetPalette {
         accentContainer = if (isDark && usesDynamicColors) {
             card
         } else {
-            defaultAccentContainer
+            adaptiveAccentContainer
         },
         iconForeground = if (isDark && usesDynamicColors) {
             accent

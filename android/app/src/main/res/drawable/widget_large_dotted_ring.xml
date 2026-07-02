@@ -3,7 +3,7 @@
     <solid android:color="@android:color/transparent" />
     <stroke
         android:width="8dp"
-        android:color="#E3EEE7"
+        android:color="@color/widget_ring"
         android:dashWidth="18dp"
         android:dashGap="12dp" />
 </shape>
